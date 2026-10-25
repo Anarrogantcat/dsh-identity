@@ -20,6 +20,7 @@ import { personaFor, sessionIdOfContext, peerOfSession } from './lib/persona.js'
 import { readMood, moodToneOf, moodSummary, moodBlock } from './lib/mood.js'
 import { llmStats } from './lib/moodllm.js'
 import { knowledgeBlock, lastQueryOf, kbStats } from './lib/knowledge.js'
+import { topicBlock, topicStats } from './lib/topic.js'
 import { matchStats } from './lib/esports.js'
 import { rulesFor as learnRulesFor, learnStats, learnView } from './lib/learn.js'
 import { listPresets, getPresetText, savePreset, deletePreset, togglePreset, setCurrent, setScope } from './lib/presets.js'
@@ -132,6 +133,10 @@ ${rules.map((r, i) => `${i + 1}. ${r}`).join('\n')}`
         if (q) body += knowledgeBlock(q, peer.peerKey, { top: 2 })
       } catch { /* ignore */ }
     }
+    // 话题：这个群现在在聊哪一场（防止把历史战绩当成今天这场）
+    if (body) {
+      try { body += topicBlock(peer.peerKey) } catch { /* ignore */ }
+    }
     if (!body || cfg.ui?.markers === false) return body
     return body + `
 
@@ -172,6 +177,7 @@ function snapshot() {
     })(),
     moodLlm: (() => { try { return llmStats() } catch { return null } })(),
     kb: (() => { try { return kbStats() } catch { return null } })(),
+    topics: (() => { try { return topicStats() } catch { return [] } })(),
     matches: (() => { try { return matchStats() } catch { return null } })(),
     mood: (() => {
       try {

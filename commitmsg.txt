@@ -1,0 +1,6 @@
+feat(topic): track the match a group is actually discussing
+
+- lib/topic.js: detect matchups written as 'A vs B' or 'A 被 B 让二追三'
+- classify history vs today vs unknown; merge repeats of the same matchup
+- inject a topic block into the persona prompt with age + guidance to ask when unclear
+- snapshot exposes topics for the panel
