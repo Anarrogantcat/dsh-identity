@@ -237,6 +237,16 @@ function moodCardHtml(){
     (m.hint ? '<div class="hint" style="margin:6px 0">' + m.hint + '</div>' : '') + warn + bars +
     (rules ? '<div class="hint" style="margin-top:8px">现在会这样说话：</div><ul style="margin:4px 0 0 18px;padding:0;color:#c9d6ea;font-size:13px">' + rules + '</ul>' : '') +
     '<div class="hint" style="margin-top:8px">心情只改语气和话的长短，事实、边界、安全规则不变。</div>' +
+    (function () {
+      var s = STATE.moodLlm
+      if (!s || (!s.lastAt && !s.paused)) return ''
+      var pause = s.paused ? '<span style="color:#ff9f9f"> · 已暂停（连续失败 ' + (s.failStreak || 0) + ' 次）</span>' : ''
+      var raw = s.lastRaw ? '<div class="hint" style="margin-top:2px;color:#93a4bd">上次原始输出：' + String(s.lastRaw).slice(0, 120) + '</div>' : ''
+      return '<div class="hint" style="margin-top:6px">模型评估：今日 ' + (s.calls || 0) + ' 次 / ' + (s.tokens || 0) + ' tokens' +
+        (s.lastReason ? ' · 最近理由：' + s.lastReason : '') +
+        (s.lastError ? ' · 上次失败：' + s.lastError : '') + pause +
+        (s.paused ? ' <button id="moodllmreset" style="margin-left:6px">重置熔断</button>' : '') + '</div>' + raw
+    })() +
     '<div class="pbtns" style="margin-top:8px"><button id="moodrefresh">刷新</button><button id="moodreset">重置本地心情</button></div>' +
   '</div>'
 }
@@ -281,6 +291,7 @@ function renderPanel(){
       el.insertAdjacentHTML("afterbegin", moodCardHtml())
       var mf = $("moodrefresh"); if (mf) mf.onclick = function () { load() }
       var mr = $("moodreset"); if (mr) mr.onclick = async function () { await mg({ action: "mgmtOp", kind: "mood", op: "resetLocal" }); await load() }
+      var ml = $("moodllmreset"); if (ml) ml.onclick = async function () { await mg({ action: "mgmtOp", kind: "mood", op: "resetLlm" }); await load() }
     } catch (e) {}
   }
 
