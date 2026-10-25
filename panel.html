@@ -1,0 +1,1090 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>QQ 机器人增强 · 设置</title>
+<style>
+  :root{
+    --glass:1;
+
+    --bg:#0f1420; --bg2:#151c2b; --card:#1a2233; --line:#26314a;
+    --fg:#e6ecf7; --dim:#93a1bb; --accent:#4d8dff; --ok:#37c98b; --warn:#f0b34a; --bad:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:linear-gradient(180deg,var(--bg),#0b1018 60%);color:var(--fg);
+    font:14px/1.6 "Segoe UI","Microsoft YaHei",system-ui,sans-serif;min-height:100vh}
+  header{padding:18px 22px;border-bottom:1px solid var(--line);background:rgba(26,34,51,.6);
+    backdrop-filter:blur(6px);position:sticky;top:0;z-index:5}
+  header{position:relative}
+  h1{margin:0;font-size:16px;letter-spacing:.4px;display:flex;align-items:center;gap:8px}
+  h1 .tag{font-size:11px;color:#0b1018;background:var(--accent);border-radius:999px;padding:1px 8px}
+  .sub{color:var(--dim);font-size:12px;margin-top:4px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .chip{font-size:12px;border:1px solid var(--line);border-radius:999px;padding:3px 10px;color:var(--dim)}
+  .chip.ok{color:var(--ok);border-color:#1f5c43}
+  .chip.warn{color:var(--warn);border-color:#5c4a1f}
+  .chip.bad{color:var(--bad);border-color:#5c1f1f}
+  main{max-width:1040px;margin:0 auto;padding:18px 22px 120px}
+  .tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 12px}
+  .toolbar button{font-size:12.5px;padding:5px 12px}
+  .toolbar .hint{margin-left:4px}
+  .pcard{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px;background:#151c2b}
+  .prow{display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px dashed rgba(38,49,74,.7)}
+  .prow:last-child{border-bottom:0}
+  .prow .grow{flex:1;min-width:160px}
+  .badge{font-size:11px;border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--dim)}
+  .badge.cur{color:#0b1018;background:var(--accent);border-color:var(--accent)}
+  .pv{white-space:pre-wrap;font-size:12.5px;color:#cfdcf3;background:#0d1320;border:1px solid var(--line);border-radius:8px;padding:10px;max-height:220px;overflow:auto}
+  .pbtns{display:flex;gap:6px;flex-wrap:wrap}
+  .pbtns button{font-size:12px;padding:4px 10px}
+  .tab{border:1px solid var(--line);background:var(--bg2);color:var(--dim);border-radius:8px;
+    padding:6px 12px;cursor:pointer;font-size:13px}
+  .tab.active{background:rgba(77,141,255,.14);border-color:#31558f;color:#cfe0ff}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+  .row{display:flex;gap:16px;align-items:center;padding:11px 0;border-bottom:1px dashed rgba(38,49,74,.7)}
+  .row:last-child{border-bottom:0}
+  .row .meta{flex:1;min-width:220px}
+  .row .label{font-size:13.5px}
+  .row .hint{color:var(--dim);font-size:12px;margin-top:2px}
+  .row .ctl{flex:0 0 300px;display:flex;justify-content:flex-end}
+  input,select{background:#0d1320;border:1px solid var(--line);color:var(--fg);border-radius:8px;padding:7px 10px;font:inherit}
+  select{cursor:pointer}
+  input:focus,select:focus,textarea:focus{outline:none;border-color:#31558f;box-shadow:0 0 0 2px rgba(77,141,255,.15)}
+  input[type=text],input[type=number],textarea{background:#0d1320;border:1px solid var(--line);color:var(--fg);
+    border-radius:8px;padding:7px 10px;font:inherit;width:100%}
+  textarea{min-height:88px;resize:vertical;font-family:ui-monospace,Consolas,monospace;font-size:12.5px}
+  input[type=number]{width:140px;text-align:right}
+  .copy{font-size:11.5px;padding:2px 8px;border-radius:6px;border:1px solid #2c3a58;background:#1b2537;color:#9fb6dd;cursor:pointer;margin-left:6px}
+  .copy:hover{background:#243149;color:#cfe0ff}
+  .code{font-family:ui-monospace,Consolas,monospace;letter-spacing:1px;background:#0d1320;border:1px solid #2c3a58;border-radius:6px;padding:2px 8px;color:#cfe0ff}
+  .switch{position:relative;width:46px;height:26px;flex:0 0 auto}
+  .switch input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+  .switch i{position:absolute;inset:0;background:#2a3450;border-radius:999px;transition:.18s}
+  .switch i::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;
+    background:#8b9bbb;transition:.18s}
+  .switch input:checked + i{background:rgba(77,141,255,.5)}
+  .switch input:checked + i::after{left:23px;background:#cfe0ff}
+  footer{position:fixed;bottom:0;left:0;right:0;padding:12px 22px;background:rgba(15,20,32,.92);
+    border-top:1px solid var(--line);display:flex;gap:10px;align-items:center;justify-content:flex-end}
+  button{font:inherit;border-radius:8px;padding:7px 14px;cursor:pointer;border:1px solid var(--line);
+    background:var(--bg2);color:var(--fg)}
+  button.primary{background:var(--accent);border-color:var(--accent);color:#08111f;font-weight:600}
+  button:disabled{opacity:.5;cursor:default}
+  #msg{margin-left:auto;margin-right:auto;color:var(--dim);font-size:12.5px}
+  .kv{font-family:ui-monospace,Consolas,monospace;font-size:12px;color:var(--dim);word-break:break-all}
+  .sec-title{font-size:12px;color:var(--dim);text-transform:uppercase;letter-spacing:.8px;margin:18px 0 8px}
+  /* 深色滚动条（原来跟随系统是白色，很扎眼） */
+  html{scrollbar-color:#33456b #0f1420;scrollbar-width:thin}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-track{background:#0f1420}
+  ::-webkit-scrollbar-thumb{background:#2c3a58;border-radius:8px;border:2px solid #0f1420}
+  ::-webkit-scrollbar-thumb:hover{background:#3b4e75}
+  ::-webkit-scrollbar-corner{background:#0f1420}
+  textarea,pre{scrollbar-color:#33456b #0d1320}  .searchbar{display:flex;gap:8px;align-items:center;margin:0 0 12px}
+  .searchbar input{flex:1;max-width:420px}
+  details.adv{margin-top:8px;border-top:1px dashed rgba(38,49,74,.7);padding-top:8px}
+  details.adv > summary{cursor:pointer;color:#9fb6dd;font-size:13px;padding:6px 2px;list-style:none;display:flex;align-items:center;gap:6px}
+  details.adv > summary::-webkit-details-marker{display:none}
+  details.adv > summary::before{content:"▸";color:#4d8dff;transition:transform .15s}
+  details.adv[open] > summary::before{transform:rotate(90deg)}
+  details.adv[open] > summary{color:#cfe0ff}
+
+  /* ── 毛玻璃 ── */
+  body::before{content:"";position:fixed;inset:-25%;z-index:-1;pointer-events:none;
+    background:
+      radial-gradient(38% 42% at 18% 12%, rgba(77,141,255,.28), transparent 70%),
+      radial-gradient(34% 38% at 82% 18%, rgba(120,90,255,.22), transparent 70%),
+      radial-gradient(46% 46% at 60% 92%, rgba(55,201,139,.16), transparent 72%),
+      radial-gradient(30% 30% at 8% 78%, rgba(240,179,74,.12), transparent 70%);
+    filter: blur(38px) saturate(1.1);
+  }
+  html.glass-off body::before{display:none}
+  html.glass-off .pcard,html.glass-off header,html.glass-off footer,html.glass-off .panel{
+    backdrop-filter:none !important;-webkit-backdrop-filter:none !important;
+    background:#1a2233 !important;
+  }
+  header,footer{background:rgba(15,20,32,.62) !important;backdrop-filter:blur(18px) saturate(1.35);-webkit-backdrop-filter:blur(18px) saturate(1.35)}
+  .pcard{background:rgba(26,34,51,.58) !important;backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);
+    border-color:rgba(120,150,210,.16) !important;box-shadow:0 10px 30px rgba(0,0,0,.28)}
+  .panel{background:rgba(26,34,51,.42) !important;backdrop-filter:blur(14px) saturate(1.25);-webkit-backdrop-filter:blur(14px) saturate(1.25)}
+  .row input,.row select,.row textarea,.searchbar input{background:rgba(13,19,32,.72) !important}
+  .tab{backdrop-filter:blur(8px)}
+  table,th,td{background:transparent}
+  #qqrefine-wrap{background:rgba(15,20,32,.72) !important;backdrop-filter:blur(20px) saturate(1.3)}
+  @media (prefers-reduced-transparency: reduce){ html{--glass:0} }
+</style>
+</head>
+<body>
+<header>
+  <h1>🐟 QQ 机器人增强 <span class="tag" id="stage">M1</span></h1>
+  <div class="sub" id="paths"></div>
+  <div class="chips" id="chips"></div>
+  <button id="glassBtn" style="position:absolute;right:22px;top:18px;font-size:12px;padding:4px 10px">🫧 毛玻璃</button>
+</header>
+<main>
+  <div class="tabs" id="tabs"></div>
+  <div class="searchbar"><input type="text" id="q" placeholder="搜索设置项（跨页签）…"><span class="hint" id="qhint"></span></div>
+  <div class="toolbar">
+    <button data-act="syncSticker">同步图库</button>
+    <button data-act="cleanSticker">清理过期图</button>
+    <button data-act="groupDiag">群诊断</button>
+    <button data-act="clearRoleCache">清角色缓存</button>
+    <span id="actmsg" class="hint"></span>
+  </div>
+  <div id="recent" class="panel" style="margin-bottom:12px;display:none"></div>
+  <div class="panel" id="panel"></div>
+  <pre id="actout" class="kv" style="white-space:pre-wrap"></pre>
+</main>
+<footer>
+  <span id="msg"></span>
+  <button id="reset">恢复默认</button>
+  <button id="save" class="primary">保存</button>
+</footer>
+<script>
+const $ = (id) => document.getElementById(id)
+let STATE = null
+let ACTIVE = 'scope'
+let SEARCH = ""
+const draft = {}
+
+function fmt(v){
+  if (Array.isArray(v)) return v.join('\n')
+  return v === undefined || v === null ? '' : String(v)
+}
+function get(path){
+  if (path in draft) return draft[path]
+  return path.split('.').reduce((o,k)=> (o==null?undefined:o[k]), STATE.config)
+}
+function put(path,val){ draft[path]=val; markDirty() }
+function markDirty(){ $('msg').textContent = Object.keys(draft).length ? ('未保存：' + Object.keys(draft).length + ' 项') : '' }
+
+function renderChips(){
+  const d = STATE.diag || {}
+  const p = d.patch || {}
+  const st = STATE.sticker || {}
+  const chips = []
+  chips.push(['配置', STATE.configPathExists ? 'ok' : 'warn', STATE.configPathExists ? '已生成' : '未生成'])
+  chips.push(['SDK', d.sdkPath ? 'ok' : 'bad', d.sdkPath ? (d.sdkVersion || '已定位') : (d.sdkError || '未定位')])
+  chips.push(['入站闸', p.inbound ? 'ok' : 'bad', p.inbound ? '已挂载' : '未挂载'])
+  chips.push(['出站脱敏', p.outbound ? 'ok' : 'bad', p.outbound ? '已挂载' : '未挂载'])
+  chips.push(['图库', st.total ? 'ok' : 'warn', st.total ? `${st.total} 张` : '空（点“同步图库”）'])
+  chips.push(['机器人', STATE.botSeen ? 'ok' : 'warn', STATE.botSeen ? '已连接' : '未收到消息'])
+  $('chips').innerHTML = chips.map(([k,s,v])=>`<span class="chip ${s}">${k}：${v}</span>`).join('')
+  $('paths').innerHTML = `<span class="kv">配置：${STATE.configPath}</span>`
+}
+
+function renderTabs(){
+  $('tabs').innerHTML = STATE.tabs.map(([k,name])=>
+    `<button class="tab ${k===ACTIVE?'active':''}" data-tab="${k}">${name}</button>`).join('')
+  ;[...document.querySelectorAll('.tab')].forEach(b=>b.onclick=()=>{
+    ACTIVE=b.dataset.tab
+    try{ localStorage.setItem('qqrefine:tab', ACTIVE) }catch{}
+    try{ history.replaceState(null, '', '#' + ACTIVE) }catch{}
+    const out=$('actout'); if(out) out.textContent=''
+    const msg=$('actmsg'); if(msg) msg.textContent=''
+    renderTabs(); renderPanel()
+    try{ updateToolbar() }catch{}
+    try{ window.scrollTo(0, 0) }catch{}
+  })
+}
+
+function learnCardHtml(){
+  var list = STATE.learnDetail || []
+  if (!list.length) return '<div class="pcard"><div class="label">会学习</div><div class="hint">还没学到东西。管理员在群里说「不要用敬语」「记住：只聊技术」「以后叫我小鱼」她就会记下来；她每说一句，有人接就算一次正反馈。</div></div>'
+  var rows = list.map(function (v) {
+    var name = v.scope === 'group' ? ('群 ' + String(v.peer || v.peerKey).slice(0, 8)) : (v.scope === 'c2c' ? ('私聊 ' + String(v.peer || v.peerKey).slice(0, 8)) : String(v.peerKey).slice(0, 10))
+    var rules = (v.rules || []).map(function (r) { return '<li>' + r + '</li>' }).join('')
+    var stat = v.sent ? ('说 ' + v.sent + ' 次 / 被接 ' + v.reacted + ' 次（' + Math.round((v.rate || 0) * 100) + '%）→ 活跃倍率 ×' + v.factor) : '接话样本还不够（满 10 次才调活跃度）'
+    return '<div style="margin:6px 0"><div class="label">' + name + ' <span class="hint">规矩 ' + (v.ruleCount || 0) + ' 条</span></div>' +
+      (rules ? '<ul style="margin:2px 0 2px 18px;padding:0;color:#c9d6ea;font-size:13px">' + rules + '</ul>' : '') +
+      '<div class="hint">' + stat + '</div></div>'
+  }).join('')
+  var kb = STATE.kb, mt = STATE.matches
+  var kbLine = kb ? ('知识库：' + (kb.files || 0) + ' 个文件 / ' + (kb.chunks || 0) + ' 段') : '知识库：未就绪'
+  if (mt) kbLine += '　赛事记录：' + (mt.total || 0) + ' 条'
+  return '<div class="pcard"><div class="label">会学习 / 存资料</div>' +
+    '<div class="hint" style="margin:4px 0 6px">规矩来自 Owner/管理员的「不要…」「记住…」「以后叫我…」；倍率来自「她说完有没有人接」。全本地、0 token。</div>' +
+    rows +
+    '<div class="hint" style="margin-top:8px;padding-top:6px;border-top:1px solid var(--line)">' + kbLine +
+    '<br>资料放这里：<code>' + ((kb && kb.dir) || 'storages/dsh-qqbot-refine/knowledge/') + '</code>（common.md 共享，g_xxx.md 单群）' +
+    '<br>录入比赛：#赛程 加 2026-10-26 IG 2:1 HLE Worlds</div></div>'
+}
+function moodCardHtml(){
+  var m = STATE.mood
+  if (!m) return '<div class="pcard"><div class="label">心情</div><div class="hint">还没有心情数据：第三方心情插件没在跑，本地兜底也还没攒到信号。群里说两句（夸她或怼她）就有反应了。</div></div>'
+  var src = m.source === 'local' ? '本地兜底（0 token）' : '第三方心情插件'
+  var age = (m.ageHours == null) ? '' : (m.ageHours < 1 ? Math.round(m.ageHours * 60) + ' 分钟前' : m.ageHours.toFixed(1) + ' 小时前')
+  var warn = m.stale ? '<div class="hint" style="color:#ff9f9f">心情源已过期（超过 24 小时没更新），现在按「已过期」处理，不影响正常聊天</div>' : ''
+  var names = { happy: '开心', calm: '平静', sweet: '甜', heartache: '心疼', worry: '担心', sad: '难过', jealous: '吃醋' }
+  var dims = m.dims || {}
+  var bars = Object.keys(dims).map(function (k) {
+    var v = Number(dims[k]) || 0
+    var pct = Math.max(0, Math.min(100, v * 10))
+    return '<div style="display:flex;align-items:center;gap:8px;margin:3px 0">' +
+      '<span style="width:44px;color:#93a4bd;font-size:12px">' + (names[k] || k) + '</span>' +
+      '<div style="flex:1;height:6px;background:#0d1320;border-radius:3px;overflow:hidden"><i style="display:block;height:100%;width:' + pct + '%;background:#5b8cff"></i></div>' +
+      '<span style="width:28px;text-align:right;color:#93a4bd;font-size:12px">' + v.toFixed(1) + '</span></div>'
+  }).join('')
+  var rules = (m.rules || []).map(function (r) { return '<li>' + r + '</li>' }).join('')
+  return '<div class="pcard">' +
+    '<div style="display:flex;align-items:baseline;gap:10px">' +
+      '<div style="font-size:34px;font-weight:700;line-height:1">' + Math.round(m.score) + '</div>' +
+      '<div class="label" style="font-size:16px">' + (m.tone || '未知') + '</div>' +
+      '<div class="hint" style="margin-left:auto">' + src + (age ? ' · ' + age : '') + ' · 模式 ' + (m.mode || 'auto') + '</div>' +
+    '</div>' +
+    (m.hint ? '<div class="hint" style="margin:6px 0">' + m.hint + '</div>' : '') + warn + bars +
+    (rules ? '<div class="hint" style="margin-top:8px">现在会这样说话：</div><ul style="margin:4px 0 0 18px;padding:0;color:#c9d6ea;font-size:13px">' + rules + '</ul>' : '') +
+    '<div class="hint" style="margin-top:8px">心情只改语气和话的长短，事实、边界、安全规则不变。</div>' +
+    '<div class="pbtns" style="margin-top:8px"><button id="moodrefresh">刷新</button><button id="moodreset">重置本地心情</button></div>' +
+  '</div>'
+}
+function renderPanel(){
+  // §clear§ 每次渲染前先清空，避免自定义页用 append 时越切越长
+  try { const _el = $("panel"); if (_el) _el.innerHTML = "" } catch {}
+  if (ACTIVE === "persona") { renderPersonaPanel(); return }
+  if (ACTIVE === "profile") { renderProfilePanel(); return }
+  if (ACTIVE === "scope") { renderScopeClaim(); return }
+
+  const el = $("panel")
+  const q = (SEARCH || "").trim().toLowerCase()
+  const allFields = STATE.fields
+  const fields = q
+    ? allFields.filter((f) => (f.l + " " + f.k + " " + (f.hint || "")).toLowerCase().includes(q))
+    : allFields.filter((f) => f.tab === ACTIVE)
+
+  if (q && fields.length === 0) {
+    el.innerHTML = '<div class="pcard"><div class="hint">没有匹配「' + q + '」的设置项</div></div>'
+    return
+  }
+
+  const tabName = (id) => (STATE.tabs.find((t) => t[0] === id) || [id, id])[1]
+  const common = fields.filter((f) => isCommon(f.k))
+  const advanced = fields.filter((f) => !isCommon(f.k))
+
+  el.innerHTML = `
+    ${q ? '<div class="pcard"><div class="hint">搜索「' + q + '」：共 ' + fields.length + ' 项（跨页签）</div></div>' : ''}
+    <div class="pcard">
+      ${common.length ? common.map((f) => fieldRow(f, q ? tabName(f.tab) : "")).join("") : ''}
+      ${advanced.length ? `<details class="adv" ${advancedOpen(ACTIVE) ? "open" : ""} data-advtab="${ACTIVE}">
+        <summary>更多设置（${advanced.length} 项）</summary>
+        ${advanced.map((f) => fieldRow(f, q ? tabName(f.tab) : "")).join("")}
+      </details>` : ''}
+    </div>`
+
+  if (ACTIVE === "memory") {
+    try { el.insertAdjacentHTML("afterbegin", learnCardHtml()) } catch (e) {}
+  }
+  if (ACTIVE === "mood") {
+    try {
+      el.insertAdjacentHTML("afterbegin", moodCardHtml())
+      var mf = $("moodrefresh"); if (mf) mf.onclick = function () { load() }
+      var mr = $("moodreset"); if (mr) mr.onclick = async function () { await mg({ action: "mgmtOp", kind: "mood", op: "resetLocal" }); await load() }
+    } catch (e) {}
+  }
+
+  ;[...el.querySelectorAll("[data-k]")].forEach((input) => {
+    const k = input.dataset.k
+    const f = STATE.fields.find((x) => x.k === k)
+    if (!f) return
+    const ev = (f.t === "bool" || f.t === "list" || f.t === "text") ? "change" : "input"
+    input.addEventListener(ev, () => {
+      if (f.t === "bool") put(k, input.checked)
+      else if (f.t === "num") put(k, Number(input.value))
+      else if (f.t === "list") put(k, input.value.split(/[\r\n,，]/).map((s) => s.trim()).filter(Boolean))
+      else put(k, input.value)
+    })
+  })
+  const det = el.querySelector("details[data-advtab]")
+  if (det) det.addEventListener("toggle", () => { try { localStorage.setItem("qqrefine:adv:" + ACTIVE, det.open ? "1" : "0") } catch {} })
+
+  if (ACTIVE === "privacy") renderPermCard()
+  const mkind = MGMT[ACTIVE]
+  if (mkind) {
+    const box = document.createElement("div")
+    box.className = "pcard"
+    box.id = "mgmt"
+    box.innerHTML = '<div class="hint">加载管理数据…</div>'
+    el.appendChild(box)
+    loadMgmt(mkind, box)
+  }
+}
+
+// 常用项（其余收进「更多设置」）
+const COMMON = new Set([
+  "scope.groups", "scope.dmUsers", "roles.owners", "roles.adminAutoFromQqOwner",
+  "frequency.mentionOnlyGroups", "frequency.naturalMode", "frequency.chatGear", "frequency.cooldownGroupSec",
+  "frequency.quietEnabled", "frequency.quietStart", "frequency.quietEnd", "frequency.probabilityPercent",
+  "privacy.enabled", "privacy.redactOutbound", "privacy.defaultRules", "tools.fullAccess", "tools.restrictToWorkspace",
+  "persona.enabled",
+  "memory.enabled", "memory.injectTop", "memory.baseHalfLifeDays",
+  "profile.enabled", "profile.dailyAt",
+  "sticker.enabled", "sticker.perGroupDay", "sticker.collectEnabled", "sticker.remoteSource",
+  "order.muteDefaultSec", "order.muteMaxSec",
+  "bili.pushEnabled", "bili.parseEnabled", "bili.sizeBudgetMB",
+  "voice.enabled", "voice.baseUrl", "voice.style", "voice.autoRead",
+  "proactive.enabled", "proactive.mode", "proactive.silentMinutes",
+  "usage.groupDailyYuan", "usage.userDailyYuan", "usage.priceInputMiss", "usage.priceInputHit", "usage.priceOutput",
+  "ui.helpCard", "ui.markers",
+  "integration.linkMood", "integration.moodInPrompt", "integration.moodProactive",
+  "integration.linkMoodProbability", "integration.linkMoodVoice",
+  "learn.enabled", "learn.injectRules",
+])
+const isCommon = (k) => COMMON.has(k)
+function advancedOpen(tab) {
+  try { return localStorage.getItem("qqrefine:adv:" + tab) === "1" } catch { return false }
+}
+
+function fieldRow(f, tabLabel) {
+  const v = get(f.k)
+  let ctl = ""
+  if (f.t === "bool") ctl = `<label class="switch"><input type="checkbox" data-k="${f.k}" ${v ? "checked" : ""}><i></i></label>`
+  else if (f.t === "num") ctl = `<input type="number" data-k="${f.k}" value="${v ?? ""}" step="${f.step || 1}" min="${f.min ?? ""}" max="${f.max ?? ""}">`
+  else if (f.t === "list") ctl = `<textarea data-k="${f.k}" spellcheck="false">${(Array.isArray(v) ? v.join("\n") : (v ?? ""))}</textarea>`
+  else ctl = `<input type="text" data-k="${f.k}" value="${(v ?? "").toString().replace(/"/g, "&quot;")}">`
+  return `<div class="row"><div class="meta"><div class="label">${f.l}${tabLabel ? ` <span class="badge">${tabLabel}</span>` : ""}</div>${f.hint ? `<div class="hint">${f.hint}</div>` : ""}</div><div class="ctl">${ctl}</div></div>`
+}
+
+async function load(){
+  const r = await fetch('/api/qqbot-refine/state')
+  STATE = await r.json()
+  if (!STATE.ok) { $('msg').textContent = '读取失败：' + (STATE.error||''); return }
+  for (const k of Object.keys(draft)) delete draft[k]
+  try { const hh = (location.hash || "").replace(/^#/, ""); if (hh && STATE.tabs.some((t) => t[0] === hh)) ACTIVE = hh } catch {}
+  renderChips(); renderTabs(); renderPanel(); markDirty(); try { updateToolbar() } catch {}
+  const qi = $("q"); if (qi) { qi.value = SEARCH; qi.oninput = () => { SEARCH = qi.value; renderPanel() } }
+  const rbox = $("recent"); if (rbox) rbox.style.display = "none"
+  $('stage').textContent = STATE.stage || 'M1'
+}
+
+async function save(){
+  const btn = $('save'); btn.disabled = true
+  try{
+    const r = await fetch('/api/qqbot-refine/config', {
+      method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify({patch: draft})
+    })
+    const j = await r.json()
+    if (j.ok){ for (const k of Object.keys(draft)) delete draft[k]; await load(); $('msg').textContent='已保存 ✓（热生效）' }
+    else { $('msg').textContent = '保存失败：' + (j.error||'') }
+  }catch(e){ $('msg').textContent = '保存失败：' + e.message }
+  finally{ btn.disabled = false }
+}
+
+async function resetAll(){
+  if(!confirm('恢复所有字段为默认值？')) return
+  const r = await fetch('/api/qqbot-refine/config', {
+    method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({reset:true})
+  })
+  const j = await r.json()
+  if (j.ok){ for (const k of Object.keys(draft)) delete draft[k]; await load(); $('msg').textContent='已恢复默认' }
+  else $('msg').textContent = '恢复失败：' + (j.error||'')
+}
+
+$('save').onclick = save
+$('reset').onclick = resetAll
+
+async function runAction(action){
+  const msg = $('actmsg'), outEl = $('actout')
+  msg.textContent = '执行中…'; outEl.textContent = ''
+  try{
+    const r = await fetch('/api/qqbot-refine/action', {
+      method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify({action})
+    })
+    const j = await r.json()
+    msg.textContent = j.ok ? '完成 ✓' : ('失败：' + (j.error||''))
+    if (action === 'groupDiag') {
+      const groups = j.groups || []
+      if (!groups.length) outEl.textContent = '群诊断结果：白名单里还没有群。先把群加进来。'
+      else {
+        outEl.textContent = '群诊断结果（缓存里的群主/管理员）：\n' + groups.map((g, i) => {
+          const admins = (g.admins || []).map((a) => '   · ' + a.openid + '（' + a.role + '）').join('\n')
+          return (i + 1) + '. 群 ' + g.group + '\n' + (admins || '   · 还没有识别到群管（接口未成功，或群里还没人发言）')
+        }).join('\n\n')
+      }
+    } else if (action === "syncSticker") {
+      const r = j.result || {}
+      if (!r.ok) outEl.textContent = "同步失败：" + (r.error || j.error || "")
+      else {
+        const lines = ["图库同步结果：新增 " + r.added + "，共 " + r.total + " 张"]
+        for (const s of (r.sources || [])) lines.push("· " + s.host + " → " + (s.ok ? ("新增 " + s.added + " / 源内 " + s.count) : ("失败：" + s.error)))
+        outEl.textContent = lines.join("\n")
+      }
+    } else {
+      outEl.textContent = JSON.stringify(j.result ?? j, null, 2).slice(0, 3000)
+    }
+    if (action === 'syncSticker' || action === 'cleanSticker') await load()
+  }catch(e){ msg.textContent = '失败：' + e.message }
+}
+
+;[...document.querySelectorAll('.toolbar [data-act]')].forEach(b=>{
+  b.onclick = () => runAction(b.dataset.act)
+})
+async function addScope(kind){
+  const patch = {}
+  if (kind.scope === "group") patch["scope.groups"] = [...((STATE.config.scope.groups)||[]), kind.peer]
+  else patch["scope.dmUsers"] = [...((STATE.config.scope.dmUsers)||[]), kind.peer]
+  if (kind.asOwner) patch["roles.owners"] = [...((STATE.config.roles.owners)||[]), kind.sender]
+  await fetch("/api/qqbot-refine/config", {method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({patch})})
+  await load()
+}
+
+function renderRecent(){
+  const list = STATE.recentPeers || []
+  const box = $("recent")
+  if (!box) return
+  if (ACTIVE !== "scope") { box.style.display = "none"; return }
+  if (!list.length){ box.style.display = "none"; return }
+  box.style.display = ""
+  box.innerHTML = '<div class="sec-title">最近出现过的来源（被拦截的）— 点按钮加入白名单</div>' + list.map((x,i)=>{
+    const label = x.scope === "group" ? "群" : "私聊"
+    return `<div class="row"><div class="meta"><div class="label">${label} · ${x.peer}</div><div class="hint">发送者 ${x.sender} · ${new Date(x.at).toLocaleTimeString()}<button class="copy" data-copy="${x.peer}">复制群 openid</button><button class="copy" data-copy="${x.sender}">复制发送者</button></div></div>` +
+      `<div class="ctl"><button data-add="${i}">加白名单</button><button data-owner="${i}">也设为 Owner</button></div></div>`
+  }).join("")
+  ;[...box.querySelectorAll("[data-add]")].forEach(b=>b.onclick=()=>{const x=list[+b.dataset.add]; addScope({scope:x.scope, peer:x.peer, sender:x.sender, asOwner:false})})
+  ;[...box.querySelectorAll("[data-owner]")].forEach(b=>b.onclick=()=>{const x=list[+b.dataset.owner]; addScope({scope:x.scope, peer:x.peer, sender:x.sender, asOwner:true})})
+}
+// ── 人设页（库 + 三级作用域 + 查看/编辑弹窗）──
+let PERSONA = null
+let PSC = "global"
+let PMODAL = null
+
+async function loadPersona() {
+  const r = await fetch("/api/qqbot-refine/action", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "presets" }) })
+  const j = await r.json()
+  PERSONA = j.ok ? j : null
+  renderPersonaPanel()
+}
+
+async function pcall(payload) {
+  const r = await fetch("/api/qqbot-refine/action", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) })
+  const j = await r.json()
+  const m = $("pmsg")
+  if (m) m.textContent = j.ok ? "已生效 ✓" : ("失败：" + (j.error || ""))
+  await loadPersona()
+  return j
+}
+
+function closePresetModal() {
+  PMODAL = null
+  const el = $("pmodal")
+  if (el) el.remove()
+}
+
+async function openPresetModal(id, mode) {
+  let data = null
+  if (id) {
+    const r = await fetch("/api/qqbot-refine/action", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "presetText", id }) })
+    const j = await r.json()
+    if (!j.ok) { alert("读不到这条人设：" + (j.error || "")); return }
+    data = j
+  } else {
+    data = { id: "", name: "", text: "" }
+  }
+  const builtin = (PERSONA?.presets || []).find((p) => p.id === id)?.builtin === true
+  PMODAL = { id, mode, builtin }
+  const copyName = data.name ? data.name + "（副本）" : ""
+
+  const wrap = document.createElement("div")
+  wrap.id = "pmodal"
+  wrap.style.cssText = "position:fixed;inset:0;z-index:9999;background:rgba(6,10,18,.72);display:flex;align-items:center;justify-content:center;padding:24px"
+  wrap.innerHTML = `
+    <div style="width:min(880px,94vw);max-height:86vh;display:flex;flex-direction:column;background:#151c2b;border:1px solid #26314a;border-radius:14px;overflow:hidden">
+      <div style="padding:12px 16px;border-bottom:1px solid #26314a;display:flex;align-items:center;gap:10px">
+        <b style="color:#e6ecf7">${mode === "edit" ? "编辑人设" : "查看人设"}</b>
+        <span class="hint">${(data.name || "").slice(0, 40)} ${builtin ? "（内置：保存会新建一条）" : ""}</span>
+        <span style="flex:1"></span>
+        <button class="copy" id="pmClose">关闭</button>
+      </div>
+      <div style="padding:12px 16px;display:flex;gap:8px;align-items:center">
+        <input id="pmName" placeholder="人设名称" value="${(data.name || "").replace(/"/g, "&quot;")}" style="flex:0 0 260px">
+        <span class="hint" id="pmMsg"></span>
+      </div>
+      <div style="padding:0 16px 12px;flex:1;display:flex">
+        <textarea id="pmText" spellcheck="false" style="width:100%;height:52vh;resize:vertical;font-family:ui-monospace,Consolas,monospace">${(data.text || "").replace(/</g, "&lt;")}</textarea>
+      </div>
+      <div style="padding:10px 16px;border-top:1px solid #26314a;display:flex;gap:8px;justify-content:flex-end">
+        <button class="copy" id="pmCopyText">复制正文</button>
+        <button id="pmSaveNew">保存为新</button>
+        ${!builtin && id ? '<button id="pmSaveSame" class="primary">保存修改</button>' : ""}
+      </div>
+    </div>`
+  document.body.appendChild(wrap)
+  $("pmClose").onclick = closePresetModal
+  wrap.addEventListener("click", (e) => { if (e.target === wrap) closePresetModal() })
+  $("pmCopyText").onclick = (e) => copyText($("pmText").value, e.target)
+
+  const save = async (sameId) => {
+    const name = $("pmName").value.trim()
+    const text = $("pmText").value.trim()
+    if (!name || text.length < 4) { $("pmMsg").textContent = "名称和正文都要填"; return }
+    const payload = { action: "presetSave", name, text }
+    if (sameId) payload.id = sameId
+    const r = await fetch("/api/qqbot-refine/action", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) })
+    const j = await r.json()
+    if (j.ok) { closePresetModal(); await loadPersona() }
+    else $("pmMsg").textContent = "保存失败：" + (j.error || "")
+  }
+  $("pmSaveNew").onclick = () => save(null)
+  const same = $("pmSaveSame")
+  if (same) same.onclick = () => save(id)
+}
+
+function renderPersonaPanel() {
+  const el = $("panel")
+  if (!PERSONA) { el.innerHTML = '<div class="hint">加载人设库…</div>'; loadPersona(); return }
+  const cur = PERSONA.presets.find((p) => p.id === PERSONA.current)
+  const byGroup = PERSONA.byGroup || {}
+  const byUser = PERSONA.byUser || {}
+  const groups = (STATE.config.scope.groups || [])
+  const dms = (STATE.config.scope.dmUsers || [])
+  const tab = (id, label) => `<button class="tab ${PSC === id ? "active" : ""}" data-psc="${id}">${label}</button>`
+  const opts = PERSONA.presets.map((p) => `<option value="${p.id}">${p.name}${p.enabled ? "" : "（停用）"}</option>`).join("")
+
+  let body = ""
+  if (PSC === "global") {
+    body = PERSONA.presets.map((p) => `
+      <div class="prow">
+        <div class="grow">
+          <div class="label">${p.name} ${p.id === PERSONA.current ? '<span class="badge cur">当前</span>' : ""}
+            <span class="badge">${p.builtin ? "内置" : "导入"}</span>
+            ${p.enabled ? "" : '<span class="badge">已停用</span>'}</div>
+          <div class="hint">${p.desc || ""} · ${p.chars} 字</div>
+        </div>
+        <div class="pbtns">
+          <button data-pview="${p.id}">查看</button>
+          <button data-pedit="${p.id}">${p.builtin ? "另存为" : "编辑"}</button>
+          <button data-pcur="${p.id}">设为当前</button>
+          <button data-ptog="${p.id}" data-on="${p.enabled ? 1 : 0}">${p.enabled ? "停用" : "启用"}</button>
+          ${p.builtin ? "" : `<button data-pdel="${p.id}">删除</button>`}
+        </div>
+      </div>`).join("")
+  } else if (PSC === "group") {
+    body = groups.length ? groups.map((g) => `
+      <div class="prow">
+        <div class="grow"><div class="label">群 ${g}</div><div class="hint">未指定时回落到「全局当前」</div></div>
+        <select data-pscope="group" data-key="${g}"><option value="">（回落全局）</option>${opts}</select>
+      </div>`).join("") : '<div class="hint">白名单里还没有群。先把群加进来，再回来指定人设。</div>'
+  } else {
+    body = dms.length ? dms.map((u) => `
+      <div class="prow">
+        <div class="grow"><div class="label">用户 ${u}</div><div class="hint">未指定时回落到「全局当前」</div></div>
+        <select data-pscope="user" data-key="${u}"><option value="">（回落全局）</option>${opts}</select>
+      </div>`).join("") : '<div class="hint">私聊白名单里还没有人。</div>'
+  }
+
+  el.innerHTML = `
+    <div class="pcard">
+      <div class="tabs">${tab("global", "全局")}${tab("group", "按群")}${tab("user", "按私聊")}</div>
+      <div class="hint">越细越优先：按私聊/按群 → 全局当前。只对 QQ 会话生效，Web 会话不受影响。</div>
+    </div>
+    <div class="pcard">
+      <div class="row" style="border-bottom:0;padding:0 0 8px">
+        <div class="meta">
+          <div class="label">QQ 专属人设注入：<b style="color:${STATE.config.persona.enabled ? "#37c98b" : "#f0b34a"}">${STATE.config.persona.enabled ? "已开启" : "未开启（当前用全局人设）"}</b></div>
+          <div class="hint">当前选中：<b>${cur ? cur.name : "（未选）"}</b>${STATE.config.persona.enabled ? "" : " · 点右边开启只对 QQ 生效的这套人设"}</div>
+        </div>
+        <div class="ctl pbtns"><button data-ptoggle class="${STATE.config.persona.enabled ? "" : "primary"}">${STATE.config.persona.enabled ? "关闭注入" : "开启注入"}</button></div>
+      </div>
+      ${body}
+    </div>
+    <div class="pcard">
+      <details class="adv"><summary>导入 / 新建人设</summary>
+      <div class="row"><div class="meta"><input type="text" id="pname" placeholder="人设名称"></div></div>
+      <textarea id="ptext" placeholder="把人设正文粘进来…（建议 100–800 字）"></textarea>
+      <div class="pbtns" style="margin-top:8px"><button id="psave" class="primary">保存为人设</button><button id="pnew">打开编辑器</button><span id="pmsg" class="hint"></span></div>
+      </details>
+    </div>`
+
+  const ptg = el.querySelector("[data-ptoggle]")
+  if (ptg) ptg.onclick = async () => {
+    const next = !STATE.config.persona.enabled
+    const r = await fetch("/api/qqbot-refine/config", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ patch: { "persona.enabled": next } }) })
+    const j = await r.json()
+    if (j.ok) await load()
+    else alert("保存失败：" + (j.error || ""))
+  }
+  ;[...el.querySelectorAll("[data-psc]")].forEach((b) => { b.onclick = () => { PSC = b.dataset.psc; renderPersonaPanel() } })
+  ;[...el.querySelectorAll("[data-pcur]")].forEach((b) => { b.onclick = () => pcall({ action: "setCurrent", id: b.dataset.pcur }) })
+  ;[...el.querySelectorAll("[data-ptog]")].forEach((b) => { b.onclick = () => pcall({ action: "presetToggle", id: b.dataset.ptog, enabled: b.dataset.on !== "1" }) })
+  ;[...el.querySelectorAll("[data-pdel]")].forEach((b) => { b.onclick = () => { if (confirm("删除这条人设？")) pcall({ action: "presetDelete", id: b.dataset.pdel }) } })
+  ;[...el.querySelectorAll("[data-pview]")].forEach((b) => { b.onclick = () => openPresetModal(b.dataset.pview, "view") })
+  ;[...el.querySelectorAll("[data-pedit]")].forEach((b) => { b.onclick = () => openPresetModal(b.dataset.pedit, "edit") })
+  ;[...el.querySelectorAll("[data-pscope]")].forEach((s) => {
+    s.value = (s.dataset.pscope === "group" ? byGroup[s.dataset.key] : byUser[s.dataset.key]) || ""
+    s.onchange = () => pcall({ action: "setScope", scope: s.dataset.pscope, key: s.dataset.key, id: s.value || null })
+  })
+  const save = $("psave")
+  if (save) save.onclick = () => {
+    const name = $("pname").value.trim()
+    const text = $("ptext").value.trim()
+    if (!name || text.length < 4) { $("pmsg").textContent = "名称和正文都要填"; return }
+    pcall({ action: "presetSave", name, text })
+  }
+  const nw = $("pnew")
+  if (nw) nw.onclick = () => openPresetModal(null, "edit")
+}
+
+// ── 通用管理表 ──
+const MGMT = { memory: "memoryPeers", sticker: "stickers", order: "audit", bili: "biliSubs", usage: "usage" }
+let MPICK = ""
+
+async function mg(payload) {
+  const r = await fetch("/api/qqbot-refine/action", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) })
+  return r.json()
+}
+
+async function loadMgmt(kind, box) {
+  const j = await mg({ action: "mgmt", kind, key: MPICK })
+  let items = null
+  if (kind === "memoryPeers" && MPICK) items = await mg({ action: "mgmt", kind: "memoryItems", key: MPICK })
+  renderMgmt(kind, j, box, items)
+}
+
+function rowHtml(kind, r) {
+  const btns = []
+  if (["groups", "dmUsers", "owners", "admins", "biliSubs"].includes(kind)) btns.push(`<button data-mrm="${r.value}">删除</button>`)
+  if (kind === "memoryPeers") btns.push(`<button data-mpick="${r.value}">查看</button>`)
+  if (kind === "memoryItems") btns.push(`<button data-mforget="${r.id}">删除</button><button data-mpin="${r.id}">pin</button>`)
+  if (kind === "stickers") btns.push(`<button data-mdel="${r.id}">删除</button>`)
+  if (kind === "usage") {
+    return `<div class="prow"><div class="grow"><div class="label">${r.k}</div></div>
+      <div class="ctl" style="flex:0 0 auto"><b style="color:#cfe0ff">${r.v}</b></div></div>`
+  }
+  const text = Object.values(r).filter((v) => v !== undefined && v !== "").join(" · ")
+  return `<div class="prow"><div class="grow"><div class="label">${text}</div></div><div class="pbtns">${btns.join("")}</div></div>`
+}
+
+function renderMgmt(kind, data, box, items) {
+  const rows = data.rows || []
+  const addRow = ["groups", "dmUsers", "owners", "admins", "biliSubs"].includes(kind)
+    ? `<div class="row"><div class="meta"><input id="madd" placeholder="粘贴 ${kind === "biliSubs" ? "UP mid" : "openid"}"></div><div class="ctl"><button id="maddb">添加</button></div></div>`
+    : ""
+  let html = `<div class="hint" style="margin-bottom:8px">${data.hint || ""}</div>${addRow}`
+  html += '<div style="background:#0d1320;border:1px solid var(--line);border-radius:8px;padding:4px 10px">' +
+    (rows.length ? rows.map((r) => rowHtml(kind, r)).join("") : '<div class="hint" style="padding:8px 0">暂无数据</div>') + "</div>"
+  if (kind === "groups") {
+    const b = STATE.bind
+    const left = b ? Math.max(1, Math.round((b.expiresAt - Date.now()) / 60000)) : 0
+    html += `<div class="row"><div class="meta"><div class="label">绑定码</div><div class="hint">${b ? `当前：<b>${b.code}</b>（用途 ${b.purpose}，剩 ${left} 分钟）` : "生成后，在 QQ 里发：#绑定 <码>"}</div></div><div class="ctl pbtns"><button data-bind="owner">绑 Owner</button><button data-bind="group">绑本群</button><button data-bind="dm">绑私聊</button>${b ? '<button data-bindcancel>作废</button>' : ""}</div></div>`
+  }
+  if (kind === "usage") html += '<div class="pbtns" style="margin-top:8px"><button id="mreset">重置计数</button><button id="mroles">清角色缓存</button></div>'
+  if (kind === "memoryPeers" && items) {
+    html += `<div class="hint" style="margin:10px 0 6px">peer ${MPICK} 的记忆（${(items.rows || []).length} 条）</div>`
+    html += '<div style="background:#0d1320;border:1px solid var(--line);border-radius:8px;padding:4px 10px">' +
+      ((items.rows || []).length ? items.rows.map((r) => rowHtml("memoryItems", r)).join("") : '<div class="hint" style="padding:8px 0">这个 peer 还没有记忆</div>') + "</div>"
+  }
+  box.innerHTML = html
+
+  const addBtn = $("maddb")
+  if (addBtn) addBtn.onclick = async () => {
+    const v = $("madd").value.trim()
+    if (!v) return
+    const j = await mg({ action: "mgmtOp", kind, op: "add", value: v })
+    if (!j.ok) { box.insertAdjacentHTML("afterbegin", `<div class="hint" style="color:#ff6b6b">${j.error || "失败"}</div>`); return }
+    await load(); await loadMgmt(kind, $("mgmt"))
+  }
+  ;[...box.querySelectorAll("[data-mrm]")].forEach((b) => {
+    b.onclick = async () => { await mg({ action: "mgmtOp", kind, op: "remove", value: b.dataset.mrm }); await load(); await loadMgmt(kind, $("mgmt")) }
+  })
+  ;[...box.querySelectorAll("[data-mpick]")].forEach((b) => {
+    b.onclick = async () => { MPICK = b.dataset.mpick; await loadMgmt(kind, $("mgmt")) }
+  })
+  ;[...box.querySelectorAll("[data-mforget]")].forEach((b) => {
+    b.onclick = async () => { await mg({ action: "mgmtOp", kind: "memoryItems", op: "forget", peerKey: MPICK, id: b.dataset.mforget }); await loadMgmt(kind, $("mgmt")) }
+  })
+  ;[...box.querySelectorAll("[data-mpin]")].forEach((b) => {
+    b.onclick = async () => { await mg({ action: "mgmtOp", kind: "memoryItems", op: "pin", peerKey: MPICK, id: b.dataset.mpin, pinned: true }); await loadMgmt(kind, $("mgmt")) }
+  })
+  ;[...box.querySelectorAll("[data-mdel]")].forEach((b) => {
+    b.onclick = async () => { if (!confirm("删除这张表情？")) return; await mg({ action: "mgmtOp", kind: "stickers", op: "remove", id: b.dataset.mdel }); await loadMgmt(kind, $("mgmt")) }
+  })
+  ;[...box.querySelectorAll("[data-bind]")].forEach((b2) => {
+    b2.onclick = async () => {
+      const j = await mg({ action: "bindNew", purpose: b2.dataset.bind, ttlMin: 10 })
+      if (j.ok) { await load(); await loadMgmt(kind, $("mgmt")) }
+    }
+  })
+  const bc = box.querySelector("[data-bindcancel]")
+  if (bc) bc.onclick = async () => { await mg({ action: "bindCancel" }); await load(); await loadMgmt(kind, $("mgmt")) }
+  const rs = $("mreset")
+  if (rs) rs.onclick = async () => { await mg({ action: "mgmtOp", kind: "usage", op: "reset" }); await loadMgmt(kind, $("mgmt")) }
+  const rc = $("mroles")
+  if (rc) rc.onclick = async () => { await mg({ action: "mgmtOp", kind: "roles", op: "clearCache" }); await loadMgmt(kind, $("mgmt")) }
+}
+
+// ── 白名单 / 层级：三条认领路 ──
+async function scopeOp(payload) {
+  const r = await fetch("/api/qqbot-refine/action", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) })
+  return r.json()
+}
+
+async function claimAdd(kind, value) {
+  if (!value) return
+  const j = await scopeOp({ action: "mgmtOp", kind, op: "add", value })
+  if (!j.ok) alert(/未知操作|unknown/i.test(j.error || "") ? "宿主还是旧代码，请重启 DSH" : (j.error || "添加失败"))
+  await load()
+}
+
+function listCard(title, kind, rows, hint) {
+  const body = (rows || []).length
+    ? rows.map((r) => `<div class="prow"><div class="grow"><div class="label">${r}</div></div><div class="pbtns"><button class="copy" data-copy="${r}">复制</button><button data-rm="${kind}|${r}">删除</button></div></div>`).join("")
+    : '<div class="hint" style="padding:6px 0">暂无</div>'
+  return `<div class="pcard"><div class="label" style="margin-bottom:6px">${title} ${hint ? '<span class="hint">' + hint + '</span>' : ''}</div>${body}</div>`
+}
+
+function renderScopeClaim() {
+  // §scope-clear§ 这里必须清空：后面用 beforeend 追加
+  const el = $("panel")
+  el.innerHTML = ""
+  const cfg = STATE.config
+  const groups = cfg.scope.groups || []
+  const dms = cfg.scope.dmUsers || []
+  const owners = cfg.roles.owners || []
+  const admins = cfg.roles.admins || []
+  const b = STATE.bind
+  const left = b ? Math.max(1, Math.round((b.expiresAt - Date.now()) / 60000)) : 0
+
+  // 按群/人聚合最近来源（同一群只出现一次）
+  const raw = (STATE.recentPeers || []).filter((x) => String(x.peer || "").length >= 16 && String(x.sender || "").length >= 16)
+  const buckets = new Map()
+  for (const x of raw) {
+    const key = x.scope + ":" + x.peer
+    let e = buckets.get(key)
+    if (!e) { e = { scope: x.scope, peer: x.peer, at: x.at, senders: new Map() }; buckets.set(key, e) }
+    if (String(x.at) > String(e.at)) e.at = x.at
+    if (!e.senders.has(x.sender)) e.senders.set(x.sender, x.at)
+  }
+  const list = [...buckets.values()].sort((a, c) => String(c.at).localeCompare(String(a.at)))
+
+  const isGroup = (a) => a.scope === "group"
+  const groupRow = (e) => {
+    const who = isGroup(e) ? "群" : "私聊"
+    const already = isGroup(e) ? groups.includes(e.peer) : dms.includes(e.peer)
+    const n = e.senders.size
+    const senders = [...e.senders.entries()]
+    const senderLine = (sid, at) => `<div class="prow" style="padding:4px 0;border-bottom:0">
+        <div class="grow"><div class="hint" style="font-size:12px">发送者 ${sid} · ${new Date(at).toLocaleTimeString()}</div></div>
+        <div class="pbtns"><button class="copy" data-copy="${sid}">复制</button><button data-owner="${sid}">设为 Owner</button></div>
+      </div>`
+    const head = `<div class="prow" style="border-bottom:1px solid rgba(38,49,74,.6)">
+      <div class="grow">
+        <div class="label">${who} · ${e.peer}
+          ${already ? '<span class="badge cur">已在白名单</span>' : ""}
+          <span class="badge">${n} 人</span></div>
+        <div class="hint">最近 ${new Date(e.at).toLocaleTimeString()}</div>
+      </div>
+      <div class="pbtns">
+        <button class="copy" data-copy="${e.peer}">复制 openid</button>
+        ${already ? "" : `<button data-addgroup="${e.peer}" data-scope="${e.scope}">加白名单</button>`}
+      </div>
+    </div>`
+    const visible = senders.slice(0, 2).map(([sid, at]) => senderLine(sid, at)).join("")
+    const rest = senders.length > 2
+      ? `<details class="adv" style="borderTop:0"><summary>还有 ${senders.length - 2} 位发言者</summary>${senders.slice(2).map(([sid, at]) => senderLine(sid, at)).join("")}</details>`
+      : ""
+    return `<div class="pcard" style="margin-bottom:10px;padding:10px 12px">${head}${visible}${rest}</div>`
+  }
+
+  const recentHtml = list.length
+    ? list.slice(0, 4).map(groupRow).join("") +
+      (list.length > 4 ? `<details class="adv"><summary>还有 ${list.length - 4} 个群/人（展开）</summary>${list.slice(4).map(groupRow).join("")}</details>` : "")
+    : '<div class="pcard"><div class="hint" style="padding:6px 0">还没有来源记录。让她先收到一条消息（群里 @ 她一句），这里就会出现。</div></div>'
+
+  const listCard = (title, kind, rows, hint) => {
+    const body = (rows || []).length
+      ? rows.map((r) => `<div class="prow"><div class="grow"><div class="label">${r}</div></div><div class="pbtns"><button class="copy" data-copy="${r}">复制</button><button data-rm2="${kind}|${r}">删除</button></div></div>`).join("")
+      : '<div class="hint" style="padding:6px 0">暂无</div>'
+    return `<div class="pcard"><div class="label" style="margin-bottom:6px">${title}${hint ? ` <span class="hint">${hint}</span>` : ""}</div>${body}</div>`
+  }
+
+  el.insertAdjacentHTML("beforeend", `
+    <div class="pcard">
+      <div class="label" style="margin-bottom:8px">认领方式① 最近来源（按群聚合）</div>
+      ${recentHtml}
+    </div>
+    <div class="pcard">
+      <div class="label" style="margin-bottom:8px">认领方式② 绑定码（最稳）</div>
+      <div id="claimmsg" class="hint" style="color:#f0b34a;min-height:18px"></div>
+      <div class="hint" style="margin-bottom:8px">${b ? `当前码：<span class="code">${b.code}</span><button class="copy" data-copy="${b.code}">复制码</button><button class="copy" data-copy="#绑定 ${b.code}">复制命令</button>（用途 ${b.purpose}，剩 ${left} 分钟）` : "还没有码：点下面任一按钮生成（一次性、10 分钟有效）。"}</div>
+      <div class="pbtns">
+        <button data-bind="owner">绑 Owner</button>
+        <button data-bind="group">绑本群</button>
+        <button data-bind="dm">绑私聊</button>
+        ${b ? '<button data-bindcancel>作废</button>' : ""}
+      </div>
+    </div>
+    <div class="pcard">
+      <details class="adv"><summary>认领方式③ 手动填 openid</summary>
+        <div class="row"><div class="meta"><input id="claimval" placeholder="粘贴 openid / UP mid"></div>
+          <div class="ctl pbtns">
+            <select id="claimkind">
+              <option value="groups">→ 群白名单</option>
+              <option value="dmUsers">→ 私聊白名单</option>
+              <option value="owners">→ Owner</option>
+              <option value="admins">→ 手动 Admin</option>
+            </select>
+            <button id="claimadd">添加</button>
+          </div>
+        </div>
+      </details>
+    </div>
+    ${listCard("白名单群", "groups", groups)}
+    ${listCard("私聊白名单", "dmUsers", dms)}
+    ${listCard("Owner", "owners", owners, "最高权限")}
+    ${listCard("手动 Admin", "admins", admins, "QQ 群主/群管自动成为 Admin")}
+  `)
+
+  ;[...el.querySelectorAll("[data-copy]")].forEach((btn) => { btn.onclick = (e) => { e.stopPropagation(); copyText(btn.dataset.copy, btn) } })
+  ;[...el.querySelectorAll("[data-addgroup]")].forEach((btn) => {
+    btn.onclick = async () => {
+      const kind = btn.dataset.scope === "group" ? "groups" : "dmUsers"
+      await claimAdd(kind, btn.dataset.addgroup)
+    }
+  })
+  ;[...el.querySelectorAll("[data-owner]")].forEach((btn) => {
+    btn.onclick = async () => { await claimAdd("owners", btn.dataset.owner) }
+  })
+  ;[...el.querySelectorAll("[data-bind]")].forEach((btn) => {
+    btn.onclick = async () => {
+      const j = await scopeOp({ action: "bindNew", purpose: btn.dataset.bind, ttlMin: 10 })
+      const msg = $("claimmsg")
+      if (j.ok) { if (msg) msg.textContent = "已生成，见上方代码"; await load() }
+      else if (msg) msg.textContent = /未知操作|unknown/i.test(j.error || "") ? "宿主还是旧代码：请重启一次 DSH 再点" : ("生成失败：" + (j.error || ""))
+    }
+  })
+  const bc = el.querySelector("[data-bindcancel]")
+  if (bc) bc.onclick = async () => { await scopeOp({ action: "bindCancel" }); await load() }
+  const addBtn = $("claimadd")
+  if (addBtn) addBtn.onclick = async () => {
+    const kind = $("claimkind").value
+    const v = $("claimval").value.trim()
+    if (!v) return
+    await claimAdd(kind, v)
+  }
+  ;[...el.querySelectorAll("[data-rm2]")].forEach((btn) => {
+    btn.onclick = async () => {
+      const [kind, value] = btn.dataset.rm2.split("|")
+      await scopeOp({ action: "mgmtOp", kind, op: "remove", value })
+      await load()
+    }
+  })
+}
+
+
+function renderGearCard() {
+  const el = $("panel")
+  const gears = STATE.gears || {}
+  const cur = (STATE.config.frequency.chatGear) || 3
+  const btns = Object.entries(gears)
+    .sort((a, b) => Number(a[0]) - Number(b[0]))
+    .map(([n, g]) => `<button data-gear="${n}" class="${Number(n) === Number(cur) ? "primary" : ""}">${n} · ${g.name}</button>`)
+    .join("")
+  el.insertAdjacentHTML("beforeend", `
+    <div class="pcard">
+      <div class="label" style="margin-bottom:6px">自然接话挡位（当前 ${cur}）</div>
+      <div class="hint" style="margin-bottom:8px">点一下整组写入：随机概率 / 粘连窗口 / 说完静默 / 话题阈值 / 每小时·每日上限 / 最小间隔。写入后仍可单独微调。</div>
+      <div class="pbtns">${btns}</div>
+      <div class="hint" id="gearmsg" style="margin-top:8px"></div>
+    </div>`)
+  ;[...el.querySelectorAll("[data-gear]")].forEach((b) => {
+    b.onclick = async () => {
+      const r = await fetch("/api/qqbot-refine/action", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "chatGear", gear: Number(b.dataset.gear) }) })
+      const j = await r.json()
+      const msg = $("gearmsg")
+      if (j.ok) { if (msg) msg.textContent = `已切到挡位 ${j.gear}：${j.applied?.name || ""}`; await load() }
+      else if (msg) msg.textContent = "失败：" + (j.error || "")
+    }
+  })
+}
+
+async function copyText(text, btn) {
+  try { await navigator.clipboard.writeText(text) } catch {
+    const ta = document.createElement("textarea")
+    ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0"
+    document.body.appendChild(ta); ta.select()
+    try { document.execCommand("copy") } catch { /* ignore */ }
+    document.body.removeChild(ta)
+  }
+  if (btn) { const old = btn.textContent; btn.textContent = "已复制"; setTimeout(() => { btn.textContent = old }, 1200) }
+}
+// 毛玻璃开关（记住选择）
+;(function initGlass(){
+  let on = true
+  try { on = localStorage.getItem("qqrefine:glass") !== "0" } catch {}
+  document.documentElement.classList.toggle("glass-off", !on)
+  const b = $("glassBtn")
+  if (b) { b.textContent = on ? "🫧 毛玻璃：开" : "🫧 毛玻璃：关"; b.onclick = () => {
+    const next = document.documentElement.classList.contains("glass-off")
+    document.documentElement.classList.toggle("glass-off", !next)
+    if (b) b.textContent = next ? "🫧 毛玻璃：开" : "🫧 毛玻璃：关"
+    try { localStorage.setItem("qqrefine:glass", next ? "1" : "0") } catch {}
+  } }
+})()
+
+// ── 画像页（自定义渲染）──
+let PROFILE = null
+let PGROUP = ""
+
+async function pfetch(payload) {
+  const r = await fetch("/api/qqbot-refine/action", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(payload) })
+  return r.json()
+}
+
+async function loadProfile(group) {
+  if (group !== undefined) PGROUP = group
+  if (!PGROUP) { PROFILE = { ok: true, members: [], stats: { total: 0, active: 0, sealed: 0, msgs: 0 } }; renderProfilePanel(); return }
+  const j = await pfetch({ action: "profileList", group: PGROUP })
+  PROFILE = j.ok ? j : { members: [], stats: {} }
+  renderProfilePanel()
+}
+
+function renderProfilePanel() {
+  const el = $("panel")
+  const groups = (STATE.config.scope.groups || [])
+  if (!groups.length) {
+    el.innerHTML = '<div class="pcard"><div class="hint">还没有白名单群。先在「白名单 / 层级」里加群，画像才有对象。</div></div>'
+    return
+  }
+  if (!PGROUP) PGROUP = groups[0]
+  if (!PROFILE) { el.innerHTML = '<div class="pcard"><div class="hint">加载画像…</div></div>'; loadProfile(); return }
+  const st = PROFILE.stats || {}
+  const members = PROFILE.members || []
+  const rows = members.map((m, i) => `
+    <div class="prow">
+      <div class="grow">
+        <div class="label">成员 ${i + 1} ${m.sealed ? '<span class="badge">已屏蔽</span>' : ""}</div>
+        <div class="hint">发言 ${m.msgs} · 均长 ${m.avgLen} 字 · ${(m.traits || []).join("、") || "未归纳"}
+          ${(m.topWords || []).length ? " · 常聊 " + m.topWords.join("/") : ""}</div>
+      </div>
+      <div class="pbtns">
+        <button data-pdel2="${m.key}">删除</button>
+        <button data-pseal2="${m.key}">屏蔽重建</button>
+      </div>
+    </div>`).join("")
+
+  el.innerHTML = `
+    <div class="pcard">
+      <div class="row"><div class="meta"><div class="label">选择群</div>
+        <div class="hint">画像按群隔离，不跨群共享</div></div>
+        <div class="ctl"><select id="pgroup">${groups.map((g) => `<option value="${g}" ${g === PGROUP ? "selected" : ""}>${g}</option>`).join("")}</select></div>
+      </div>
+      <div class="row"><div class="meta"><div class="label">统计</div>
+        <div class="hint">成员 ${st.total ?? 0} · 达标 ${st.active ?? 0} · 已屏蔽 ${st.sealed ?? 0} · 累计发言 ${st.msgs ?? 0}</div></div>
+        <div class="ctl pbtns"><button id="pinduce">本地归纳</button><button id="pllm">语义归纳（模型）</button><button id="pclear">清空本群画像</button></div>
+      </div>
+      <div class="hint" id="pmsg2"></div>
+    </div>
+    <div class="pcard">
+      <div class="label" style="margin-bottom:6px">成员（按发言排序）</div>
+      ${rows || '<div class="hint">还没有统计到发言。让群友在白名单群里说几句话再回来（通过闸门的消息才计入）。</div>'}
+    </div>`
+
+  const sel = $("pgroup")
+  if (sel) sel.onchange = () => loadProfile(sel.value)
+  const ind = $("pinduce")
+  if (ind) ind.onclick = async () => {
+    $("pmsg2").textContent = "归纳中…"
+    const j = await pfetch({ action: "profileInduce", group: PGROUP })
+    if (j.ok) { $("pmsg2").textContent = `已归纳 ${j.updated} 人（共 ${j.total} 人）`; await loadProfile() }
+    else $("pmsg2").textContent = "失败：" + (j.error || "")
+  }
+  const pllm = $("pllm")
+  if (pllm) pllm.onclick = async () => {
+    const cfgp = (STATE.config.profile || {})
+    if (!cfgp.llmProvider || !cfgp.llmModel) { $("pmsg2").textContent = "先填 profile.llmProvider / llmModel（画像栏「更多设置」里）"; return }
+    $("pmsg2").textContent = "调用模型归纳中…"
+    const j = await pfetch({ action: "profileInduceLlm", group: PGROUP })
+    $("pmsg2").textContent = j.ok ? `模型归纳完成：${j.updated} 人` : ("失败：" + (j.error || ""))
+    if (j.ok) await loadProfile()
+  }
+  const clr = $("pclear")
+  if (clr) clr.onclick = async () => {
+    if (!confirm("清空本群所有人的画像？")) return
+    const j = await pfetch({ action: "profileClear", group: PGROUP })
+    if (j.ok) { $("pmsg2").textContent = `已清空 ${j.removed} 人`; await loadProfile() }
+  }
+  ;[...el.querySelectorAll("[data-pdel2]")].forEach((b) => {
+    b.onclick = async () => {
+      if (!confirm("删除这个成员的画像？")) return
+      await pfetch({ action: "profileDelete", group: PGROUP, key: b.dataset.pdel2 })
+      await loadProfile()
+    }
+  })
+  ;[...el.querySelectorAll("[data-pseal2]")].forEach((b) => {
+    b.onclick = async () => {
+      if (!confirm("屏蔽后不再为他重建画像，确定？")) return
+      await pfetch({ action: "profileDelete", group: PGROUP, key: b.dataset.pseal2, seal: true })
+      await loadProfile()
+    }
+  })
+}
+
+// ── 权限档位卡片（隐私页）──
+function renderPermCard() {
+  const el = $("panel")
+  const levels = STATE.permLevels || {}
+  const cur = STATE.config.tools?.permissionLevel || "standard"
+  const order = ["strict", "standard", "open"]
+  const btns = order.filter((k) => levels[k]).map((k) =>
+    `<button data-perm="${k}" class="${k === cur ? "primary" : ""}">${levels[k].name}</button>`).join("")
+  const desc = levels[cur]?.desc || ""
+  el.insertAdjacentHTML("beforeend", `<div class="pcard">
+    <div class="label" style="margin-bottom:6px">权限档位（当前：${levels[cur]?.name || cur}）</div>
+    <div class="hint" style="margin-bottom:8px">${desc}</div>
+    <div class="pbtns">${btns}</div>
+    <div class="hint" id="permmsg" style="margin-top:8px">开放档会把工具、路径、套话拦截全部放开，只保留「真实凭据兜底」。</div>
+  </div>`)
+  ;[...el.querySelectorAll("[data-perm]")].forEach((b) => {
+    b.onclick = async () => {
+      const lv = b.dataset.perm
+      if (lv === "open" && !confirm("切到「开放」= 把工具/路径/套话拦截全部放开（仅保留凭据兜底）。确定？")) return
+      const r = await fetch("/api/qqbot-refine/action", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "permGear", level: lv }) })
+      const j = await r.json()
+      const msg = $("permmsg")
+      if (j.ok) { if (msg) msg.textContent = "已切到「" + lv + "」"; await load() }
+      else if (msg) msg.textContent = "失败：" + (j.error || "")
+    }
+  })
+}
+// 工具栏按页签显示，避免每个页都堆一排按钮
+const TOOLBAR_OF = {
+  syncSticker: ["sticker"],
+  cleanSticker: ["sticker"],
+  groupDiag: ["scope", "profile"],
+  clearRoleCache: ["scope", "profile"],
+}
+function updateToolbar() {
+  ;[...document.querySelectorAll(".toolbar [data-act]")].forEach((b) => {
+    const allow = TOOLBAR_OF[b.dataset.act]
+    b.style.display = !allow || allow.includes(ACTIVE) ? "" : "none"
+  })
+  const out = $("actout")
+  if (out && !$("actmsg")?.textContent) out.textContent = ""
+}
+window.addEventListener("hashchange", () => {
+  try {
+    const hh = (location.hash || "").replace(/^#/, "")
+    if (hh && STATE && STATE.tabs.some((t) => t[0] === hh) && hh !== ACTIVE) {
+      ACTIVE = hh; renderTabs(); renderPanel(); try { updateToolbar() } catch {}
+    }
+  } catch {}
+})
+
+load()
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
