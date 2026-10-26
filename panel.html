@@ -356,6 +356,7 @@ function moodCardHtml(){
         (s.paused ? ' <button id="moodllmreset" style="margin-left:6px">重置熔断</button>' : '') + '</div>' + raw
     })() +
     '<div class="pbtns" style="margin-top:8px"><button id="moodrefresh">刷新</button><button id="moodreset">重置本地心情</button></div>' +
+    '<div class="hint" id="moodmsg" style="min-height:16px;margin-top:4px"></div>' +
   '</div>'
 }
 function renderPanel(){
@@ -417,9 +418,13 @@ function renderPanel(){
   if (ACTIVE === "mood") {
     try {
       el.insertAdjacentHTML("afterbegin", moodCardHtml())
-      var mf = $("moodrefresh"); if (mf) mf.onclick = function () { load() }
-      var mr = $("moodreset"); if (mr) mr.onclick = async function () { await mg({ action: "mgmtOp", kind: "mood", op: "resetLocal" }); await load() }
-      var ml = $("moodllmreset"); if (ml) ml.onclick = async function () { await mg({ action: "mgmtOp", kind: "mood", op: "resetLlm" }); await load() }
+      var mm = function (s) { var m = $("moodmsg"); if (m) m.textContent = s }
+      var mf = $("moodrefresh")
+      if (mf) mf.onclick = async function () { mm("刷新中…"); await load() }
+      var mr = $("moodreset")
+      if (mr) mr.onclick = async function () { mm("重置本地心情中…"); try { var j = await mg({ action: "mgmtOp", kind: "mood", op: "resetLocal" }); mm(j && j.ok ? "本地心情已重置" : ("失败：" + ((j && j.error) || ""))) } catch (e) { mm("失败：" + e.message) } ; await load() }
+      var ml = $("moodllmreset")
+      if (ml) ml.onclick = async function () { mm("重置熔断中…"); try { var j2 = await mg({ action: "mgmtOp", kind: "mood", op: "resetLlm" }); mm(j2 && j2.ok ? "熔断已重置" : ("失败：" + ((j2 && j2.error) || ""))) } catch (e) { mm("失败：" + e.message) } ; await load() }
     } catch (e) {}
   }
 
@@ -493,18 +498,13 @@ function fieldRow(f, tabLabel) {
 }
 
 async function load(){
-  const sigOf = (s) => {
-    try { return [s.version, JSON.stringify(s.config).length, s.transport && s.transport.mode, (s.transport && s.transport.channel && s.transport.channel.counts && s.transport.channel.counts.inbound) || 0, (s.roster && s.roster.updatedAt) || 0, (s.kb && s.kb.chunks) || 0].join("|") } catch (e) { return String(Date.now()) }
-  }
+
   const r = await fetch('/api/qqbot-refine/state')
   STATE = await r.json()
   if (!STATE.ok) { $('msg').textContent = '读取失败：' + (STATE.error||''); return }
   for (const k of Object.keys(draft)) delete draft[k]
   try { const hh = (location.hash || "").replace(/^#/, ""); if (hh && STATE.tabs.some((t) => t[0] === hh)) ACTIVE = hh } catch {}
-  // 状态没变就别重画（刷新/切页时的卡顿主要来自整页重建）
-  const sig = sigOf(STATE)
-  if (sig === (window.__qqrefineSig || "") && $("panel").childElementCount > 0) { renderChips(); renderTopbar(); markDirty(); return }
-  window.__qqrefineSig = sig
+
   await ensurePeerKeys()
   renderQuick()
   renderChips(); renderTopbar(); renderTabs(); renderPanel(); markDirty(); try { updateToolbar() } catch {}
