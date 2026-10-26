@@ -1,4 +1,4 @@
-> 安装步骤见 [docs/INSTALL.md](docs/INSTALL.md)
+> 安装：`dsh plugin --profile web add github:Anarrogantcat/dsh-qqbot-refine`（详见 [docs/INSTALL.md](docs/INSTALL.md)）
 
 # dsh-qqbot-refine
 

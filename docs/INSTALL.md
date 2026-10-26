@@ -10,10 +10,19 @@
 | 通道 | 二选一：**NapCat / OneBot 11**（推荐，WS 默认 `ws://127.0.0.1:3001`）或**官方 QQ 机器人**（appId/appSecret） |
 | 可选依赖 | `sharp`（#帮助 卡片）、`silk-wasm`（发语音）——宿主 profile 里已有就自动用，没有则对应功能降级 |
 
-## 1. 拿到代码
+## 1. 装（推荐：DSH 插件命令）
+
+```sh
+dsh plugin --profile web add github:Anarrogantcat/dsh-qqbot-refine
+# 发布到 npm 之后也可以：
+dsh plugin --profile web add dsh-qqbot-refine
+```
+
+桌面端（DeepSeek Harness Desktop）的 profile 由应用管理，请用应用内 **设置 → 插件** 安装。
+
+手动方式（插件命令不可用时）：
 
 ```powershell
-# GitHub（当前是私有仓库，需要把仓库加为你的协作仓库）
 git clone https://github.com/Anarrogantcat/dsh-qqbot-refine.git "$env:USERPROFILE\.dsh\plugins\dsh-qqbot-refine"
 ```
 
