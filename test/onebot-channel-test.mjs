@@ -11,6 +11,10 @@ const { loadConfig, saveConfig, clone, DEFAULTS } = await import(base + "lib/con
 ensureDirs();
 const cfg = clone(DEFAULTS); cfg.transport.mode = "onebot"; saveConfig(cfg);
 
+function mkCtxSoft() {
+  const agents = { get: () => null, resume: async () => { throw new Error('no') }, create: async ({ sessionId }) => ({ agent: { session: { id: sessionId }, followup: () => {} }, dispose: async () => {} }) };
+  return { get: (n) => (n === 'agents' ? agents : null), on: () => () => {} };
+}
 const ok = [];
 const A = (n, c, e) => ok.push([n, !!c, e]);
 
@@ -122,6 +126,8 @@ let threw2 = false;
 try { await botFail.sendVoice({ scope: "group", targetId: "1", msgId: "m9" }, { buffer: Buffer.from("x") }) } catch { threw2 = true }
 A("语音发送失败会抛（可回落文字）", threw2 === true);
 
+
+
 // ── 7. 通道：事件 → agent，session 事件 → 发送 ──
 const dispatched = [];
 const createdOpts = [];
@@ -177,6 +183,20 @@ A("闸门认 onebot raw（不在白名单 → 拦）", blocked === true, blocked
 const cfg2 = loadConfig(); cfg2.scope.dmUsers = ["10001"]; saveConfig(cfg2);
 const outArgs = await gate.onOutbound(bot, "sendText", [{ scope: "c2c", targetId: "10001", msgId: "1" }, "你好 [[sticker:无语]]"]);
 A("出站剥标记", outArgs.args[1].indexOf("[[sticker") < 0, outArgs.args[1]);
+
+// 被闸门挡掉的群消息也要进上下文（否则她只记得自己回过的）
+const ctxLog = [];
+let firstBlock = true;
+const gateBlockThenAllow = { onInbound: async () => { if (firstBlock) { firstBlock = false; return true } return false }, onOutbound: async (b, m, a) => ({ args: a }) };
+const chCtx = new CH.OneBotChannel({ ctx: mkCtxSoft(), gate: gateBlockThenAllow, client: client2, logger: { info() {}, warn() {} } });
+chCtx.selfId = "690618714"; chCtx.start();
+const oldDispatch = chCtx.dispatch.bind(chCtx);
+chCtx.dispatch = async (n) => { ctxLog.push(String(n.content)); return oldDispatch(n) };
+await chCtx.handleEvent({ post_type: "message", message_type: "group", group_id: 778, user_id: 7, message_id: 5001, sender: { card: "路人甲" }, message: [{ type: "text", data: { text: "听说今晚有比赛" } }] });
+A("被拦的消息不投递", ctxLog.length === 0, ctxLog);
+const ctxBody = chCtx.composeBody({ scope: "group", peer: "778", senderName: "路人乙", sender: "8", content: "谁跟谁", mentions: [], images: [] });
+A("被拦的消息出现在下一条的上下文里", ctxBody.includes("听说今晚有比赛") && ctxBody.includes("最近群聊"), ctxBody);
+A("上下文带当前消息分段", ctxBody.includes("# 当前消息"), ctxBody);
 
 console.log("=== 自建 OneBot 通道测试 ===");
 let fail = 0;

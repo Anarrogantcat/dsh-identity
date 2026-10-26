@@ -1119,10 +1119,14 @@ function renderProfilePanel() {
   if (!PROFILE) { el.innerHTML = '<div class="pcard"><div class="hint">加载画像…</div></div>'; loadProfile(); return }
   const st = PROFILE.stats || {}
   const members = PROFILE.members || []
-  const rows = members.map((m, i) => `
+  let showAll = false
+  try { showAll = localStorage.getItem('qqrefine:pshowall') === '1' } catch (e) {}
+  const spoken = members.filter((m) => (m.msgs || 0) > 0)
+  const visible = (showAll ? members : spoken)
+  const rows = visible.map((m, i) => `
     <div class="prow">
       <div class="grow">
-        <div class="label">成员 ${i + 1} ${m.sealed ? '<span class="badge">已屏蔽</span>' : ""}</div>
+        <div class="label">${escapeHtml(m.nick || ("成员 " + (i + 1)))}${m.uid ? '<span class="hint" style="margin-left:6px">' + escapeHtml(String(m.uid)) + "</span>" : ""}${m.role === "owner" ? ' <span class="badge cur">群主</span>' : m.role === "admin" ? ' <span class="badge">管理</span>' : ""}${m.sealed ? '<span class="badge">已屏蔽</span>' : ""}</div>
         <div class="hint">发言 ${m.msgs} · 均长 ${m.avgLen} 字 · ${(m.traits || []).join("、") || "未归纳"}
           ${(m.topWords || []).length ? " · 常聊 " + m.topWords.join("/") : ""}</div>
       </div>
@@ -1139,16 +1143,24 @@ function renderProfilePanel() {
         <div class="ctl"><select id="pgroup">${groups.map((g) => `<option value="${g}" ${g === PGROUP ? "selected" : ""}>${g}</option>`).join("")}</select></div>
       </div>
       <div class="row"><div class="meta"><div class="label">统计</div>
-        <div class="hint">成员 ${st.total ?? 0} · 达标 ${st.active ?? 0} · 已屏蔽 ${st.sealed ?? 0} · 累计发言 ${st.msgs ?? 0}<br>「达标」= 单个成员发言 &ge; ${(STATE.config && STATE.config.profile && STATE.config.profile.minMsgs7d) || 20} 条才会归纳特质；刚重建的画像只有身份（群名片/角色），统计从 0 开始，群里聊几句就有了。</div></div>
+        <div class="hint">名册成员 ${st.total ?? 0} · 已发言 ${st.spoken ?? spoken.length} · 达标 ${st.active ?? 0} · 已屏蔽 ${st.sealed ?? 0} · 累计发言 ${st.msgs ?? 0}<br>「达标」= 单个成员发言 &ge; ${(STATE.config && STATE.config.profile && STATE.config.profile.minMsgs7d) || 20} 条才会归纳特质；刚重建的画像只有身份（群名片/角色），统计从 0 开始，群里聊几句就有了。</div></div>
     <div class="hint" style="margin-top:2px">语义归纳用的模型：${((STATE.llmRoute && STATE.llmRoute.profile && STATE.llmRoute.profile.provider) ? ((STATE.llmRoute.profile.source === "config" ? "配置指定 " : "宿主默认 ") + STATE.llmRoute.profile.provider + " / " + STATE.llmRoute.profile.model) : "未找到（填 profile.llmProvider / llmModel 或检查宿主默认模型）")}</div>
         <div class="ctl pbtns"><button id="pinduce">本地归纳</button><button id="pllm">语义归纳（模型）</button><button id="pclear">清空本群画像</button></div>
       </div>
       <div class="hint" id="pmsg2"></div>
     </div>
     <div class="pcard">
-      <div class="label" style="margin-bottom:6px">成员（按发言排序）</div>
+      <div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta">
+        <div class="label">成员（按发言排序）</div>
+        <div class="hint">默认只列发过言的人；机器人的号不参与画像。</div>
+      </div><div class="ctl pbtns"><label class="hint" style="display:flex;gap:6px;align-items:center">
+        <input type="checkbox" id="pshowall" ${showAll ? "checked" : ""}> 显示全部名册成员（${members.length}）
+      </label></div></div>
       ${rows || '<div class="hint">还没有统计到发言。让群友在白名单群里说几句话再回来（通过闸门的消息才计入）。</div>'}
     </div>`
+
+  const sa = $("pshowall")
+  if (sa) sa.onchange = () => { try { localStorage.setItem("qqrefine:pshowall", sa.checked ? "1" : "0") } catch (e) {} ; renderProfilePanel() }
 
   const sel = $("pgroup")
   if (sel) sel.onchange = () => loadProfile(sel.value)
