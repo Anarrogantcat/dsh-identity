@@ -174,6 +174,9 @@ C:\Users\Ranmi\.dsh\plugins\dsh-qqbot-refine         ← 部署目录（DSH 真�
 
 悬浮按钮只用 DOM 实现，不依赖 slot 契约，DSH 升级后不易失效；若宿主未加载客户端半边，用方式 2 即可。
 
+**悬浮按钮可以拖动**：按住拖到任意位置（贴边 6px 会夹住），松手记住位置（`localStorage: qqrefine:fabPos`），
+点一下仍然是打开面板（位移 <5px 才算点击，拖完不会误开）。指针事件 + rAF 合帧，拖动期间没有过渡动画，跟手。
+
 ## 配置面板
 
 启动后打开：`http://127.0.0.1:<DSH端口>/qqbot-refine`（只允许 loopback 访问）

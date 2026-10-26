@@ -9,12 +9,17 @@ window.__ModuleLoader__.load({
   id: 'dsh-qqbot-refine',
   factory: () => {
     const CSS = `
-      #qqrefine-fab{position:fixed;right:18px;bottom:18px;z-index:2147483000;
+      #qqrefine-fab{position:fixed;left:0;top:0;z-index:2147483000;
         width:46px;height:46px;border-radius:50%;border:1px solid rgba(120,150,210,.45);
-        background:linear-gradient(160deg,#1a2233,#0f1420);color:#dfe8fb;cursor:pointer;
+        background:linear-gradient(160deg,#1a2233,#0f1420);color:#dfe8fb;cursor:grab;
         box-shadow:0 6px 20px rgba(0,0,0,.45);font-size:20px;line-height:46px;text-align:center;
-        transition:transform .15s ease, box-shadow .15s ease;user-select:none}
-      #qqrefine-fab:hover{transform:translateY(-2px) scale(1.04);box-shadow:0 10px 26px rgba(77,141,255,.35)}
+        user-select:none;-webkit-user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent;
+        will-change:transform;transform:translate3d(var(--x,0px),var(--y,0px),0);
+        transition:box-shadow .15s ease, filter .15s ease, transform .12s ease}
+      #qqrefine-fab:hover{filter:brightness(1.08);box-shadow:0 10px 26px rgba(77,141,255,.35)}
+      #qqrefine-fab.dragging{cursor:grabbing;transition:box-shadow .15s ease;
+        transform:translate3d(var(--x,0px),var(--y,0px),0) scale(1.06);box-shadow:0 16px 34px rgba(0,0,0,.55)}
+      #qqrefine-fab:active{cursor:grabbing}
       #qqrefine-fab[data-open="1"]{background:linear-gradient(160deg,#2b4a7d,#1b2c4a)}
       #qqrefine-mask{position:fixed;inset:0;z-index:2147482999;background:rgba(6,10,18,.55);
         backdrop-filter:blur(2px);display:none}
@@ -48,10 +53,87 @@ window.__ModuleLoader__.load({
 
       const fab = document.createElement('button')
       fab.id = 'qqrefine-fab'
-      fab.title = '大肥鱼 · QQ 增强（控制面板）'
+      fab.title = '大肥鱼 · QQ 增强（控制面板）\n拖动可以挪位置，双击标题栏没用的那种（笑）'
       fab.textContent = '🐟'
-      fab.addEventListener('click', () => toggle(true))
+      fab.addEventListener('dragstart', (e) => e.preventDefault())
       document.body.appendChild(fab)
+
+      // ── 拖动：pointer 事件 + rAF 合帧，松手才落盘；位移 <5px 视为点击 ──
+      const POS_KEY = 'qqrefine:fabPos'
+      const SIZE = 46
+      const EDGE = 6
+      const clampPos = (x, y) => ({
+        x: Math.min(Math.max(EDGE, Math.round(x)), Math.max(EDGE, window.innerWidth - SIZE - EDGE)),
+        y: Math.min(Math.max(EDGE, Math.round(y)), Math.max(EDGE, window.innerHeight - SIZE - EDGE)),
+      })
+      const applyPos = (p) => {
+        fab.style.setProperty('--x', p.x + 'px')
+        fab.style.setProperty('--y', p.y + 'px')
+      }
+      const loadPos = () => {
+        try {
+          const j = JSON.parse(localStorage.getItem(POS_KEY) || 'null')
+          if (j && Number.isFinite(j.x) && Number.isFinite(j.y)) return clampPos(j.x, j.y)
+        } catch { /* ignore */ }
+        return clampPos(window.innerWidth - SIZE - 18, window.innerHeight - SIZE - 18)
+      }
+      const savePos = (p) => { try { localStorage.setItem(POS_KEY, JSON.stringify(p)) } catch { /* ignore */ } }
+
+      let pos = loadPos()
+      applyPos(pos)
+
+      let drag = null
+      let raf = 0
+      let pending = null
+      let suppressClickAt = 0
+
+      fab.addEventListener('pointerdown', (e) => {
+        if (e.button !== 0 && e.pointerType === 'mouse') return
+        const r = fab.getBoundingClientRect()
+        drag = { id: e.pointerId, ox: e.clientX - r.left, oy: e.clientY - r.top, sx: e.clientX, sy: e.clientY, moved: false }
+        try { fab.setPointerCapture(e.pointerId) } catch { /* ignore */ }
+      })
+
+      fab.addEventListener('pointermove', (e) => {
+        if (!drag || e.pointerId !== drag.id) return
+        if (!drag.moved) {
+          if (Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 5) return
+          drag.moved = true
+          fab.classList.add('dragging')
+        }
+        pending = clampPos(e.clientX - drag.ox, e.clientY - drag.oy)
+        if (!raf) {
+          raf = requestAnimationFrame(() => { raf = 0; if (pending) applyPos(pending) })
+        }
+        e.preventDefault()
+      })
+
+      const endDrag = (e) => {
+        if (!drag) return
+        const moved = drag.moved
+        try { fab.releasePointerCapture(drag.id) } catch { /* ignore */ }
+        drag = null
+        fab.classList.remove('dragging')
+        if (raf) { cancelAnimationFrame(raf); raf = 0 }
+        if (pending) { pos = pending; applyPos(pos) }
+        pending = null
+        if (moved) {
+          suppressClickAt = Date.now()
+          try { localStorage.setItem(POS_KEY, JSON.stringify(pos)) } catch { /* ignore */ }
+        }
+      }
+      fab.addEventListener('pointerup', endDrag)
+      fab.addEventListener('pointercancel', endDrag)
+
+      fab.addEventListener('click', (e) => {
+        if (Date.now() - suppressClickAt < 350) { e.preventDefault(); e.stopPropagation(); return }
+        toggle(true)
+      })
+
+      window.addEventListener('resize', () => {
+        const next = clampPos(pos.x, pos.y)
+        if (next.x !== pos.x || next.y !== pos.y) { pos = next; applyPos(pos); savePos(pos) }
+      })
 
       const mask = document.createElement('div')
       mask.id = 'qqrefine-mask'
