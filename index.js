@@ -201,9 +201,9 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.8.2',
+    version: '0.8.3',
     install: installInfo(),
-    stage: 'v0.8.2 · S1–S7',
+    stage: 'v0.8.3 · S1–S7',
     dshHome: STORE_DIR,
     configPath: CFG_PATH,
     configPathExists: existsSync(CFG_PATH),
@@ -244,7 +244,7 @@ function snapshot() {
     })(),
     agentPresets: agentPresetList,
     profileNotices: (() => { try { const g = (loadConfig()?.scope?.groups ?? [])[0]; const list = g ? profile.noticesOf(String(g)) : []; return { count: list.length, latest: list.length ? String(list[list.length - 1].text || '') : '' } } catch (e) { return { count: 0, latest: '' } } })(),
-    esports: (() => { try { const c = esportsCache(); return { at: c.at || 0, source: c.source || '', count: c.count || 0, today: dayMatches().length, errors: (c.errors || []).slice(0, 3) } } catch (e) { return null } })(),
+    esports: (() => { try { const c = esportsCache(); return { at: c.at || 0, source: c.source || '', count: c.count || 0, today: dayMatches().length, errors: (c.errors || []).slice(0, 3), attempts: (c.attempts || []).slice(0, 4) } } catch (e) { return null } })(),
     mutedGroups: (() => { try { return Object.keys(state.muted ?? {}) } catch (e) { return [] } })(),
     voiceProbe: (() => { try { return (globalThis.__qqrefineVoiceProbe ?? null) } catch (e) { return null } })(),
     voiceLast: (() => { try { return lastJobInfo() } catch (e) { return null } })(),

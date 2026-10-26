@@ -2133,6 +2133,7 @@ function esportsCardHtml() {
     '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta">' +
       '<div class="label">自动赛程（官方 lolesports API）</div>' +
       '<div class="hint">来源 <b>' + escapeHtml(e.source || '—') + '</b> · 上次同步 ' + escapeHtml(at) + ' · 库里今天 ' + (e.today == null ? '—' : e.today) + ' 场</div>' +
+      ((e.attempts || []).length ? '<div class="hint">' + e.attempts.map(function (a) { return (a.ok ? '✓ ' : '✗ ') + escapeHtml(a.name) + (a.count ? ' ' + a.count + ' 场' : '') + (a.note ? '：' + escapeHtml(a.note) : '') }).join('<br>') + '</div>' : '') +
       (err ? '<div class="hint" style="color:#ffb0b0">' + escapeHtml(err) + '</div>' : '') +
     '</div><div class="ctl pbtns"><button id="esportsSync" class="primary">立即同步</button>' +
       '<button id="esportsToday">看今天</button></div></div>' +
