@@ -90,6 +90,11 @@ r = await A.kick(client, 778, 5, true);
 T("踢人调用 set_group_kick", r.ok && calls.some((c) => c[0] === "set_group_kick" && c[1].reject_add_request === true));
 r = await A.setCard(client, 778, 5, "新名片");
 T("改名片调用 set_group_card", r.ok && calls.some((c) => c[0] === "set_group_card" && c[1].card === "新名片"));
+r = await A.setAvatar(client, "https://x/a.png");
+T("换头像调用 set_qq_avatar（URL 原样）", r.ok && calls.some((c) => c[0] === "set_qq_avatar" && c[1].file === "https://x/a.png"), calls.slice(-1));
+r = await A.setAvatar(client, "D:\\tmp\\a.png");
+T("本地路径转 file:///", r.ok && calls.some((c) => c[0] === "set_qq_avatar" && String(c[1].file).startsWith("file:///")), calls.slice(-1));
+
 r = await A.react(client, 1001, 76);
 T("贴表情调用 set_msg_emoji_like", r.ok && calls.some((c) => c[0] === "set_msg_emoji_like"));
 // 官方模式：能力位挡掉
