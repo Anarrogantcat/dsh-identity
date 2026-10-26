@@ -5,14 +5,6 @@
 给 [DeepSeek Harness](https://github.com/deepseek-ai) 的 QQ 机器人加一层「能管得住」的增强：
 **频率闸 · 隐私脱敏 · 人设 · 半衰期记忆 · 群成员画像 · 表情包 · 层级与群管 · B站动态与链接解析**。
 
-## 更新日志
-
-- **0.6.2**：全面自检；叫人 vs 提话题判定、心情评估全 0 修复、面板去重/减模糊、发送失败审计、`#换头像`、留空=宿主默认模型
-- **0.6.0**：语音资源下载中心（whisper 模型 / ffmpeg，可放别的盘）、数据目录可整体挪盘（`.data-path` 指针 / `QQBOT_REFINE_HOME`）、面板语音页资源卡、`scripts/move-data.ps1`
-- **0.5.0**：S3–S7（入站事件 / 出站动作 / 安全熔断 / 认知四张卡）、面板通道页与知识库、赛程页、名册卡、`#群列表` `#群成员` `#踢人` `#名片` `#赞`
-- **0.4.0**：自建 OneBot 通道（不依赖其他 DSH 插件）、名册、能力位
-- **0.3.0**：P0（安装恢复、标记泄漏、启动自检）、通道抽象
-
 > 所有闸门都在模型之前生效：命令、推送、禁言/撤回、图库同步 **不消耗任何 token**；
 > 只有正常对话与（可选的）记忆归纳/画像归纳会产生 token。
 
@@ -108,50 +100,6 @@
 
 > `#群列表` `#群成员` `#踢人` `#名片` `#赞` 只在 onebot 模式可用；管理类命令仅 Owner / Admin。
 
-## 语音资源下载（大文件，可放别的盘）
-
-语音转写要两个外部东西，都不小，默认落在数据目录，**可以整体挪到别的盘**：
-
-| 资源 | 大概 | 说明 |
-|---|---|---|
-| Whisper 模型 small | 466MB | 识别质量好 |
-| Whisper 模型 base | 142MB | 省地方，够听清日常 |
-| FFmpeg essentials | 80MB | 语音转 wav / 视频转码 |
-
-面板 →「语音」页顶部有「语音资源」卡片：看状态、点下载、删掉重下。下载好模型后在卡片上点 **启用转写**，会自动把 `stt.command` 写成指向该模型（前提：`whisper-cli` 在 PATH 里）。
-
-### 目录怎么挪（C 盘放不下时）
-
-- **只挪大文件**：面板「语音」页填 `paths.downloadsDir`（例如 `D:\qqbot-assets`），保存即可
-- **整个数据目录挪盘**：
-
-```powershell
-.\scripts\move-data.ps1 -Target 'D:\qqbot-data' -WhatIf   # 先看
-.\scripts\move-data.ps1 -Target 'D:\qqbot-data'           # 复制并写指针
-.\scripts\move-data.ps1 -Target 'D:\qqbot-data' -Move     # 搬走（源目录只留 .data-path）
-```
-
-原理：默认目录里留一个 `.data-path` 指针文件，插件启动时读它决定数据目录；也可以用环境变量 `QQBOT_REFINE_HOME` 强制指定（优先级最高）。改完 **重启 DSH** 生效。
-
-## 项目目录 / 开发与部署
-
-```
-D:\AI\DeepSeek Harness Workspace\dsh-qqbot-refine   ← 项目目录（git 仓库：源码 + docs/ + test/）
-C:\Users\Ranmi\.dsh\plugins\dsh-qqbot-refine         ← 部署目录（DSH 真正加载的地方）
-```
-
-改完代码要同步到部署目录（profile 里的 junction 指向那里）：
-
-```powershell
-.\scripts\sync-to-deploy.ps1            # 同步有变化的文件（只动 index/client/panel/lib 等运行文件）
-.\scripts\sync-to-deploy.ps1 -WhatIf    # 先看会动哪些
-.\scripts\sync-to-deploy.ps1 -Restart   # 顺手提醒：服务端代码要重启 DSH
-```
-
-- 只改 `panel.html` → 同步后**刷新页面**即可，不用重启
-- 改 `index.js` / `lib/*` → 必须**重启 DSH**
-- `docs/` `test/` `scripts/` 只留在项目目录，不进部署目录
-
 ## 安装（DSH 插件协议）
 
 本插件遵循 DSH 的「一切皆插件」约定（cordis 插件 + bundle patch + webServer 面板）：
@@ -174,9 +122,6 @@ C:\Users\Ranmi\.dsh\plugins\dsh-qqbot-refine         ← 部署目录（DSH 真�
 2. **直接访问** `http://127.0.0.1:<DSH端口>/qqbot-refine`（仅 loopback）。
 
 悬浮按钮只用 DOM 实现，不依赖 slot 契约，DSH 升级后不易失效；若宿主未加载客户端半边，用方式 2 即可。
-
-**悬浮按钮可以拖动**：按住拖到任意位置（贴边 6px 会夹住），松手记住位置（`localStorage: qqrefine:fabPos`），
-点一下仍然是打开面板（位移 <5px 才算点击，拖完不会误开）。指针事件 + rAF 合帧，拖动期间没有过渡动画，跟手。
 
 ## 配置面板
 

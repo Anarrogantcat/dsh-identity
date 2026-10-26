@@ -30,7 +30,8 @@
 6. 一条消息里重复占位符（[图片][图片]）→ 合并。
 7. 发送失败现在写审计（`onebot.sendFail`，带动作与报错原文）。
 
-已知未做（记着）：入站看图（只给占位符，取决于模型多模态）、`set_qq_avatar` 只验证了接口存在（未用真图测）、agent 脚手架要靠选纯聊天预设压。
+已知未做（记着）：`set_qq_avatar` 只验证了接口存在（未用真图测）、agent 脚手架要靠选纯聊天预设压。
+入站看图已补（0.6.3）：图片 → 宿主 attachment → 图像内容块；`transport.onebot.vision/maxImages/maxImageMB`；模型拒图自动降级。
 ## 0. 真机现状（2026-10-26 21:5x）
 
 - 通道 **已连上**：mode=onebot / connected=true / health=ok / 能力位 15/15，账号 690618714（鲸鱼娘）
