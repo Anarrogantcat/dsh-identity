@@ -1621,7 +1621,7 @@ function rosterCardHtml() {
     '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta">' +
       '<div class="label">名册</div>' +
       '<div class="hint">' + (r.supported ? "群/好友/成员来自通道接口，刷新后可以用来一键填白名单。" : "当前通道拿不到名册；切 onebot 模式（NapCat）后可用。") + '</div>' +
-    '</div><div class="ctl pbtns"><button id="rosterRefresh">刷新名册</button></div></div>' +
+    '</div><div class="ctl pbtns"><button id="rosterRefresh">刷新名册</button><button id="rosterPrune">清理旧通道条目</button></div></div>' +
     '<div class="kgrid">' + items.map(function (x) {
       return '<div class="kcell"><span class="k">' + x[0] + '</span><span class="v">' + escapeHtml(x[1]) + '</span></div>'
     }).join("") + '</div>' +
@@ -1646,6 +1646,16 @@ async function bindRosterCard() {
       say("已提交刷新，1 秒后重读…")
       setTimeout(function () { load() }, 1000)
     } catch (e) { say("刷新失败：" + e.message) }
+  }
+  const prune = $("rosterPrune")
+  if (prune) prune.onclick = async function () {
+    if (!confirm("清掉白名单里「旧通道」留下的 openid 条目？\n（真实群号 / QQ 号不会被删）")) return
+    try {
+      const a = await mg({ action: "mgmtOp", kind: "groups", op: "pruneLegacy" })
+      const b = await mg({ action: "mgmtOp", kind: "dmUsers", op: "pruneLegacy" })
+      say("已清理：群 " + (a.removed || 0) + " 条，私聊 " + (b.removed || 0) + " 条")
+      await load()
+    } catch (e) { say("清理失败：" + e.message) }
   }
   const sel = $("rosterGroup")
   const add = $("rosterAdd")
