@@ -209,11 +209,25 @@ function renderChips(){
   const st = STATE.sticker || {}
   const chips = []
   chips.push(['配置', STATE.configPathExists ? 'ok' : 'warn', STATE.configPathExists ? '已生成' : '未生成'])
-  chips.push(['SDK', d.sdkPath ? 'ok' : 'bad', d.sdkPath ? (d.sdkVersion || '已定位') : (d.sdkError || '未定位')])
-  chips.push(['入站闸', p.inbound ? 'ok' : 'bad', p.inbound ? '已挂载' : '未挂载'])
-  chips.push(['出站脱敏', p.outbound ? 'ok' : 'bad', p.outbound ? '已挂载' : '未挂载'])
+  const tp = STATE.transport || {}
+  if (tp.mode === 'onebot') {
+    // 自建通道：官方 SDK / 官方钩子本来就不存在，别拿它们报红
+    const ch = tp.channel || {}
+    const caps = STATE.capabilities || (tp.capabilities || {})
+    const acct = tp.account && tp.account.uin ? (tp.account.uin + (tp.account.nickname ? '（' + tp.account.nickname + '）' : '')) : '未登录'
+    chips.push(['通道', tp.connected ? 'ok' : 'bad', tp.connected ? 'OneBot 已连接' : ('未连接' + (tp.lastError ? '：' + tp.lastError : ''))])
+    chips.push(['账号', tp.account && tp.account.uin ? 'ok' : 'warn', acct])
+    chips.push(['能力位', 'ok', (caps.available || []).length + '/' + (caps.total || 15)])
+    chips.push(['入站闸', ch.selfHosted ? 'ok' : 'bad', ch.selfHosted ? '自建通道' : '未挂载'])
+    chips.push(['出站', (tp.failedToday || 0) > 2 ? 'warn' : 'ok', '发 ' + (tp.sentToday || 0) + ' / 失败 ' + (tp.failedToday || 0)])
+    chips.push(['最近事件', tp.lastEventAt ? 'ok' : 'warn', tp.lastEventAt ? (Math.max(0, Math.round((Date.now() - tp.lastEventAt) / 1000)) + ' 秒前') : '还没收到消息'])
+  } else {
+    chips.push(['SDK', d.sdkPath ? 'ok' : 'bad', d.sdkPath ? (d.sdkVersion || '已定位') : (d.sdkError || '未定位')])
+    chips.push(['入站闸', p.inbound ? 'ok' : 'bad', p.inbound ? '已挂载' : '未挂载'])
+    chips.push(['出站脱敏', p.outbound ? 'ok' : 'bad', p.outbound ? '已挂载' : '未挂载'])
+  }
   chips.push(['图库', st.total ? 'ok' : 'warn', st.total ? `${st.total} 张` : '空（点“同步图库”）'])
-  chips.push(['机器人', STATE.botSeen ? 'ok' : 'warn', STATE.botSeen ? '已连接' : '未收到消息'])
+  if (tp.mode !== 'onebot') chips.push(['机器人', STATE.botSeen ? 'ok' : 'warn', STATE.botSeen ? '已连接' : '未收到消息'])
   $('chips').innerHTML = chips.map(([k,s,v])=>`<span class="chip ${s}">${k}：${v}</span>`).join('')
   $('paths').innerHTML = `<span class="kv">配置：${STATE.configPath}</span>`
 }
@@ -1118,7 +1132,7 @@ function renderProfilePanel() {
         <div class="ctl"><select id="pgroup">${groups.map((g) => `<option value="${g}" ${g === PGROUP ? "selected" : ""}>${g}</option>`).join("")}</select></div>
       </div>
       <div class="row"><div class="meta"><div class="label">统计</div>
-        <div class="hint">成员 ${st.total ?? 0} · 达标 ${st.active ?? 0} · 已屏蔽 ${st.sealed ?? 0} · 累计发言 ${st.msgs ?? 0}</div></div>
+        <div class="hint">成员 ${st.total ?? 0} · 达标 ${st.active ?? 0} · 已屏蔽 ${st.sealed ?? 0} · 累计发言 ${st.msgs ?? 0}<br>「达标」= 单个成员发言 &ge; ${(STATE.config && STATE.config.profile && STATE.config.profile.minMsgs7d) || 20} 条才会归纳特质；刚重建的画像只有身份（群名片/角色），统计从 0 开始，群里聊几句就有了。</div></div>
         <div class="ctl pbtns"><button id="pinduce">本地归纳</button><button id="pllm">语义归纳（模型）</button><button id="pclear">清空本群画像</button></div>
       </div>
       <div class="hint" id="pmsg2"></div>
@@ -1140,7 +1154,7 @@ function renderProfilePanel() {
   const pllm = $("pllm")
   if (pllm) pllm.onclick = async () => {
     const cfgp = (STATE.config.profile || {})
-    if (!cfgp.llmProvider || !cfgp.llmModel) { $("pmsg2").textContent = "先填 profile.llmProvider / llmModel（画像栏「更多设置」里）"; return }
+    if (!cfgp.llmProvider || !cfgp.llmModel) { $("pmsg2").textContent = "语义归纳（花 token）要先填 profile.llmProvider / llmModel（画像栏「更多设置」）；只想 0 token 就点「本地归纳」"; return }
     $("pmsg2").textContent = "调用模型归纳中…"
     const j = await pfetch({ action: "profileInduceLlm", group: PGROUP })
     $("pmsg2").textContent = j.ok ? `模型归纳完成：${j.updated} 人` : ("失败：" + (j.error || ""))
