@@ -496,7 +496,12 @@ function renderPanel(){
     try { el.insertAdjacentHTML("beforeend", safetyCardHtml()) } catch (e) {}
   }
   if (VIEW === "voice") {
-    try { el.insertAdjacentHTML("afterbegin", assetsCardHtml()) } catch (e) {}
+    try {
+      el.insertAdjacentHTML("afterbegin", voiceStatusCardHtml())
+      el.insertAdjacentHTML("beforeend", assetsCardHtml())
+      bindVoiceStatus()
+      startAssetPoll()
+    } catch (e) {}
   }
   if (VIEW === "mood") {
     try {
