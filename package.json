@@ -1,7 +1,7 @@
 {
   "name": "dsh-qqbot-refine",
-  "version": "0.3.0",
-  "description": "QQ 机器人增强（DeepSeek Harness 插件）：频率闸 / 隐私脱敏 / 人设 / 半衰期记忆 / 群成员画像 / 表情包 / 层级与群管 / B站动态 / 看图 / 本地心情 / 学习 / 知识库。全部闸门在模型之前生效，命令与推送 0 token。",
+  "version": "0.4.0",
+  "description": "QQ 机器人增强（DeepSeek Harness 插件）：频率闸 / 隐私脱敏 / 人设 / 半衰期记忆 / 群成员画像 / 表情包 / 层级与群管 / B站动态与链接解析。全部闸门在模型之前生效，命令与推送 0 token。",
   "type": "module",
   "main": "./index.js",
   "exports": {
@@ -15,7 +15,6 @@
     "panel.html",
     "cordis.patch.yml",
     "README.md",
-    "README.en.md",
     "LICENSE"
   ],
   "dsh": {
@@ -36,22 +35,14 @@
     "cordis",
     "plugin",
     "moderation",
-    "memory",
-    "mood",
-    "knowledge-base"
+    "memory"
   ],
   "engines": {
     "node": ">=20"
   },
   "author": "鲸鱼娘和染喵",
   "license": "MIT",
-  "private": false,
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/your-github-name/dsh-qqbot-refine.git"
-  },
-  "homepage": "https://github.com/your-github-name/dsh-qqbot-refine#readme",
-  "bugs": {
-    "url": "https://github.com/your-github-name/dsh-qqbot-refine/issues"
-  }
+  "private": true
 }
+
+

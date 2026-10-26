@@ -177,7 +177,7 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.3.0',
+    version: '0.4.0',
     install: installInfo(),
     stage: 'M1–M9（核心）',
     dshHome: STORE_DIR,
@@ -263,6 +263,7 @@ export async function apply(ctx, config = {}) {
     saveConfig,
     diagRef: diag,
     onBot: (bot) => { botRef = bot },
+    getClient: () => { try { return getOneBotClient(loadConfig()) } catch { return null } },
     logger,
   })
 
@@ -271,7 +272,7 @@ export async function apply(ctx, config = {}) {
 
   // 1) 通道（单活：tencent 或 onebot；失败降级放行）
   try {
-    const tr = await startTransport(gate, logger)
+    const tr = await startTransport(gate, logger, { ctx })
     logger.info?.(`[qqbot-refine] 通道模式=${tr.mode} 钩子=${tr.hooked ? '已挂' : '未挂'}`)
     const caps = capabilitySummary(loadConfig())
     logger.info?.(`[capability] mode=${caps.mode} 可用 ${caps.available.length}/${caps.total}` + (caps.missing.length ? ` · 缺失：${caps.missingLabels.join('/')}` : ''))

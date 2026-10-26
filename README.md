@@ -22,6 +22,34 @@
 | 群秩序 | 撤回、禁言/解禁、**闭麦**（#闭嘴 / #说话） | 0 |
 | B站 | 动态推送、链接解析（智能降画质、可选截取） | 0 |
 
+## 通道：官方 / 自建 OneBot（二选一）
+
+`transport.mode` 决定走哪条路，**单活、不共存**：
+
+| 模式 | 连接方式 | 能力 | 依赖 |
+|---|---|---|---|
+| `tencent` | 官方 QQ 机器人 SDK（`@tencent-connect/dsh-qqbot`），本插件挂 `QQBot.prototype` 钩子 | 7 项（官方限制：拿不到群名片/成员列表/撤回事件/戳一戳/合并转发/表情回应/引用） | 官方通道插件 |
+| `onebot` | **本插件自己**连 NapCat 的 `websocketServers`（OneBot 11） | 15 项全开 | **零**——不需要任何其他 DSH 插件 |
+
+`onebot` 模式下整条链路都在本插件里：
+`NapCat → OneBotClient → 闸门（频率/隐私/命令）→ 宿主 agent → 出站闸门（脱敏/标记/拆气泡）→ OneBot 发送`。
+只借用宿主自带的 `agents / sessions / agentPresets` 服务，不 import 宿主的 `@deepseek-ai/*` 包。
+
+### NapCat 侧要做的（一次性）
+
+1. WebUI `http://127.0.0.1:6099` → 网络配置 → **Websocket 服务器** → 新增：
+   `host=127.0.0.1`、`port=3001`、`token=<随机 32 位>`、`messagePostFormat=array`、`reportSelfMessage=否`
+2. 保存 → 重启 NapCat（Yunzai 那条 `websocketClients` 不受影响）
+3. 面板「通道」页填：模式 `onebot`、地址 `ws://127.0.0.1:3001`、token；重启 DSH
+
+### 行为
+
+- **每群/每个私聊一个 DSH 会话**：sessionId = sha256(`qqbot-refine:onebot:<scope>:<peer>`)，重启时 `resume` 同一条历史
+- 群里喂给模型的正文形如 `[群名片(QQ)] 内容 (@你)`；群名片优先取名册，取不到才用 QQ 昵称
+- 出站媒体：图片（本地/网络）、语音（silk base64）、视频、文件（`upload_group_file` / `upload_private_file`）
+- 入站目前把图片/语音标成 `[图片]` / `[语音]` 占位（图库收集、表情包仍照常）
+- 新命令（仅 onebot 模式）：`#群列表`、`#群成员`（Owner/Admin）
+
 ## 安装（DSH 插件协议）
 
 本插件遵循 DSH 的「一切皆插件」约定（cordis 插件 + bundle patch + webServer 面板）：
