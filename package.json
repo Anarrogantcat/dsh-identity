@@ -41,9 +41,17 @@
     "memory"
   ],
   "engines": {
-    "node": ">=20"
+    "node": ">=20",
+    "dsh": ">=0.2.0"
   },
   "author": "鲸鱼娘和染喵",
   "license": "MIT",
-  "private": true
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Anarrogantcat/dsh-qqbot-refine.git"
+  },
+  "homepage": "https://github.com/Anarrogantcat/dsh-qqbot-refine",
+  "publishConfig": {
+    "access": "public"
+  }
 }
