@@ -146,6 +146,51 @@
   #topbar .metrics b{color:#e6eefc;font-weight:600}
   #topbar .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
   #topbar .dot.ok{background:#3ecf8e}#topbar .dot.warn{background:#e5b95c}#topbar .dot.bad{background:#ef6b6b}
+/* ── 2026 UI 优化层 ───────────────────────────────── */
+:root{--bg:#0e1320;--bg2:#141b29;--card:#161e2e;--line2:#32405f;--dim2:#6d7d99;--r-sm:8px;--r-md:12px;
+  --shadow:0 1px 2px rgba(0,0,0,.25),0 8px 24px rgba(5,10,20,.28)}
+body{font-size:13.5px;background:radial-gradient(1200px 600px at 20% -10%,#17203a 0%,var(--bg) 55%)}
+main{max-width:1080px;padding:16px 20px 140px}
+header{padding:14px 20px 12px;background:rgba(14,19,32,.86);border-bottom:1px solid var(--line)}
+h1{font-size:15.5px;font-weight:650}
+.sub{font-size:11.5px;color:var(--dim2)}
+.chips{gap:6px}.chip{font-size:11.5px;padding:2px 9px}
+.tabs{display:flex;gap:4px;flex-wrap:nowrap;overflow-x:auto;padding:6px;margin:0 0 12px;
+  background:rgba(20,27,41,.75);border:1px solid var(--line);border-radius:var(--r-md);scrollbar-width:thin}
+.tab{border:1px solid transparent;background:transparent;color:var(--dim);border-radius:var(--r-sm);
+  padding:6px 12px;font-size:12.5px;white-space:nowrap;transition:background .15s,color .15s}
+.tab:hover{background:rgba(255,255,255,.04);color:var(--fg)}
+.tab.active{background:linear-gradient(180deg,rgba(77,141,255,.22),rgba(77,141,255,.12));
+  border-color:#345c99;color:#dbe7ff}
+.pcard{background:linear-gradient(180deg,var(--card),#141b2a);border:1px solid var(--line);
+  border-radius:var(--r-md);padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow)}
+.panel{background:linear-gradient(180deg,var(--card),#141b2a);border:1px solid var(--line);
+  border-radius:var(--r-md);padding:6px 16px;box-shadow:var(--shadow)}
+.row{padding:10px 2px;gap:14px;border-bottom:1px solid rgba(38,49,74,.55);transition:background .12s}
+.row:hover{background:rgba(255,255,255,.015)}
+.row .label{font-size:13px;font-weight:500}
+.row .hint{font-size:11.5px;color:var(--dim2);margin-top:3px}
+.row .ctl{flex:0 0 320px;gap:8px}
+.prow{padding:9px 2px;border-bottom:1px solid rgba(38,49,74,.5)}
+input[type=text],input[type=number],select{height:34px;padding:0 10px;background:#0c1220;
+  border:1px solid var(--line2);border-radius:var(--r-sm);transition:border-color .15s,box-shadow .15s}
+input[type=text]:hover,input[type=number]:hover,select:hover{border-color:#3a4a6e}
+input[type=range]{accent-color:var(--accent);height:22px}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#3f6bb8;box-shadow:0 0 0 3px rgba(77,141,255,.18)}
+button{background:#1b2436;border:1px solid var(--line2);color:#d6e2f6;border-radius:var(--r-sm);
+  padding:6px 12px;font-size:12.5px;cursor:pointer;transition:background .15s,border-color .15s}
+button:hover{background:#233049;border-color:#3d4f75}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.primary{background:linear-gradient(180deg,#4d8dff,#3f7be6);border-color:#5b96ff;color:#08111f;font-weight:600}
+.kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;margin:2px 0}
+.kcell{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:8px 10px;
+  background:rgba(10,16,28,.6);border:1px solid var(--line);border-radius:var(--r-sm)}
+.kcell .k{color:var(--dim2);font-size:12px}.kcell .v{font-size:12.5px;text-align:right}
+footer{background:rgba(12,17,28,.94);border-top:1px solid var(--line2);padding:10px 20px}
+.pv,code,.code{background:#0a101c;border:1px solid var(--line);border-radius:6px}
+@media(max-width:760px){main{padding:12px 12px 130px}
+  .row{flex-direction:column;align-items:stretch;gap:8px}.row .ctl{flex:1 1 auto;justify-content:flex-start;flex-wrap:wrap}
+  .prow{flex-direction:column;align-items:stretch}.kgrid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -2201,6 +2246,50 @@ function startAssetPoll() {
   }, 1000)
 }
 
+function voiceStatusCardHtml() {
+  const v = (STATE.config && STATE.config.voice) || {}
+  const stt = (STATE.config && STATE.config.stt) || {}
+  const pr = STATE.voiceProbe || null
+  const last = STATE.voiceLast || null
+  const chip = (label, ok, extra) => '<span class="chip ' + (ok === true ? 'ok' : ok === false ? 'bad' : '') + '">' + label + (extra ? '：' + extra : '') + '</span>'
+  const caps = pr && pr.caps ? pr.caps : null
+  const capOf = (k) => { try { const c = caps && (caps[k] || (caps.capabilities && caps.capabilities[k])); if (!c) return null; const s = String(c.state || c.status || c); return s === 'available' || s === 'ok' } catch (e) { return null } }
+  const svcOk = pr ? !!pr.ok : null
+  const speakOk = capOf('tts')
+  const rvcOk = capOf('rvc') || capOf('voice-conversion')
+  const singOk = capOf('singing')
+  const lastTxt = last ? (last.ok ? ('上次合成成功 · ' + new Date(last.at).toLocaleTimeString()) : ('上次失败：' + (last.error || '未知'))) : '还没试过合成'
+  return '<div class="pcard" id="voiceStatus">' +
+    '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta">' +
+      '<div class="label">语音状态</div>' +
+      '<div class="hint">' + escapeHtml(String(v.baseUrl || '（没填服务地址）')) + ' · voiceId ' + escapeHtml(String(v.voiceId || '-')) + ' · style ' + escapeHtml(String(v.style || '-')) + '</div>' +
+    '</div><div class="ctl pbtns"><button id="voiceProbe">探活 / 看能力</button></div></div>' +
+    '<div class="chips" style="margin:4px 0 8px">' +
+      chip('开关', v.enabled === true ? '开' : '关', '') +
+      chip('API key', pr ? (pr.keySet ? '有' : '空') : (v.apiKey ? '有' : '空'), '') +
+      chip('服务', svcOk === null ? '未探测' : (svcOk ? 'ok' : '连不上'), '') +
+      chip('说话', speakOk === null ? '未探测' : (speakOk ? '可用' : '不可用'), '') +
+      chip('换声', rvcOk === null ? '未探测' : (rvcOk ? '可用' : '未装好'), '') +
+      chip('唱歌', singOk === null ? '未探测' : (singOk ? '可用' : '未装好'), '') +
+      chip('转写', stt.enabled === true ? (String(stt.command || '').trim() ? '开' : '开但没命令') : '关', '') +
+    '</div>' +
+    '<div class="hint">' + escapeHtml(lastTxt) + (pr && pr.error ? (' · 探测：' + escapeHtml(pr.error)) : '') + '</div>' +
+    (caps ? '<details class="adv" style="margin-top:6px"><summary>能力原文</summary><div class="pv" style="max-height:180px">' + escapeHtml(JSON.stringify(caps)) + '</div></details>' : '') +
+  '</div>'
+}
+
+function bindVoiceStatus() {
+  const b = $('voiceProbe')
+  if (!b) return
+  b.onclick = async function () {
+    const old = b.textContent; b.disabled = true; b.textContent = '探测中…'
+    try {
+      const j = await pfetch({ action: 'voiceStatus' })
+      if (j && j.ok) { STATE.voiceProbe = j.probe; STATE.voiceLast = j.last }
+    } catch (e) {}
+    try { await load() } catch (e) {}
+  }
+}
 function assetsCardHtml() {
   const a = STATE.assets
   if (!a) return '<div class="pcard"><div class="label">语音资源</div><div class="hint">读不到资源状态</div></div>'

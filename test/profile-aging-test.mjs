@@ -1,0 +1,37 @@
+process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-pa';
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+const HOME = process.env.DSH_HOME;
+try { rmSync(HOME, { recursive: true, force: true }) } catch {}
+mkdirSync(HOME + "/profiles/desktop", { recursive: true });
+writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy\n", "utf8");
+const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const P = await import(base + "lib/profile.js");
+const { clone, DEFAULTS } = await import(base + "lib/config.js");
+const { ensureDirs } = await import(base + "lib/store.js");
+ensureDirs();
+const cfg = clone(DEFAULTS);
+cfg.profile.minMsgs7d = 3; cfg.profile.notifyGroup = true; cfg.profile.sealDays = 30;
+const ok = []; const T = (n, c, e) => ok.push([n, !!c, e]);
+const G = '830148935';
+// 3 个人各说几句，其中 2 个够阈值
+for (let i = 0; i < 6; i++) P.record(cfg, G, '1001', '今天打游戏输了，好烦啊', false);
+for (let i = 0; i < 4; i++) P.record(cfg, G, '1002', '哈哈哈哈', false);
+for (let i = 0; i < 2; i++) P.record(cfg, G, '1003', '确实累', false);
+const r1 = P.induce(G, cfg);
+T("归纳更新了 2 人", r1.updated === 2, r1);
+T("首次归纳记为 fresh", r1.fresh === 2, r1);
+const note = P.takeNotice(G);
+T("notifyGroup 触发通知", note.includes("画像更新"), note);
+T("通知只发一次", P.takeNotice(G) === "", P.takeNotice(G));
+const r2 = P.induce(G, cfg);
+T("再归纳不会重复通知（fresh=0）", r2.fresh === 0, r2);
+const mt = P.maintain(G, cfg);
+T("刚说过话的人不会被老化清理", mt.removed === 0, mt);
+const cfg2 = clone(cfg); cfg2.profile.sealDays = 1;
+const mt2 = P.maintain(G, { profile: Object.assign({}, cfg.profile, { sealDays: 9999 }) });
+T("sealDays 未到不删人", mt2.removed === 0 && P.stats(G).total === 3, { mt2, stats: P.stats(G), members: P.listMembers(G).map((m) => ({ uid: m.uid, msgs: m.msgs, nick: m.nick })) });
+console.log("=== 画像：老化 / 通知 测试 ===");
+let fail = 0;
+for (const [n, pass, e] of ok) { console.log((pass ? "OK  " : "FAIL ") + n + (pass ? "" : "   " + JSON.stringify(e))); if (!pass) fail++; }
+console.log(fail ? ("失败 " + fail) : ("全部通过 " + ok.length + "/" + ok.length));
+process.exit(fail ? 1 : 0);

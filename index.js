@@ -19,6 +19,7 @@ import { refreshAll, refreshMembers, rosterStats, groupChoices, groupName, loadR
 import { loadState, state, newBind, getBind, clearBind } from './lib/state.js'
 import { createGate, startJobs } from './lib/gate.js'
 import { loadCognition, createHooks, cognitionText, consolidatePeers } from './lib/hooks.js'
+import { probeService as probeVoice, lastJobInfo } from './lib/voice.js'
 import { assetStatus, progressOf, downloadAsset, removeAsset, sttAutoCommand, downloadsStats } from './lib/downloads.js'
 import { usageReport } from './lib/usage.js'
 import { resolveRoute, withRoute } from './lib/llmroute.js'
@@ -199,9 +200,9 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.7.1',
+    version: '0.7.3',
     install: installInfo(),
-    stage: 'v0.7.1 · S1–S7',
+    stage: 'v0.7.3 · S1–S7',
     dshHome: STORE_DIR,
     configPath: CFG_PATH,
     configPathExists: existsSync(CFG_PATH),
@@ -242,6 +243,8 @@ function snapshot() {
     })(),
     agentPresets: agentPresetList,
     mutedGroups: (() => { try { return Object.keys(state.muted ?? {}) } catch (e) { return [] } })(),
+    voiceProbe: (() => { try { return (globalThis.__qqrefineVoiceProbe ?? null) } catch (e) { return null } })(),
+    voiceLast: (() => { try { return lastJobInfo() } catch (e) { return null } })(),
     usage: (() => { try { return usageReport(loadConfig()) } catch (e) { return { ok: false, error: String(e && e.message || e) } } })(),
     llmRoute: (() => {
       try {
@@ -532,6 +535,11 @@ export async function apply(ctx, config = {}) {
           if (action === "profileList") {
             return sendJson(res, 200, { ok: true, group: body.group, stats: profile.stats(body.group), members: profile.listMembers(body.group) })
           }
+          if (action === "voiceStatus") {
+            const probe = await probeVoice(cfg)
+            globalThis.__qqrefineVoiceProbe = probe
+            return sendJson(res, 200, { ok: true, probe, last: lastJobInfo(), stt: { enabled: cfg.stt?.enabled === true, hasCommand: !!(cfg.stt?.command ?? "").trim(), timeoutMs: cfg.stt?.timeoutMs ?? 0 } })
+          }
           if (action === "assetsStatus") {
             const st = assetStatus(cfg)
             return sendJson(res, 200, { ok: true, ...st, progress: progressOf(), dataDir: DATA_DIR, pointer: dataPointer(), sttAuto: sttAutoCommand(cfg) })
@@ -620,6 +628,32 @@ export async function apply(ctx, config = {}) {
   // 4) 定时任务
   stopJobs = startJobs({ getConfig: loadConfig, getBot: () => botRef, diagRef: diag, logger, llmRef })
   ctx.effect?.(() => () => { try { stopJobs?.() } catch { /* ignore */ } }, 'qqbot-refine: jobs')
+  // 每日画像归纳（本地统计，0 token）：到点跑一次，同一天只跑一次
+  {
+    const daily = () => {
+      try {
+        const cfg = loadConfig()
+        const at = String(cfg?.profile?.dailyAt ?? '').trim()
+        const want = /^\d{1,2}:\d{2}$/.test(at) ? at : ''
+        if (!want) return
+        const now = new Date()
+        const hhmm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')
+        if (hhmm !== want) return
+        const day = now.toISOString().slice(0, 10)
+        if ((state['profile-daily'] ?? '') === day) return
+        state['profile-daily'] = day
+        let total = 0
+        for (const g2 of (cfg?.scope?.groups ?? [])) {
+          try { const r = profile.induce(String(g2), cfg); total += r.updated } catch { /* ignore */ }
+        }
+        audit('profile.daily', { updated: total })
+      } catch { /* ignore */ }
+    }
+    const t3 = setInterval(daily, 60 * 1000)
+    t3.unref?.()
+    ctx.effect?.(() => () => { clearInterval(t3) }, 'qqbot-refine: profile-daily')
+  }
+
   ctx.effect?.(() => () => {
     try { stopTransport() } catch { /* ignore */ }
     for (const t of timers) { try { clearTimeout(t); clearInterval(t) } catch { /* ignore */ } }
