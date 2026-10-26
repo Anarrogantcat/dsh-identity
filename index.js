@@ -199,9 +199,9 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.7.0',
+    version: '0.7.1',
     install: installInfo(),
-    stage: 'v0.7.0 · S1–S7',
+    stage: 'v0.7.1 · S1–S7',
     dshHome: STORE_DIR,
     configPath: CFG_PATH,
     configPathExists: existsSync(CFG_PATH),
@@ -533,7 +533,8 @@ export async function apply(ctx, config = {}) {
             return sendJson(res, 200, { ok: true, group: body.group, stats: profile.stats(body.group), members: profile.listMembers(body.group) })
           }
           if (action === "assetsStatus") {
-            return sendJson(res, 200, { ok: true, ...downloadsStats() })
+            const st = assetStatus(cfg)
+            return sendJson(res, 200, { ok: true, ...st, progress: progressOf(), dataDir: DATA_DIR, pointer: dataPointer(), sttAuto: sttAutoCommand(cfg) })
           }
           if (action === "downloadAsset") {
             const id = String(body.id ?? '')

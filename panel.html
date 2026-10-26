@@ -2167,6 +2167,40 @@ async function loadMatchesTable() {
 }
 
 // ── 页签卡片的事件绑定 ──
+function fmtMB(n) { return (Number(n || 0) / 1048576).toFixed(1) }
+function dlLine(pr) {
+  if (!pr) return ''
+  const got = fmtMB(pr.got || pr.bytes || 0)
+  const total = pr.total ? fmtMB(pr.total) : '?'
+  const pct = pr.total ? Math.min(100, Math.round(((pr.got || 0) / pr.total) * 100)) : (pr.pct || 0)
+  const sp = pr.speedBps ? (pr.speedBps / 1048576).toFixed(1) + ' MB/s' : ''
+  return got + ' / ' + total + ' MB · ' + pct + '%' + (sp ? ' · ' + sp : '')
+}
+
+function startAssetPoll() {
+  if (window.__assetTimer) { clearInterval(window.__assetTimer); window.__assetTimer = null }
+  const anyDown = Object.values((STATE.assets && STATE.assets.progress) || {}).some(function (x) { return x && x.ok === null && !x.doneAt })
+  if (!anyDown) return
+  window.__assetTimer = setInterval(async function () {
+    let j = null
+    try { j = await pfetch({ action: 'assetsStatus' }) } catch (e) { return }
+    if (!j || !j.ok) return
+    STATE.assets = j
+    const pr = j.progress || {}
+    let still = false
+    Object.keys(pr).forEach(function (id) {
+      const x = pr[id]
+      const line = document.querySelector('[data-aprog="' + id + '"]')
+      const bar = document.querySelector('[data-abar="' + id + '"]')
+      if (!x) return
+      if (x.ok === null && !x.doneAt) still = true
+      if (line) line.textContent = x.ok === null && !x.doneAt ? dlLine(x) : (x.ok ? '完成 ' + fmtMB(x.bytes) + ' MB' : ('失败：' + (x.error || '')))
+      if (bar) bar.style.width = (x.pct || 0) + '%'
+    })
+    if (!still) { clearInterval(window.__assetTimer); window.__assetTimer = null; try { load() } catch (e) {} }
+  }, 1000)
+}
+
 function assetsCardHtml() {
   const a = STATE.assets
   if (!a) return '<div class="pcard"><div class="label">语音资源</div><div class="hint">读不到资源状态</div></div>'
@@ -2176,8 +2210,13 @@ function assetsCardHtml() {
     let st = it.installed ? ("已下载 " + it.gotMB + "MB" + (it.looksComplete ? "" : "（可能不完整）")) : "未下载"
     if (pr && pr.ok === null && !pr.doneAt) st = "下载中…"
     if (pr && pr.ok === false) st = "失败：" + (pr.error || "")
+    const pct = pr ? (pr.pct || 0) : (it.installed ? 100 : 0)
+    const prog = (pr && pr.ok === null && !pr.doneAt)
+      ? '<div style="margin-top:4px"><div style="height:5px;background:#0d1320;border-radius:3px;overflow:hidden"><i data-abar="' + escapeHtml(it.id) + '" style="display:block;height:100%;width:' + pct + '%;background:#4d8dff"></i></div>' +
+        '<div class="hint" data-aprog="' + escapeHtml(it.id) + '" style="margin-top:2px">' + escapeHtml(dlLine(pr)) + '</div></div>'
+      : ''
     return '<div class="kcell"><span class="k">' + escapeHtml(it.name) + '</span>' +
-      '<span class="v">' + escapeHtml(st) + '<div class="hint" style="margin-top:2px">' + escapeHtml(it.note || "") +
+      '<span class="v">' + escapeHtml(st) + prog + '<div class="hint" style="margin-top:2px">' + escapeHtml(it.note || "") +
       ' · 约 ' + it.sizeMB + 'MB</div></span>' +
       '<span class="pbtns">' +
         (it.installed ? '<button data-adel="' + escapeHtml(it.id) + '">删除</button>'
@@ -2210,7 +2249,7 @@ function bindAssetsCard() {
     b.onclick = async function () {
       const id = b.getAttribute("data-adl")
       b.disabled = true
-      say("已开始下载（大文件，放后台跑；点「刷新状态」看进度）")
+      say("已开始下载…")
       try {
         const j = await fetch("/api/qqbot-refine/action", {
           method: "POST", headers: { "content-type": "application/json" },
@@ -2219,7 +2258,7 @@ function bindAssetsCard() {
         const r = await j.json()
         if (!r.ok) say("启动失败：" + (r.error || ""))
       } catch (e) { say("启动失败：" + e.message) }
-      setTimeout(function () { load() }, 1500)
+      setTimeout(function () { load(); try { startAssetPoll() } catch (e) {} }, 1200)
     }
   })
   ;[...document.querySelectorAll("[data-adel]")].forEach(function (b) {
