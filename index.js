@@ -201,9 +201,9 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.8.1',
+    version: '0.8.2',
     install: installInfo(),
-    stage: 'v0.8.1 · S1–S7',
+    stage: 'v0.8.2 · S1–S7',
     dshHome: STORE_DIR,
     configPath: CFG_PATH,
     configPathExists: existsSync(CFG_PATH),
@@ -243,6 +243,7 @@ function snapshot() {
       } catch { return {} }
     })(),
     agentPresets: agentPresetList,
+    profileNotices: (() => { try { const g = (loadConfig()?.scope?.groups ?? [])[0]; const list = g ? profile.noticesOf(String(g)) : []; return { count: list.length, latest: list.length ? String(list[list.length - 1].text || '') : '' } } catch (e) { return { count: 0, latest: '' } } })(),
     esports: (() => { try { const c = esportsCache(); return { at: c.at || 0, source: c.source || '', count: c.count || 0, today: dayMatches().length, errors: (c.errors || []).slice(0, 3) } } catch (e) { return null } })(),
     mutedGroups: (() => { try { return Object.keys(state.muted ?? {}) } catch (e) { return [] } })(),
     voiceProbe: (() => { try { return (globalThis.__qqrefineVoiceProbe ?? null) } catch (e) { return null } })(),
@@ -573,6 +574,9 @@ export async function apply(ctx, config = {}) {
             if (!list.length) return sendJson(res, 200, { ok: false, error: "名册里还没有这个群的成员（先刷新名册）" })
             const r = profile.seedMembers(body.group, list, cfg)
             return sendJson(res, 200, { ok: true, ...r, members: profile.listMembers(body.group) })
+          }
+          if (action === "profileNoticesClear") {
+            return sendJson(res, 200, { ok: true, ...profile.clearNotices(body.group) })
           }
           if (action === "profileInduce") {
             const r = profile.induce(body.group, cfg)

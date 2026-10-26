@@ -550,6 +550,17 @@ function renderPanel(){
   }
 
   attachCogNav()
+  try {
+    if (VIEW === 'profile' && STATE.profileNotices && STATE.profileNotices.count) {
+      var pnb = document.createElement('div')
+      pnb.id = 'profileNoticeBar'
+      pnb.className = 'pcard'
+      pnb.innerHTML = '<div class="row" style="border-bottom:0;padding:0"><div class="meta"><div class="label">画像提示 <span class="badge">' + STATE.profileNotices.count + ' 条</span></div><div class="hint">' + escapeHtml(STATE.profileNotices.latest || '') + '</div></div><div class="ctl pbtns"><button id="profileNoticeClear">标记已读</button></div></div>'
+      el.insertBefore(pnb, el.firstChild)
+      var pnc = $('profileNoticeClear')
+      if (pnc) pnc.onclick = async function () { try { await pfetch({ action: 'profileNoticesClear', group: PGROUP }) } catch (e) {} ; await load(); loadProfile() }
+    }
+  } catch (e) {}
   bindFields(el)
   try { bindTabCards() } catch (e) {}
   const det = el.querySelector("details[data-advtab]")
