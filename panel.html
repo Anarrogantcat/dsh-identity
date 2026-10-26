@@ -396,6 +396,9 @@ function renderPanel(){
     try { el.insertAdjacentHTML("afterbegin", quickCardHtml()) } catch (e) {}
     try { el.insertAdjacentHTML("beforeend", safetyCardHtml()) } catch (e) {}
   }
+  if (ACTIVE === "voice") {
+    try { el.insertAdjacentHTML("afterbegin", assetsCardHtml()) } catch (e) {}
+  }
   if (ACTIVE === "mood") {
     try {
       el.insertAdjacentHTML("afterbegin", moodCardHtml())
@@ -1954,8 +1957,93 @@ async function loadMatchesTable() {
 }
 
 // ── 页签卡片的事件绑定 ──
+function assetsCardHtml() {
+  const a = STATE.assets
+  if (!a) return '<div class="pcard"><div class="label">语音资源</div><div class="hint">读不到资源状态</div></div>'
+  const ptr = a.pointer ? ("指针文件 → " + a.pointer) : "未设指针（用默认数据目录）"
+  const rows = (a.items || []).map(function (it) {
+    const pr = (a.progress || {})[it.id]
+    let st = it.installed ? ("已下载 " + it.gotMB + "MB" + (it.looksComplete ? "" : "（可能不完整）")) : "未下载"
+    if (pr && pr.ok === null && !pr.doneAt) st = "下载中…"
+    if (pr && pr.ok === false) st = "失败：" + (pr.error || "")
+    return '<div class="kcell"><span class="k">' + escapeHtml(it.name) + '</span>' +
+      '<span class="v">' + escapeHtml(st) + '<div class="hint" style="margin-top:2px">' + escapeHtml(it.note || "") +
+      ' · 约 ' + it.sizeMB + 'MB</div></span>' +
+      '<span class="pbtns">' +
+        (it.installed ? '<button data-adel="' + escapeHtml(it.id) + '">删除</button>'
+                      : '<button data-adl="' + escapeHtml(it.id) + '" class="primary">下载</button>') +
+      '</span></div>'
+  }).join("")
+  return '<div class="pcard" id="assetsCard">' +
+    '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta">' +
+      '<div class="label">语音资源（大文件，默认放数据目录）</div>' +
+      '<div class="hint">数据目录：' + escapeHtml(a.dataDir || "") + ' · ' + escapeHtml(ptr) + '</div>' +
+      '<div class="hint">下载目录：' + escapeHtml(a.root || "") + '</div>' +
+      (a.sttAuto ? '<div class="hint">自动命令：' + escapeHtml(a.sttAuto) + '</div>' : "") +
+    '</div><div class="ctl pbtns">' +
+      '<button id="assetsReload">刷新状态</button>' +
+      (a.sttAuto ? '<button id="assetsApplyStt">启用转写（写入 stt.command）</button>' : "") +
+    '</div></div>' +
+    '<div class="kgrid" style="grid-template-columns:1fr">' + (rows || '<div class="hint">清单为空</div>') + '</div>' +
+    '<div class="hint" style="margin-top:8px">装 whisper：下载模型 + 安装 whisper-cli（whisper.cpp 发布包）并把 whisper-cli 放进 PATH；' +
+    'ffmpeg 解压后把 bin 目录加进 PATH。语音转写只影响入站语音，不装也能正常聊天（会显示 [语音]）。</div>' +
+    '<div class="hint">C 盘放不下：把整个数据目录挪到别的盘 → 在项目里跑 <code>scripts/move-data.ps1 -Target D:\qqbot-data</code>，或只改「大文件下载目录」字段。</div>' +
+    '<div class="hint" id="assetsMsg" style="min-height:16px"></div>' +
+  '</div>'
+}
+
+function bindAssetsCard() {
+  const say = function (s) { const m = $("assetsMsg"); if (m) m.textContent = s }
+  const rl = $("assetsReload")
+  if (rl) rl.onclick = function () { say("重新读状态…"); load() }
+  ;[...document.querySelectorAll("[data-adl]")].forEach(function (b) {
+    b.onclick = async function () {
+      const id = b.getAttribute("data-adl")
+      b.disabled = true
+      say("已开始下载（大文件，放后台跑；点「刷新状态」看进度）")
+      try {
+        const j = await fetch("/api/qqbot-refine/action", {
+          method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "downloadAsset", id: id })
+        })
+        const r = await j.json()
+        if (!r.ok) say("启动失败：" + (r.error || ""))
+      } catch (e) { say("启动失败：" + e.message) }
+      setTimeout(function () { load() }, 1500)
+    }
+  })
+  ;[...document.querySelectorAll("[data-adel]")].forEach(function (b) {
+    b.onclick = async function () {
+      const id = b.getAttribute("data-adel")
+      if (!confirm("删掉已下载的这个资源？")) return
+      try {
+        const j = await fetch("/api/qqbot-refine/action", {
+          method: "POST", headers: { "content-type": "application/json" },
+          body: JSON.stringify({ action: "removeAsset", id: id })
+        })
+        const r = await j.json()
+        say(r.ok ? "已删除" : ("删除失败：" + (r.error || "")))
+        load()
+      } catch (e) { say("删除失败：" + e.message) }
+    }
+  })
+  const ap = $("assetsApplyStt")
+  if (ap) ap.onclick = async function () {
+    try {
+      const j = await fetch("/api/qqbot-refine/action", {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ action: "applySttCommand" })
+      })
+      const r = await j.json()
+      say(r.ok ? ("已写入 stt.command 并打开开关：" + r.command) : ("失败：" + (r.error || "")))
+      load()
+    } catch (e) { say("失败：" + e.message) }
+  }
+}
+
 function bindTabCards() {
   if (ACTIVE === "channel") bindTransportCard()
+  if (ACTIVE === "voice") bindAssetsCard()
   if (ACTIVE === "freq") {
     const b = $("topicsReload")
     if (b) b.onclick = async function () {

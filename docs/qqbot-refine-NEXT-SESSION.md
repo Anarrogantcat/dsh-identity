@@ -2,6 +2,13 @@
 
 > 目标：按《完整方案》把插件做完（NapCat 主线 / 单活切换 / **不依赖任何其他 DSH 插件** / 单群 / 体验优先）。
 
+## 0.0 版本 0.6.0（2026-10-26 22:1x）
+
+- 新增 `lib/downloads.js`：语音资源下载中心（whisper small 466MB / base 142MB / ffmpeg 80MB），面板「语音」页卡片可下载/删除/一键写 `stt.command`
+- 数据目录可整体挪盘：`QQBOT_REFINE_HOME` 环境变量 > 默认目录下 `.data-path` 指针 > 默认；`scripts/move-data.ps1` 一键搬
+- 大文件目录单独可配：`paths.downloadsDir`
+- 测试新增 `downloads-test.mjs`（20 例，含本地 HTTP 真下载）
+
 ## 0. 真机现状（2026-10-26 21:5x）
 
 - 通道 **已连上**：mode=onebot / connected=true / health=ok / 能力位 15/15，账号 690618714（鲸鱼娘）

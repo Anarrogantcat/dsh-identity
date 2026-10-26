@@ -19,6 +19,8 @@ import { refreshAll, refreshMembers, rosterStats, groupChoices, groupName, loadR
 import { loadState, state, newBind, getBind, clearBind } from './lib/state.js'
 import { createGate, startJobs } from './lib/gate.js'
 import { loadCognition, createHooks, cognitionText, consolidatePeers } from './lib/hooks.js'
+import { assetStatus, progressOf, downloadAsset, removeAsset, sttAutoCommand, downloadsStats } from './lib/downloads.js'
+import { dataPointer, STORE_DIR as DATA_DIR } from './lib/config.js'
 import { memoryCard, listMemory, forgetMemory, pinMemory, prunePeer, takePendingRecall, recall } from './lib/memory.js'
 import { personaFor, sessionIdOfContext, peerOfSession } from './lib/persona.js'
 import { readMood, moodToneOf, moodSummary, moodBlock } from './lib/mood.js'
@@ -181,9 +183,9 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.5.0',
+    version: '0.6.0',
     install: installInfo(),
-    stage: 'v0.5.0 · S1–S7',
+    stage: 'v0.6.0 · S1–S7',
     dshHome: STORE_DIR,
     configPath: CFG_PATH,
     configPathExists: existsSync(CFG_PATH),
@@ -192,6 +194,12 @@ function snapshot() {
     tabs: TABS,
     diag,
     sticker: sticker.stats(),
+    assets: (() => {
+      try {
+        const st = assetStatus(cfg)
+        return { ...st, progress: progressOf(), dataDir: DATA_DIR, pointer: dataPointer(), sttAuto: sttAutoCommand(cfg) }
+      } catch { return null }
+    })(),
     botSeen: !!botRef,
     learn: (() => { try { return learnStats() } catch { return [] } })(),
     learnDetail: (() => {
@@ -474,6 +482,26 @@ export async function apply(ctx, config = {}) {
           }
           if (action === "profileList") {
             return sendJson(res, 200, { ok: true, group: body.group, stats: profile.stats(body.group), members: profile.listMembers(body.group) })
+          }
+          if (action === "assetsStatus") {
+            return sendJson(res, 200, { ok: true, ...downloadsStats() })
+          }
+          if (action === "downloadAsset") {
+            const id = String(body.id ?? '')
+            void downloadAsset(id, cfg, logger).catch(() => {})
+            return sendJson(res, 200, { ok: true, started: true, id })
+          }
+          if (action === "removeAsset") {
+            return sendJson(res, 200, removeAsset(String(body.id ?? ''), cfg))
+          }
+          if (action === "applySttCommand") {
+            const cmdLine = sttAutoCommand(cfg)
+            if (!cmdLine) return sendJson(res, 200, { ok: false, error: "还没下载 whisper 模型" })
+            const nc = loadConfig()
+            nc.stt.command = cmdLine
+            nc.stt.enabled = true
+            saveConfig(nc)
+            return sendJson(res, 200, { ok: true, command: cmdLine })
           }
           if (action === "profileSeed") {
             const roster = loadRoster()
