@@ -1133,6 +1133,7 @@ function renderProfilePanel() {
       </div>
       <div class="row"><div class="meta"><div class="label">统计</div>
         <div class="hint">成员 ${st.total ?? 0} · 达标 ${st.active ?? 0} · 已屏蔽 ${st.sealed ?? 0} · 累计发言 ${st.msgs ?? 0}<br>「达标」= 单个成员发言 &ge; ${(STATE.config && STATE.config.profile && STATE.config.profile.minMsgs7d) || 20} 条才会归纳特质；刚重建的画像只有身份（群名片/角色），统计从 0 开始，群里聊几句就有了。</div></div>
+    <div class="hint" style="margin-top:2px">语义归纳用的模型：${((STATE.llmRoute && STATE.llmRoute.profile && STATE.llmRoute.profile.provider) ? ((STATE.llmRoute.profile.source === "config" ? "配置指定 " : "宿主默认 ") + STATE.llmRoute.profile.provider + " / " + STATE.llmRoute.profile.model) : "未找到（填 profile.llmProvider / llmModel 或检查宿主默认模型）")}</div>
         <div class="ctl pbtns"><button id="pinduce">本地归纳</button><button id="pllm">语义归纳（模型）</button><button id="pclear">清空本群画像</button></div>
       </div>
       <div class="hint" id="pmsg2"></div>
@@ -1154,7 +1155,7 @@ function renderProfilePanel() {
   const pllm = $("pllm")
   if (pllm) pllm.onclick = async () => {
     const cfgp = (STATE.config.profile || {})
-    if (!cfgp.llmProvider || !cfgp.llmModel) { $("pmsg2").textContent = "语义归纳（花 token）要先填 profile.llmProvider / llmModel（画像栏「更多设置」）；只想 0 token 就点「本地归纳」"; return }
+    if (!cfgp.llmProvider || !cfgp.llmModel) { const r0 = (STATE.llmRoute && STATE.llmRoute.profile) || {}; const who = (r0.provider && r0.model) ? (r0.provider + " / " + r0.model + "（宿主默认）") : "（没找到宿主默认模型，填一下 provider/model）"; $("pmsg2").textContent = "用 " + who + " 归纳中…"; if (!r0.provider) return }
     $("pmsg2").textContent = "调用模型归纳中…"
     const j = await pfetch({ action: "profileInduceLlm", group: PGROUP })
     $("pmsg2").textContent = j.ok ? `模型归纳完成：${j.updated} 人` : ("失败：" + (j.error || ""))

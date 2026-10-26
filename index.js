@@ -20,6 +20,7 @@ import { loadState, state, newBind, getBind, clearBind } from './lib/state.js'
 import { createGate, startJobs } from './lib/gate.js'
 import { loadCognition, createHooks, cognitionText, consolidatePeers } from './lib/hooks.js'
 import { assetStatus, progressOf, downloadAsset, removeAsset, sttAutoCommand, downloadsStats } from './lib/downloads.js'
+import { resolveRoute, withRoute } from './lib/llmroute.js'
 import { dataPointer, STORE_DIR as DATA_DIR } from './lib/config.js'
 import { memoryCard, listMemory, forgetMemory, pinMemory, prunePeer, takePendingRecall, recall } from './lib/memory.js'
 import { personaFor, sessionIdOfContext, peerOfSession } from './lib/persona.js'
@@ -53,6 +54,8 @@ let botRef = null
 let llmRef = null
 let stopJobs = null
 let modsRef = null
+/** 宿主的 agentDefaultModel 服务（拿「默认用哪个模型」） */
+let defaultModelSvc = null
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 
@@ -224,6 +227,14 @@ function snapshot() {
         return map
       } catch { return {} }
     })(),
+    llmRoute: (() => {
+      try {
+        const cfg0 = loadConfig()
+        const prof = resolveRoute(defaultModelSvc, cfg0.profile?.llmProvider, cfg0.profile?.llmModel)
+        const mood = resolveRoute(defaultModelSvc, cfg0.integration?.llmProvider, cfg0.integration?.llmModel)
+        return { profile: prof, mood }
+      } catch { return null }
+    })(),
     safety: (() => {
       try {
         const m = modsRef?.safety
@@ -287,6 +298,16 @@ export async function apply(ctx, config = {}) {
   // 认知 / 安全模块（可选；缺了插件照常跑）
   const mods = await loadCognition(logger)
   modsRef = mods
+  try { defaultModelSvc = ctx.get?.('agentDefaultModel') ?? null } catch { defaultModelSvc = null }
+
+  /** 配置里没写模型就用宿主默认；返回配置副本（不落盘） */
+  const withLlmRoute = (c, section) => {
+    try {
+      const cur = c?.[section] ?? {}
+      const route = resolveRoute(defaultModelSvc, cur.llmProvider, cur.llmModel)
+      return withRoute(c, section, route)
+    } catch { return c }
+  }
   const hooks = createHooks({ mods, getConfig: loadConfig, logger, saveConfig })
 
   const gate = createGate({
@@ -296,6 +317,7 @@ export async function apply(ctx, config = {}) {
     diagRef: diag,
     onBot: (bot) => { botRef = bot },
     getClient: () => { try { return getOneBotClient(loadConfig()) } catch { return null } },
+    resolveLlm: (c) => withLlmRoute(c, 'integration'),
     logger,
   })
 
@@ -515,7 +537,8 @@ export async function apply(ctx, config = {}) {
             return sendJson(res, 200, { ok: true, ...r, members: profile.listMembers(body.group) })
           }
           if (action === "profileInduceLlm") {
-            const r = await profile.induceLlm(body.group, cfg, llmRef)
+            const routed = withLlmRoute(cfg, 'profile')
+            const r = await profile.induceLlm(body.group, routed, llmRef)
             return sendJson(res, 200, { ...r, members: profile.listMembers(body.group) })
           }
           if (action === "profileDelete") {
