@@ -13,6 +13,9 @@ import { fileURLToPath } from 'node:url'
 import { DEFAULTS, FIELDS, TABS, FIELD_MAP, CFG_PATH, STORE_DIR, loadConfig, saveConfig, ensureStore, clone, coerce, setAt } from './lib/config.js'
 import { ensureDirs, readJson, writeJson, dirs, peerKey, audit } from './lib/store.js'
 import { diag, loadQQBot, installHooks } from './lib/diag.js'
+import { startTransport, stopTransport, transportDescribe, getOneBotClient } from './lib/transport.js'
+import { capabilitySummary } from './lib/capabilities.js'
+import { refreshAll, refreshMembers, rosterStats, groupChoices, groupName } from './lib/roster.js'
 import { loadState, state, newBind, getBind, clearBind } from './lib/state.js'
 import { createGate, startJobs } from './lib/gate.js'
 import { memoryCard, listMemory, forgetMemory, pinMemory, prunePeer, takePendingRecall, recall } from './lib/memory.js'
@@ -150,11 +153,32 @@ ${rules.map((r, i) => `${i + 1}. ${r}`).join('\n')}`
     return ''
   }
 }
+/** 自检：插件是不是从 node_modules 正常加载（而不是躺在 .ignored 里） */
+function installInfo() {
+  try {
+    const here = fileURLToPath(import.meta.url)
+    const inIgnored = /\\node_modules\\\.ignored\\/.test(here)
+    const viaNodeModules = /\\node_modules\\dsh-qqbot-refine\\/.test(here)
+    return {
+      path: here,
+      inIgnored,
+      viaNodeModules,
+      ok: !inIgnored,
+      note: inIgnored
+        ? '插件被包管理器隔离（.ignored）：检查 profile 的 package.json 是否声明了 file: 依赖'
+        : viaNodeModules
+          ? '已通过 node_modules 链接加载'
+          : '从非标准路径加载（可能是直接引用源码目录）',
+    }
+  } catch { return { ok: true, path: '', inIgnored: false, viaNodeModules: false, note: '自检失败（已放行）' } }
+}
+
 function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.2.0',
+    version: '0.3.0',
+    install: installInfo(),
     stage: 'M1–M9（核心）',
     dshHome: STORE_DIR,
     configPath: CFG_PATH,
@@ -177,6 +201,17 @@ function snapshot() {
     })(),
     moodLlm: (() => { try { return llmStats() } catch { return null } })(),
     kb: (() => { try { return kbStats() } catch { return null } })(),
+    transport: (() => { try { return transportDescribe() } catch { return null } })(),
+    capabilities: (() => { try { return capabilitySummary(cfg) } catch { return null } })(),
+    roster: (() => { try { return rosterStats() } catch { return null } })(),
+    groupChoices: (() => { try { return groupChoices() } catch { return [] } })(),
+    groupNames: (() => {
+      try {
+        const map = {}
+        for (const g of cfg.scope?.groups ?? []) map[g] = groupName(g)
+        return map
+      } catch { return {} }
+    })(),
     topics: (() => { try { return topicStats() } catch { return [] } })(),
     matches: (() => { try { return matchStats() } catch { return null } })(),
     mood: (() => {
@@ -231,12 +266,32 @@ export async function apply(ctx, config = {}) {
     logger,
   })
 
-  // 1) 钩子（失败降级放行）
-  const loaded = await loadQQBot()
-  if (loaded.error) {
-    logger.warn?.(`[qqbot-refine] SDK 未定位：${loaded.error}`)
-  } else {
-    await installHooks(gate, logger)
+  /** 定时器集合（启动时用于登记、卸载时统一清理） */
+  const timers = []
+
+  // 1) 通道（单活：tencent 或 onebot；失败降级放行）
+  try {
+    const tr = await startTransport(gate, logger)
+    logger.info?.(`[qqbot-refine] 通道模式=${tr.mode} 钩子=${tr.hooked ? '已挂' : '未挂'}`)
+    const caps = capabilitySummary(loadConfig())
+    logger.info?.(`[capability] mode=${caps.mode} 可用 ${caps.available.length}/${caps.total}` + (caps.missing.length ? ` · 缺失：${caps.missingLabels.join('/')}` : ''))
+    if (tr.mode === 'onebot') {
+      const cfg0 = loadConfig()
+      const client = getOneBotClient(cfg0)
+      if (client) {
+        const tick = async () => {
+          try { await refreshAll(client, loadConfig()) } catch { /* ignore */ }
+          const gs = loadConfig().scope?.groups ?? []
+          for (const g of gs) { try { await refreshMembers(client, g, loadConfig()) } catch { /* ignore */ } }
+        }
+        const t1 = setTimeout(tick, 30 * 1000); t1.unref?.()
+        const hours = Math.max(1, Number(cfg0.transport?.rosterRefreshHours ?? 6))
+        const t2 = setInterval(tick, hours * 3600 * 1000); t2.unref?.()
+        timers.push(t1, t2)
+      }
+    }
+  } catch (err) {
+    logger.warn?.('[qqbot-refine] 通道启动失败：' + (err?.message ?? err))
   }
 
   // 2) 系统提示：人格 + 记忆
@@ -445,6 +500,10 @@ export async function apply(ctx, config = {}) {
   // 4) 定时任务
   stopJobs = startJobs({ getConfig: loadConfig, getBot: () => botRef, diagRef: diag, logger, llmRef })
   ctx.effect?.(() => () => { try { stopJobs?.() } catch { /* ignore */ } }, 'qqbot-refine: jobs')
+  ctx.effect?.(() => () => {
+    try { stopTransport() } catch { /* ignore */ }
+    for (const t of timers) { try { clearTimeout(t); clearInterval(t) } catch { /* ignore */ } }
+  }, 'qqbot-refine: transport')
 
   logger.info?.(`[qqbot-refine] 已启动：SDK=${diag.sdkVersion ?? '?'} 入站钩子=${diag.patch.inbound} 出站钩子=${diag.patch.outbound}`)
 }

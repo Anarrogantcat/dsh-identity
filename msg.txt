@@ -1,7 +1,0 @@
-refactor(topic): trust only the schedule DB, never chat inference
-
-- drop chat-derived match detection as a source of truth (cross-talk / nicknames made it wrong)
-- identify a match only when team names match a record in matches.json
-- player nicknames (Kanavi/TheShy/Zeus/369...) are explicitly not teams
-- prompt block now says: no record -> ask which match, do not decide for the group
-- tests: topic-db-test.mjs
