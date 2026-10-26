@@ -455,6 +455,15 @@ function fieldRow(f, tabLabel) {
   if (f.t === "bool") ctl = `<label class="switch"><input type="checkbox" data-k="${f.k}" ${v ? "checked" : ""}><i></i></label>`
   else if (f.t === "num") ctl = `<input type="number" data-k="${f.k}" value="${v ?? ""}" step="${f.step || 1}" min="${f.min ?? ""}" max="${f.max ?? ""}">`
   else if (f.t === "list") ctl = `<textarea data-k="${f.k}" spellcheck="false">${(Array.isArray(v) ? v.join("\n") : (v ?? ""))}</textarea>`
+  else if (f.t === "select" && Array.isArray(f.options)) {
+    const cur = v == null ? "" : String(v)
+    const opts = f.options.map((o) => (typeof o === "string" ? { v: o, l: o } : o))
+    const known = opts.some((o) => String(o.v) === cur)
+    ctl = '<select data-k="' + f.k + '">' + opts.map((o) =>
+      '<option value="' + escapeHtml(String(o.v)) + '"' + (String(o.v) === cur ? " selected" : "") + '>' + escapeHtml(String(o.l || o.v)) + '</option>').join("") +
+      (known ? "" : '<option value="' + escapeHtml(cur) + '" selected>' + escapeHtml(cur || "（空）") + '</option>') +
+      '</select>'
+  }
   else ctl = `<input type="text" data-k="${f.k}" value="${(v ?? "").toString().replace(/"/g, "&quot;")}">`
   return `<div class="row"><div class="meta"><div class="label">${f.l}${tabLabel ? ` <span class="badge">${tabLabel}</span>` : ""}</div>${f.hint ? `<div class="hint">${f.hint}</div>` : ""}</div><div class="ctl">${ctl}</div></div>`
 }
@@ -1208,7 +1217,7 @@ function bindFields(root) {
     const f = (STATE.fields || []).find(function (x) { return x.k === k }) ||
       EXTRA_FIELDS.find(function (x) { return x.k === k })
     if (!f) return
-    const ev = (f.t === "bool" || f.t === "list" || f.t === "text") ? "change" : "input"
+    const ev = (f.t === "bool" || f.t === "list" || f.t === "text" || f.t === "select") ? "change" : "input"
     input.addEventListener(ev, function () {
       let val
       if (f.t === "bool") val = input.type === "checkbox" ? !!input.checked : input.value === "true"
