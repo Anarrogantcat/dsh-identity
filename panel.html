@@ -1354,7 +1354,10 @@ function renderProfilePanel() {
     <div class="prow">
       <div class="grow">
         <div class="label">${escapeHtml(m.nick || ("成员 " + (i + 1)))}${m.uid ? '<span class="hint" style="margin-left:6px">' + escapeHtml(String(m.uid)) + "</span>" : ""}${m.role === "owner" ? ' <span class="badge cur">群主</span>' : m.role === "admin" ? ' <span class="badge">管理</span>' : ""}${m.sealed ? '<span class="badge">已屏蔽</span>' : ""}</div>
-        <div class="hint">发言 ${m.msgs} · 均长 ${m.avgLen} 字 · ${(m.traits || []).join("、") || "未归纳"}
+        <div class="hint">发言 ${m.msgs} 条${m.chars ? " · " + m.chars + " 字" : ""} · 均长 ${m.avgLen} 字${(m.topWords || []).length ? " · 常聊 " + m.topWords.join("/") : ""}</div>
+        <div style="margin-top:3px">${(m.tags || []).length ? (m.tags || []).map((t) => `<span class="badge">${escapeHtml(t.text)} ${Math.round((t.conf || 0) * 100)}%</span>`).join(" ") : '<span class="hint">未归纳（点「本地归纳」）</span>'}</div>
+        ${(m.interests && Object.keys(m.interests).length) ? `<div class="hint" style="margin-top:2px">兴趣：${Object.entries(m.interests).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => k + " " + v).join(" · ")}</div>` : ""}
+        ${(m.attitude && (m.attitude.ask || m.attitude.praise || m.attitude.tease)) ? `<div class="hint" style="margin-top:2px">对她：找 ${m.attitude.ask || 0} · 夸 ${m.attitude.praise || 0} · 逗 ${m.attitude.tease || 0}</div>` : ""}
           ${(m.topWords || []).length ? " · 常聊 " + m.topWords.join("/") : ""}</div>
       </div>
       <div class="pbtns">
@@ -2111,6 +2114,44 @@ async function renderKbPanel() {
 }
 
 // ── 赛程页 ──
+function esportsCardHtml() {
+  const e = STATE.esports || {}
+  const at = e.at ? new Date(e.at).toLocaleString() : '还没同步'
+  const err = (e.errors || [])[0] || ''
+  return '<div class="pcard" id="esportsCard">' +
+    '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta">' +
+      '<div class="label">自动赛程（官方 lolesports API）</div>' +
+      '<div class="hint">来源 <b>' + escapeHtml(e.source || '—') + '</b> · 上次同步 ' + escapeHtml(at) + ' · 库里今天 ' + (e.today == null ? '—' : e.today) + ' 场</div>' +
+      (err ? '<div class="hint" style="color:#ffb0b0">' + escapeHtml(err) + '</div>' : '') +
+    '</div><div class="ctl pbtns"><button id="esportsSync" class="primary">立即同步</button>' +
+      '<button id="esportsToday">看今天</button></div></div>' +
+    '<div class="hint" id="esportsMsg" style="min-height:16px"></div>' +
+  '</div>'
+}
+
+function bindEsportsCard() {
+  const say = function (s) { const m = $('esportsMsg'); if (m) m.textContent = s }
+  const b = $('esportsSync')
+  if (b) b.onclick = async function () {
+    b.disabled = true; say('正在拉官方赛程…')
+    try {
+      const j = await pfetch({ action: 'esportsSync' })
+      say(j && j.ok ? ('同步完成：' + (j.result.source || '') + ' 拉到 ' + j.result.got + ' 场，保留 ' + j.result.kept + ' 场') : ('失败：' + ((j && j.error) || '')))
+      await load()
+    } catch (e) { say('失败：' + e.message) } finally { b.disabled = false }
+  }
+  const t = $('esportsToday')
+  if (t) t.onclick = function () {
+    const d = (STATE.esports && STATE.esports.todayDate) || ''
+    loadMatchesTable()
+    say('（今天的比赛在下面列表里，带「今天」标记）')
+  }
+  if (!window.__esportsPoll) {
+    window.__esportsPoll = true
+    const any = STATE.esports && STATE.esports.at
+    if (!any) setTimeout(async function () { try { const j = await pfetch({ action: 'esportsSync' }); if (j && j.ok) await load() } catch (e) {} }, 3000)
+  }
+}
 async function renderMatchesPanel() {
   const el = $("panel")
   try {
@@ -2123,6 +2164,7 @@ async function renderMatchesPanel() {
       ? ("最近：" + String(st.latest.date || "") + " " + String(st.latest.team1 || "") + " vs " + String(st.latest.team2 || ""))
       : "还没有记录"
     el.innerHTML =
+      esportsCardHtml() +
       '<div class="pcard">' +
         '<div class="label" style="margin-bottom:6px">赛程速查</div>' +
         '<div class="hint">已录 ' + (st.total == null ? "—" : st.total) + ' 场 · 涉及战队 ' + (st.teams == null ? "—" : st.teams) + ' · ' + escapeHtml(latest) + '</div>' +
@@ -2206,6 +2248,7 @@ async function renderMatchesPanel() {
         if (box) box.innerHTML = '<div class="hint" style="color:#ff6b6b">查询失败：' + escapeHtml(e.message) + '</div>'
       }
     }
+    try { bindEsportsCard() } catch (e) {}
     await loadMatchesTable()
   } catch (e) {
     el.innerHTML = '<div class="pcard"><div class="hint" style="color:#ff6b6b">赛程页渲染失败：' + escapeHtml(e.message) + '</div></div>'

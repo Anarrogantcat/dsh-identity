@@ -1,0 +1,29 @@
+process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-esports3';
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+const HOME = process.env.DSH_HOME;
+try { rmSync(HOME, { recursive: true, force: true }) } catch {}
+mkdirSync(HOME + "/profiles/desktop", { recursive: true });
+writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy\n", "utf8");
+const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const { ensureDirs } = await import(base + "lib/store.js");
+ensureDirs();
+const E = await import(base + "lib/esports.js");
+const ok = []; const T = (n, c, e) => ok.push([n, !!c, e]);
+const ev = { type: 'match', startTime: '2026-10-26T17:00:00Z', state: 'completed', blockName: '瑞士轮', league: { name: 'Worlds' }, match: { teams: [ { code: 'T1', result: { outcome: 'loss', gameWins: 1 } }, { code: 'CFO', result: { outcome: 'win', gameWins: 2 } } ], strategy: { type: 'bestOf' } } };
+const r = E.normalizeLolesportsEvent(ev);
+T("UTC 17:00 → 北京时间次日 01:00", r.date === "2026-10-27" && r.time === "01:00", r);
+T("比分与胜者正确", r.score === "1:2" && r.winner === "CFO", r);
+T("联赛与轮次带出来", r.league === "Worlds" && r.note === "瑞士轮", r);
+T("非 match 事件被忽略", E.normalizeLolesportsEvent({ type: "show", match: null }) === null);
+const noScore = E.normalizeLolesportsEvent({ type: 'match', startTime: '2026-10-28T20:00:00Z', state: 'unstarted', blockName: '八强', league: { name: 'Worlds' }, match: { teams: [{ code: 'TBD' }, { code: 'TBD' }] } });
+T("未开赛：没有比分也不炸", noScore.score === "" && noScore.winner === "", noScore);
+E.addMatch({ date: '2026-10-27', league: 'Worlds', team1: 'T1', team2: 'CFO', score: '1:2', winner: 'CFO', note: '瑞士轮 01:00', source: 'lolesports' });
+T("按日期能取到当天赛程", E.dayMatches("2026-10-27").length === 1, E.dayMatches("2026-10-27"));
+E.addMatch({ date: '2026-10-27', league: 'Worlds', team1: 'T1', team2: 'CFO', score: '2:2', winner: 'T1', note: '瑞士轮 01:00', source: 'lolesports' });
+T("同一天同一对阵覆盖而不是重复", E.dayMatches("2026-10-27").length === 1 && E.dayMatches("2026-10-27")[0].score === "2:2", E.dayMatches("2026-10-27"));
+T("缓存默认结构可用", typeof E.loadCache().count === "number");
+console.log("=== 自动赛程 测试 ===");
+let fail = 0;
+for (const [n, pass, e] of ok) { console.log((pass ? "OK  " : "FAIL ") + n + (pass ? "" : "   " + JSON.stringify(e))); if (!pass) fail++; }
+console.log(fail ? ("失败 " + fail) : ("全部通过 " + ok.length + "/" + ok.length));
+process.exit(fail ? 1 : 0);

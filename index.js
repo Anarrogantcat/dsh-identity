@@ -22,6 +22,7 @@ import { loadCognition, createHooks, cognitionText, consolidatePeers } from './l
 import { probeService as probeVoice, lastJobInfo } from './lib/voice.js'
 import { assetStatus, progressOf, downloadAsset, removeAsset, sttAutoCommand, downloadsStats } from './lib/downloads.js'
 import { usageReport } from './lib/usage.js'
+import { syncFromApi as syncEsports, loadCache as esportsCache, dayMatches } from './lib/esports.js'
 import { resolveRoute, withRoute } from './lib/llmroute.js'
 import { dataPointer, STORE_DIR as DATA_DIR } from './lib/config.js'
 import { memoryCard, listMemory, forgetMemory, pinMemory, prunePeer, takePendingRecall, recall } from './lib/memory.js'
@@ -200,9 +201,9 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.7.8',
+    version: '0.8.1',
     install: installInfo(),
-    stage: 'v0.7.8 · S1–S7',
+    stage: 'v0.8.1 · S1–S7',
     dshHome: STORE_DIR,
     configPath: CFG_PATH,
     configPathExists: existsSync(CFG_PATH),
@@ -242,6 +243,7 @@ function snapshot() {
       } catch { return {} }
     })(),
     agentPresets: agentPresetList,
+    esports: (() => { try { const c = esportsCache(); return { at: c.at || 0, source: c.source || '', count: c.count || 0, today: dayMatches().length, errors: (c.errors || []).slice(0, 3) } } catch (e) { return null } })(),
     mutedGroups: (() => { try { return Object.keys(state.muted ?? {}) } catch (e) { return [] } })(),
     voiceProbe: (() => { try { return (globalThis.__qqrefineVoiceProbe ?? null) } catch (e) { return null } })(),
     voiceLast: (() => { try { return lastJobInfo() } catch (e) { return null } })(),
@@ -535,6 +537,10 @@ export async function apply(ctx, config = {}) {
           if (action === "profileList") {
             return sendJson(res, 200, { ok: true, group: body.group, stats: profile.stats(body.group), members: profile.listMembers(body.group) })
           }
+          if (action === "esportsSync") {
+            const r = await syncEsports(cfg, logger)
+            return sendJson(res, 200, { ok: !!r.ok, result: { got: r.got || 0, kept: r.kept || 0, added: r.added || 0, source: r.source || "", errors: r.errors || [] }, error: r.ok ? "" : r.error })
+          }
           if (action === "voiceStatus") {
             const probe = await probeVoice(cfg)
             globalThis.__qqrefineVoiceProbe = probe
@@ -573,6 +579,7 @@ export async function apply(ctx, config = {}) {
             return sendJson(res, 200, { ok: true, ...r, members: profile.listMembers(body.group) })
           }
           if (action === "profileInduceLlm") {
+            if (!llmRef?.stream) return sendJson(res, 200, { ok: false, error: "宿主没有可用的 llm 服务（llmRef 为空）；先用「本地归纳」，或重启 DSH 再试" })
             const routed = withLlmRoute(cfg, 'profile')
             const r = await profile.induceLlm(body.group, routed, llmRef)
             return sendJson(res, 200, { ...r, members: profile.listMembers(body.group) })
@@ -652,6 +659,23 @@ export async function apply(ctx, config = {}) {
     const t3 = setInterval(daily, 60 * 1000)
     t3.unref?.()
     ctx.effect?.(() => () => { clearInterval(t3) }, 'qqbot-refine: profile-daily')
+  // 赛事赛程自动同步：每小时检查一次，按 esports.refreshHours 决定要不要真拉
+  {
+    const tick4 = () => {
+      try {
+        const cfg = loadConfig()
+        if (cfg?.esports?.enabled !== true) return
+        const hours = Math.max(1, Number(cfg?.esports?.refreshHours ?? 6))
+        const last = Number(esportsCache()?.at ?? 0)
+        if (last && Date.now() - last < hours * 3600 * 1000) return
+        syncEsports(cfg, logger).catch(() => {})
+      } catch { /* ignore */ }
+    }
+    const t4 = setInterval(tick4, 60 * 60 * 1000)
+    t4.unref?.()
+    setTimeout(tick4, 20 * 1000).unref?.()
+    ctx.effect?.(() => () => { clearInterval(t4) }, 'qqbot-refine: esports-tick')
+  }
   }
 
   ctx.effect?.(() => () => {
