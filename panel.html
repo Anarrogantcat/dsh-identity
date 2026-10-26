@@ -284,7 +284,8 @@ function renderTopbar() {
 }
 
 function renderTabs(){
-  $('tabs').innerHTML = STATE.tabs.map(([k,name])=>
+  const HIDDEN_TABS = new Set(COG_SUB_TABS.map((x) => x[0]))
+  $('tabs').innerHTML = STATE.tabs.filter(([k]) => !HIDDEN_TABS.has(k)).map(([k,name])=>
     `<button class="tab ${k===ACTIVE?'active':''}" data-tab="${k}">${name}</button>`).join('')
   ;[...document.querySelectorAll('.tab')].forEach(b=>b.onclick=()=>{
     ACTIVE=b.dataset.tab
@@ -359,13 +360,50 @@ function moodCardHtml(){
     '<div class="hint" id="moodmsg" style="min-height:16px;margin-top:4px"></div>' +
   '</div>'
 }
+function attachCogNav() {
+  if (ACTIVE !== "cognition") return
+  try {
+    const el = $("panel")
+    el.insertAdjacentHTML("afterbegin", cogNavHtml())
+    const cur = COG_SUB_TABS.find((x) => x[0] === COGSUB)
+    const nom = $("cogname"); if (nom) nom.textContent = cur ? cur[1] : ""
+    ;[...el.querySelectorAll("[data-cog]")].forEach((b) => { b.onclick = () => { COGSUB = b.dataset.cog; try { localStorage.setItem("qqrefine:cogsub", COGSUB) } catch {} ; renderPanel(); try { window.scrollTo(0, 0) } catch {} } })
+  } catch (e) {}
+}
+
+function cogRelationsHtml() {
+  const c = STATE.cognition || {}
+  const r = c.relations || {}
+  const d = c.digest || {}
+  const s = c.self || {}
+  const cell = (k, v) => '<div class="kcell"><span class="k">' + k + '</span><span class="v">' + v + '</span></div>'
+  return '<div class="pcard"><div class="label">关系图</div>' +
+    '<div class="kgrid">' + cell('聊过的人', r.people || 0) + cell('会话数', r.peers || 0) + cell('互动次数', r.interactions || 0) + cell('最近更新', r.lastAt ? new Date(r.lastAt).toLocaleString() : '—') + '</div>' +
+    '<div class="hint">谁和谁熟、谁常跟谁说话。纯本地统计，0 token。</div></div>' +
+    '<div class="pcard"><div class="label">离线摘要</div>' +
+    '<div class="kgrid">' + cell('会话', d.peers || 0) + cell('摘要条数', d.items || 0) + cell('最近更新', d.lastAt ? new Date(d.lastAt).toLocaleString() : '—') + '</div>' +
+    '<div class="hint">攒够消息后压缩成几句，注入时只带摘要，不带全文。</div></div>' +
+    '<div class="pcard"><div class="label">自我卡</div>' +
+    '<div class="kgrid">' + cell('条目', s.items || 0) + cell('最近更新', s.lastAt ? new Date(s.lastAt).toLocaleString() : '—') + '</div>' +
+    '<div class="hint">她对自己的认知（自称、偏好、常做的事），会随聊天慢慢长。</div></div>' +
+    '<div class="pcard"><div class="hint">这些数据是聊天时顺便积累的，没有「立刻刷新」——群里聊几句再回来看。</div></div>'
+}
+
+function cogNavHtml() {
+  const tabs = COG_SUB_TABS.map((x) => '<button class="tab ' + (x[0] === COGSUB ? 'active' : '') + '" data-cog="' + x[0] + '">' + x[1] + '</button>').join('')
+  return '<div class="pcard"><div class="tabs">' + tabs + '</div>' +
+    '<div class="hint">认知相关都收在这：心情（语气）、画像（谁是谁）、记忆（长期记得的事）、知识库（文档片段）。当前：<b id="cogname"></b></div></div>'
+}
+
 function renderPanel(){
   // §clear§ 每次渲染前先清空，避免自定义页用 append 时越切越长
   try { const _el = $("panel"); if (_el) _el.innerHTML = "" } catch {}
+  const VIEW = ACTIVE === "cognition" ? COGSUB : ACTIVE
+  if (VIEW === "profile") { renderProfilePanel(); attachCogNav(); return }
+  if (VIEW === "knowledge") { renderKbPanel(); attachCogNav(); return }
+  if (VIEW === "relations") { $("panel").innerHTML = cogRelationsHtml(); attachCogNav(); return }
   if (ACTIVE === "persona") { renderPersonaPanel(); return }
-  if (ACTIVE === "profile") { renderProfilePanel(); return }
   if (ACTIVE === "scope") { renderScopeClaim(); return }
-  if (ACTIVE === "knowledge") { renderKbPanel(); return }
   if (ACTIVE === "matches") { renderMatchesPanel(); return }
 
   const el = $("panel")
@@ -373,7 +411,7 @@ function renderPanel(){
   const allFields = (STATE.fields || []).filter((f) => !SKIP_KEYS.has(f.k))
   const fields = q
     ? allFields.filter((f) => (f.l + " " + f.k + " " + (f.hint || "")).toLowerCase().includes(q))
-    : allFields.filter((f) => f.tab === ACTIVE)
+    : allFields.filter((f) => f.tab === VIEW)
 
   if (q && fields.length === 0) {
     el.innerHTML = '<div class="pcard"><div class="hint">没有匹配「' + q + '」的设置项</div></div>'
@@ -405,17 +443,17 @@ function renderPanel(){
     try { el.insertAdjacentHTML("afterbegin", transportCardHtml()) } catch (e) {}
     try { el.insertAdjacentHTML("beforeend", presetPickerHtml()) } catch (e) {}
   }
-  if (ACTIVE === "freq") {
+  if (VIEW === "freq") {
     try { el.insertAdjacentHTML("beforeend", topicsCardHtml()) } catch (e) {}
   }
-  if (ACTIVE === "usage") {
+  if (VIEW === "usage") {
     try { el.insertAdjacentHTML("afterbegin", usageCardHtml()) } catch (e) {}
     try { el.insertAdjacentHTML("beforeend", safetyCardHtml()) } catch (e) {}
   }
-  if (ACTIVE === "voice") {
+  if (VIEW === "voice") {
     try { el.insertAdjacentHTML("afterbegin", assetsCardHtml()) } catch (e) {}
   }
-  if (ACTIVE === "mood") {
+  if (VIEW === "mood") {
     try {
       el.insertAdjacentHTML("afterbegin", moodCardHtml())
       var mm = function (s) { var m = $("moodmsg"); if (m) m.textContent = s }
@@ -428,13 +466,14 @@ function renderPanel(){
     } catch (e) {}
   }
 
+  attachCogNav()
   bindFields(el)
   try { bindTabCards() } catch (e) {}
   const det = el.querySelector("details[data-advtab]")
   if (det) det.addEventListener("toggle", () => { try { localStorage.setItem("qqrefine:adv:" + ACTIVE, det.open ? "1" : "0") } catch {} })
 
   if (ACTIVE === "privacy") renderPermCard()
-  const mkind = MGMT[ACTIVE]
+  const mkind = MGMT[VIEW]
   if (mkind) {
     const box = document.createElement("div")
     box.className = "pcard"
@@ -823,6 +862,9 @@ function renderPersonaPanel() {
 }
 
 // ── 通用管理表 ──
+const COG_SUB_TABS = [["mood", "心情"], ["profile", "画像"], ["memory", "记忆"], ["knowledge", "知识库"], ["relations", "关系"]]
+let COGSUB = "mood"
+try { const s = localStorage.getItem("qqrefine:cogsub"); if (s && COG_SUB_TABS.some((x) => x[0] === s)) COGSUB = s } catch {}
 const MGMT = { memory: "memoryPeers", sticker: "stickers", order: "audit", bili: "biliSubs" }
 let MPICK = ""
 
