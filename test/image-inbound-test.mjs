@@ -18,7 +18,7 @@ const ok = []; const T = (n, c, e) => ok.push([n, !!c, e]);
 function mkCtx(followed, withAttachment = true) {
   const agents = { get: () => null, resume: async () => { throw new Error('no') }, create: async ({ sessionId }) => ({ agent: { session: { id: sessionId }, followup: (m) => followed.push(m) }, dispose: async () => {} }) };
   const attachment = withAttachment ? { admitPromptContent: async (parts) => parts.map((p) => p.type === 'image' ? { type: 'image', attachment: { attachmentId: 'att-1', mediaType: p.mediaType, bytes: 1, width: 1, height: 1 } } : p) } : null;
-  return { get: (n) => (n === 'agents' ? agents : n === 'attachment' ? attachment : n === 'agentDefaultModel' ? { currentSelection: () => ({ provider: 'p', model: 'm' }) } : null), on: () => () => {} };
+  return { get: (n) => (n === 'agents' ? agents : (n === 'attachments' || n === 'attachment') ? attachment : n === 'agentDefaultModel' ? { currentSelection: () => ({ provider: 'p', model: 'm' }) } : null), on: () => () => {} };
 }
 function mkClient() {
   return { connected: true, url: 'ws://t', onEvent: () => () => {}, call: async (action) => { if (action === 'get_image') return { url: 'http://127.0.0.1:' + port + '/x.png' }; return {} } };

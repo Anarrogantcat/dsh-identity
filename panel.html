@@ -1428,6 +1428,7 @@ function transportCardHtml() {
     ["熔断", breaker ? ("保护中（到 " + new Date(t.breaker.until).toLocaleString() + "）") : "正常"],
     ["最后错误", t.lastError || "—"],
     ["能力位", capCnt],
+    ["看图", (t.channel && t.channel.vision) ? (t.channel.vision.rejected ? "模型不收图（已降级纯文字）" : (t.channel.vision.attachment ? ("可用" + (t.channel.vision.lastSkip ? "（上次跳过：" + t.channel.vision.lastSkip + "）" : "")) : "缺 attachments 服务")) : "—"],
     ["另一条通道", other],
   ]
   const isOb = t.mode === "onebot"
