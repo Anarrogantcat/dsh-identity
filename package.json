@@ -18,7 +18,9 @@
     "panel.html",
     "cordis.patch.yml",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "docs",
+    "scripts"
   ],
   "dsh": {
     "bundle": {
