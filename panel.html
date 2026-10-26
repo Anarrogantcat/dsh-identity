@@ -191,6 +191,27 @@ footer{background:rgba(12,17,28,.94);border-top:1px solid var(--line2);padding:1
 @media(max-width:760px){main{padding:12px 12px 130px}
   .row{flex-direction:column;align-items:stretch;gap:8px}.row .ctl{flex:1 1 auto;justify-content:flex-start;flex-wrap:wrap}
   .prow{flex-direction:column;align-items:stretch}.kgrid{grid-template-columns:1fr}}
+/* ── UI polish 2 ─────────────────────────────── */
+header{position:sticky;top:0;z-index:20}
+.tabs{position:sticky;top:56px;z-index:15;backdrop-filter:blur(8px)}
+.tab .ti{margin-right:6px;opacity:.85}
+.pbtns button{white-space:nowrap}
+#save{min-width:92px}
+#save[data-dirty="1"]{box-shadow:0 0 0 3px rgba(77,141,255,.25)}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #6aa4ff;outline-offset:1px}
+.pcard>.row:first-child{padding-top:0}
+.kcell{transition:background .12s,border-color .12s}
+.kcell:hover{background:rgba(255,255,255,.02);border-color:#3a4a6e}
+.kcell.hl{border-color:#3f6bb8;background:rgba(77,141,255,.08)}
+.qgrid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+#panel button[data-mdel2],#panel button[data-pdel2],#panel button[data-rm2],#panel button[data-mrm]{color:#ffb0b0;border-color:#5a2c2c}
+#panel button[data-mdel2]:hover,#panel button[data-pdel2]:hover{background:#3a1f22;border-color:#7a3a3a}
+details.adv>summary{cursor:pointer;color:#9fb6dd;font-size:12.5px;padding:4px 0}
+details.adv>summary:hover{color:#cfe0ff}
+.badge{background:rgba(255,255,255,.02)}
+.badge.cur{background:linear-gradient(180deg,#5b96ff,#3f7be6);color:#08111f;border-color:transparent}
+footer .pbtns{gap:8px}
+@media(max-width:760px){.tabs{top:0}.row .ctl{flex:1 1 100%}}
 </style>
 </head>
 <body>
@@ -246,7 +267,18 @@ function get(path){
   return path.split('.').reduce((o,k)=> (o==null?undefined:o[k]), STATE.config)
 }
 function put(path,val){ draft[path]=val; markDirty() }
-function markDirty(){ $('msg').textContent = Object.keys(draft).length ? ('未保存：' + Object.keys(draft).length + ' 项') : '' }
+function dirtyCount(){ return Object.keys(draft).length }
+function dirtyCount(){ try { return Object.keys(draft).length } catch (e) { return 0 } }
+function markDirty(){
+  const n = dirtyCount()
+  const m = $('msg'); if (m) m.textContent = n ? ('未保存：' + n + ' 项') : ''
+  const b = $('save')
+  if (b) {
+    b.textContent = n ? ('保存 (' + n + ')') : '保存'
+    try { b.setAttribute('data-dirty', n ? '1' : '0') } catch (e) {}
+    b.disabled = n === 0
+  }
+}
 
 function renderChips(){
   const d = STATE.diag || {}
@@ -328,10 +360,11 @@ function renderTopbar() {
   bindModeButtons(box)
 }
 
+const TAB_ICON = { scope:'🗂', freq:'🎚', privacy:'🔒', persona:'🎭', cognition:'🧠', channel:'🔌', sticker:'🖼', order:'🛡', bili:'📺', voice:'🔊', proactive:'🌙', usage:'📊', matches:'🏆' }
 function renderTabs(){
   const HIDDEN_TABS = new Set(COG_SUB_TABS.map((x) => x[0]))
   $('tabs').innerHTML = STATE.tabs.filter(([k]) => !HIDDEN_TABS.has(k)).map(([k,name])=>
-    `<button class="tab ${k===ACTIVE?'active':''}" data-tab="${k}">${name}</button>`).join('')
+    '<button class="tab ' + (k === ACTIVE ? 'active' : '') + '" data-tab="' + k + '"><span class="ti">' + (TAB_ICON[k] || '') + '</span>' + name + '</button>').join('')
   ;[...document.querySelectorAll('.tab')].forEach(b=>b.onclick=()=>{
     ACTIVE=b.dataset.tab
     try{ localStorage.setItem('qqrefine:tab', ACTIVE) }catch{}
