@@ -35,5 +35,9 @@ dsh-qqbot-refine/
 │  ├─ hooks.js            通道事件 → 认知/安全 的接缝
 │  └─ …                   memory / profile / mood / sticker / esports / knowledge / usage / cost …
 ├─ test/               59 个测试 + run-all.mjs 运行器
+├─ scripts/            sync-to-deploy.ps1（项目目录 → ~/.dsh/plugins 部署目录）
 └─ docs/               本目录
+
+> 项目目录：`D:\AI\DeepSeek Harness Workspace\dsh-qqbot-refine`
+> 部署目录（DSH 加载）：`C:\Users\Ranmi\.dsh\plugins\dsh-qqbot-refine`
 ```

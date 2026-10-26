@@ -100,6 +100,25 @@
 
 > `#群列表` `#群成员` `#踢人` `#名片` `#赞` 只在 onebot 模式可用；管理类命令仅 Owner / Admin。
 
+## 项目目录 / 开发与部署
+
+```
+D:\AI\DeepSeek Harness Workspace\dsh-qqbot-refine   ← 项目目录（git 仓库：源码 + docs/ + test/）
+C:\Users\Ranmi\.dsh\plugins\dsh-qqbot-refine         ← 部署目录（DSH 真正加载的地方）
+```
+
+改完代码要同步到部署目录（profile 里的 junction 指向那里）：
+
+```powershell
+.\scripts\sync-to-deploy.ps1            # 同步有变化的文件（只动 index/client/panel/lib 等运行文件）
+.\scripts\sync-to-deploy.ps1 -WhatIf    # 先看会动哪些
+.\scripts\sync-to-deploy.ps1 -Restart   # 顺手提醒：服务端代码要重启 DSH
+```
+
+- 只改 `panel.html` → 同步后**刷新页面**即可，不用重启
+- 改 `index.js` / `lib/*` → 必须**重启 DSH**
+- `docs/` `test/` `scripts/` 只留在项目目录，不进部署目录
+
 ## 安装（DSH 插件协议）
 
 本插件遵循 DSH 的「一切皆插件」约定（cordis 插件 + bundle patch + webServer 面板）：
