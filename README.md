@@ -1,3 +1,5 @@
+> 安装步骤见 [docs/INSTALL.md](docs/INSTALL.md)
+
 # dsh-qqbot-refine
 
 > 作者：**鲸鱼娘** ＆ **染喵**
