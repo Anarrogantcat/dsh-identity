@@ -408,6 +408,7 @@ function renderPanel(){
     try { el.insertAdjacentHTML("beforeend", topicsCardHtml()) } catch (e) {}
   }
   if (ACTIVE === "usage") {
+    try { el.insertAdjacentHTML("afterbegin", usageCardHtml()) } catch (e) {}
     try { el.insertAdjacentHTML("beforeend", safetyCardHtml()) } catch (e) {}
   }
   if (ACTIVE === "voice") {
@@ -822,7 +823,7 @@ function renderPersonaPanel() {
 }
 
 // ── 通用管理表 ──
-const MGMT = { memory: "memoryPeers", sticker: "stickers", order: "audit", bili: "biliSubs", usage: "usage" }
+const MGMT = { memory: "memoryPeers", sticker: "stickers", order: "audit", bili: "biliSubs" }
 let MPICK = ""
 
 async function mg(payload) {
@@ -1139,6 +1140,76 @@ async function loadProfile(group) {
   renderProfilePanel()
 }
 
+function usageCardHtml() {
+  const u = STATE.usage || {}
+  const t = STATE.transport || {}
+  const ch = t.channel || {}
+  const c = ch.counts || {}
+  const cfgU = (STATE.config && STATE.config.usage) || {}
+  const budget = Number(cfgU.groupDailyYuan || 0)
+  const totals = u.totals || {}
+  const yuan = Number(totals.yuan || 0)
+  const pct = budget > 0 ? Math.min(100, Math.round((yuan / budget) * 100)) : 0
+  const over = budget > 0 && yuan >= budget
+  const barColor = over ? '#ef6b6b' : pct >= 80 ? '#e5b95c' : '#4d8dff'
+  const money = (u.ok === false) ? '<div class="hint" style="color:#ff9f9f">读不到用量：' + escapeHtml(String(u.error || '')) + '</div>' : ''
+  // 会话/分组明细
+  const names = STATE.groupNames || {}
+  const rows = (u.rows || []).map(function (r) {
+    const label = r.scope === 'group' ? ('群 ' + (names[r.peer] || r.peer)) : ('私聊 ' + r.peer)
+    return '<div class="kcell"><span class="k">' + escapeHtml(label.slice(0, 22)) + '</span>' +
+      '<span class="v">¥' + Number(r.yuan || 0).toFixed(2) + ' · ' + Number((r.tokens && r.tokens.total) || 0) + ' tokens</span></div>'
+  }).join('')
+  // 计数器：按通道显示
+  let counters = []
+  if (t.mode === 'onebot') {
+    counters = [
+      ['入站', c.inbound || 0], ['投给模型', c.dispatched || 0], ['被闸门挡', c.blocked || 0],
+      ['回复', c.replied || 0], ['发送成功', c.sent || 0], ['发送失败', c.failed || 0],
+      ['看过图', c.images || 0], ['通知事件', c.notices || 0],
+    ]
+  } else {
+    const d = STATE.diag || {}; const dc = d.counts || {}
+    counters = [['入站', dc.inbound || 0], ['被拦截', dc.blocked || 0], ['出站', dc.outbound || 0], ['脱敏', dc.redacted || 0], ['标记', dc.markers || 0]]
+  }
+  const counterHtml = counters.map(function (x) {
+    return '<div class="kcell"><span class="k">' + x[0] + '</span><span class="v">' + x[1] + '</span></div>'
+  }).join('')
+  const muted = Array.isArray(STATE.mutedGroups) ? STATE.mutedGroups : []
+  const stickerN = (STATE.sticker && STATE.sticker.total) || 0
+  return '<div class="pcard" id="usageCard">' +
+    '<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">' +
+      '<div style="font-size:34px;font-weight:700;line-height:1">¥' + yuan.toFixed(2) + '</div>' +
+      '<div class="hint">今日花费（估算）' + (over ? ' · <b style="color:#ef6b6b">已超预算</b>' : '') + '</div>' +
+      '<div class="hint" style="margin-left:auto">预算 ¥' + budget.toFixed(2) + ' · 已用 ' + pct + '%</div>' +
+    '</div>' +
+    '<div style="height:8px;background:#0d1320;border-radius:4px;overflow:hidden;margin:10px 0 12px"><i style="display:block;height:100%;width:' + pct + '%;background:' + barColor + '"></i></div>' +
+    money +
+    '<div class="kgrid">' +
+      '<div class="kcell"><span class="k">今日 tokens</span><span class="v">入 ' + (totals.input || 0) + ' · 出 ' + (totals.output || 0) + ' · 命中 ' + (totals.hit || 0) + '</span></div>' +
+      '<div class="kcell"><span class="k">会话累计</span><span class="v">¥' + Number((u.all && u.all.yuan) || 0).toFixed(2) + ' · ' + Number((u.all && u.all.total) || 0) + ' tokens</span></div>' +
+      '<div class="kcell"><span class="k">花费硬闸</span><span class="v">' + (cfgU.hardLimitEnabled ? ('开 · 超限' + (cfgU.onExceed === 'mute' ? '静默' : '降级回模板')) : '关（只记录）') + '</span></div>' +
+      '<div class="kcell"><span class="k">单价（元/百万）</span><span class="v">未命中 ' + Number((u.prices && u.prices.inputMiss) || 0) + ' · 命中 ' + Number((u.prices && u.prices.inputHit) || 0) + ' · 输出 ' + Number((u.prices && u.prices.output) || 0) + '</span></div>' +
+      '<div class="kcell"><span class="k">闭麦中的群</span><span class="v">' + muted.length + '</span></div>' +
+      '<div class="kcell"><span class="k">图库</span><span class="v">' + stickerN + ' 张</span></div>' +
+    '</div>' +
+    (rows ? '<div class="label" style="margin:12px 0 4px">按会话</div><div class="kgrid" style="grid-template-columns:1fr">' + rows + '</div>' : '') +
+    '<div class="label" style="margin:12px 0 4px">计数器（' + (t.mode === 'onebot' ? '自建通道' : '官方通道') + '）</div>' +
+    '<div class="kgrid">' + counterHtml + '</div>' +
+    '<div class="pbtns" style="margin-top:12px"><button id="uReset">重置计数</button><button id="uResetCost">重置花费闸</button><button id="uRoles">清角色缓存</button><span class="hint">花费闸开启后：超限会降级回模板 / 静默</span></div>' +
+    '<div class="hint" id="uMsg" style="min-height:16px"></div>' +
+  '</div>'
+}
+
+function bindUsageCard() {
+  const say = function (s) { const m = $('uMsg'); if (m) m.textContent = s }
+  const a = $('uReset')
+  if (a) a.onclick = async function () { try { await mg({ action: 'mgmtOp', kind: 'usage', op: 'resetDiag' }); say('计数器已清零'); await load() } catch (e) { say('失败：' + e.message) } }
+  const b = $('uResetCost')
+  if (b) b.onclick = async function () { try { await mg({ action: 'mgmtOp', kind: 'usage', op: 'resetCost' }); say('花费闸已重置'); await load() } catch (e) { say('失败：' + e.message) } }
+  const r = $('uRoles')
+  if (r) r.onclick = async function () { try { await mg({ action: 'mgmtOp', kind: 'roles', op: 'clearCache' }); say('角色缓存已清'); await load() } catch (e) { say('失败：' + e.message) } }
+}
 function renderProfilePanel() {
   const el = $("panel")
   const groups = (STATE.config.scope.groups || [])
@@ -2157,7 +2228,7 @@ function bindTabCards() {
     }
   }
   if (ACTIVE === "memory") bindCardsCard()
-  if (ACTIVE === "usage") loadSafety($("safetyBox"))
+  if (ACTIVE === "usage") { try { bindUsageCard() } catch (e) {} ; loadSafety($("safetyBox")) }
 }
 
 // 工具栏按页签显示，避免每个页都堆一排按钮

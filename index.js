@@ -20,6 +20,7 @@ import { loadState, state, newBind, getBind, clearBind } from './lib/state.js'
 import { createGate, startJobs } from './lib/gate.js'
 import { loadCognition, createHooks, cognitionText, consolidatePeers } from './lib/hooks.js'
 import { assetStatus, progressOf, downloadAsset, removeAsset, sttAutoCommand, downloadsStats } from './lib/downloads.js'
+import { usageReport } from './lib/usage.js'
 import { resolveRoute, withRoute } from './lib/llmroute.js'
 import { dataPointer, STORE_DIR as DATA_DIR } from './lib/config.js'
 import { memoryCard, listMemory, forgetMemory, pinMemory, prunePeer, takePendingRecall, recall } from './lib/memory.js'
@@ -198,9 +199,9 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.6.6',
+    version: '0.6.7',
     install: installInfo(),
-    stage: 'v0.6.6 · S1–S7',
+    stage: 'v0.6.7 · S1–S7',
     dshHome: STORE_DIR,
     configPath: CFG_PATH,
     configPathExists: existsSync(CFG_PATH),
@@ -240,6 +241,8 @@ function snapshot() {
       } catch { return {} }
     })(),
     agentPresets: agentPresetList,
+    mutedGroups: (() => { try { return Object.keys(state.muted ?? {}) } catch (e) { return [] } })(),
+    usage: (() => { try { return usageReport(loadConfig()) } catch (e) { return { ok: false, error: String(e && e.message || e) } } })(),
     llmRoute: (() => {
       try {
         const cfg0 = loadConfig()
