@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>QQ 机器人增强 · 设置</title>
+<title>大肥鱼 · QQ 增强</title>
 <style>
   :root{
     --glass:1;
@@ -132,16 +132,31 @@
   .cap{display:flex;gap:8px;align-items:baseline;font-size:12.5px;padding:2px 0}
   .cap.miss{color:#7d8aa3}
   .cap .why{color:#6f7d96;font-size:11.5px;margin-left:auto;text-align:right}
+  /* ── 顶栏：通道模式 + 健康度 + 能力位（一眼可见，不用翻页签） ── */
+  #topbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;
+    padding:10px 14px;background:linear-gradient(180deg,#141b29,#111826);
+    border:1px solid var(--line);border-radius:12px}
+  #topbar .tlabel{font-size:12.5px;color:#9fb0c9;margin-right:2px}
+  .seg{display:inline-flex;border:1px solid #2c3a58;border-radius:9px;overflow:hidden}
+  .seg button{border:0;border-radius:0;padding:6px 13px;background:#151d2c;color:#b9c8e0;font:12.5px/1 inherit;cursor:pointer}
+  .seg button+button{border-left:1px solid #2c3a58}
+  .seg button.on{background:#2f5b9e;color:#f2f7ff;cursor:default}
+  .seg button:disabled{opacity:1}
+  #topbar .metrics{display:flex;flex-wrap:wrap;gap:6px 14px;margin-left:auto;align-items:center;font-size:12.5px;color:#a9b8d0}
+  #topbar .metrics b{color:#e6eefc;font-weight:600}
+  #topbar .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;vertical-align:middle}
+  #topbar .dot.ok{background:#3ecf8e}#topbar .dot.warn{background:#e5b95c}#topbar .dot.bad{background:#ef6b6b}
 </style>
 </head>
 <body>
 <header>
-  <h1>🐟 QQ 机器人增强 <span class="tag" id="stage">M1</span></h1>
+  <h1>🐟 大肥鱼 <span class="tag">QQ 增强</span> <span class="tag" id="stage">v0.5.0</span></h1>
   <div class="sub" id="paths"></div>
   <div class="chips" id="chips"></div>
   <button id="glassBtn" style="position:absolute;right:22px;top:18px;font-size:12px;padding:4px 10px">🫧 毛玻璃</button>
 </header>
 <main>
+  <div id="topbar"></div>
   <div id="quick" class="panel" style="margin-bottom:12px"></div>
   <div class="tabs" id="tabs"></div>
   <div class="searchbar"><input type="text" id="q" placeholder="搜索设置项（跨页签）…"><span class="hint" id="qhint"></span></div>
@@ -201,6 +216,57 @@ function renderChips(){
   chips.push(['机器人', STATE.botSeen ? 'ok' : 'warn', STATE.botSeen ? '已连接' : '未收到消息'])
   $('chips').innerHTML = chips.map(([k,s,v])=>`<span class="chip ${s}">${k}：${v}</span>`).join('')
   $('paths').innerHTML = `<span class="kv">配置：${STATE.configPath}</span>`
+}
+
+function healthText(h) {
+  return h === "ok" ? "正常" : h === "warn" ? "可疑" : "异常"
+}
+
+function topbarHtml() {
+  const t = STATE.transport || {}
+  const c = STATE.capabilities || (t.capabilities || {})
+  const isOb = t.mode === "onebot"
+  const modeBtn = (id, label, on) => '<button data-mode="' + id + '" class="' + (on ? "on" : "") + '" ' + (on ? 'data-cur="1"' : "") + '>' + label + '</button>'
+  const h = t.health || (t.connected ? "ok" : "bad")
+  const caps = (c.available || []).length + "/" + (c.total || 15)
+  const acct = t.account && t.account.uin ? (t.account.uin + (t.account.nickname ? "（" + t.account.nickname + "）" : "")) : "—"
+  const lat = t.latencyMs == null ? "—" : (t.latencyMs + "ms")
+  const ago = t.lastEventAt ? (Math.max(0, Math.round((Date.now() - t.lastEventAt) / 1000)) + " 秒前") : "还没有"
+  return '<span class="tlabel">通道</span>' +
+    '<span class="seg" id="topMode">' + modeBtn("tencent", "官方 QQ", !isOb) + modeBtn("onebot", "NapCat / OneBot", isOb) + '</span>' +
+    '<span class="metrics">' +
+      '<span><i class="dot ' + h + '"></i>健康度 <b>' + healthText(h) + '</b></span>' +
+      '<span>能力位 <b>' + caps + '</b></span>' +
+      '<span>账号 <b>' + escapeHtml(acct) + '</b></span>' +
+      '<span>延迟 <b>' + lat + '</b></span>' +
+      '<span>最近事件 <b>' + ago + '</b></span>' +
+      '<span id="topMsg" style="color:#8fa2bd"></span>' +
+    '</span>' +
+    '<span class="hint" style="flex-basis:100%;margin-top:2px">切模式只写配置，重启 DSH 才生效；详情见「通道」页签</span>'
+}
+
+function bindModeButtons(root) {
+  if (!root) return
+  const msg = $("topMsg") || $("trMsg")
+  Array.prototype.forEach.call(root.querySelectorAll("button[data-mode]"), function (b) {
+    if (b.getAttribute("data-cur") === "1") { b.disabled = true; return }
+    b.onclick = async function () {
+      const to = b.getAttribute("data-mode")
+      const label = to === "onebot" ? "NapCat / OneBot 11" : "官方 QQ（im-qqbot）"
+      if (!confirm("切到「" + label + "」？\n\n只会写配置，重启 DSH 后才真正生效。")) return
+      try {
+        const j = await saveKey("transport.mode", to)
+        if (msg) msg.textContent = j.ok ? ("已切到「" + label + "」→ 重启 DSH 生效") : ("切换失败：" + (j.error || ""))
+      } catch (e) { if (msg) msg.textContent = "切换失败：" + e.message }
+    }
+  })
+}
+
+function renderTopbar() {
+  const box = $("topbar")
+  if (!box) return
+  box.innerHTML = topbarHtml()
+  bindModeButtons(box)
 }
 
 function renderTabs(){
@@ -401,10 +467,10 @@ async function load(){
   try { const hh = (location.hash || "").replace(/^#/, ""); if (hh && STATE.tabs.some((t) => t[0] === hh)) ACTIVE = hh } catch {}
   await ensurePeerKeys()
   renderQuick()
-  renderChips(); renderTabs(); renderPanel(); markDirty(); try { updateToolbar() } catch {}
+  renderChips(); renderTopbar(); renderTabs(); renderPanel(); markDirty(); try { updateToolbar() } catch {}
   const qi = $("q"); if (qi) { qi.value = SEARCH; qi.oninput = () => { SEARCH = qi.value; renderPanel() } }
   const rbox = $("recent"); if (rbox) rbox.style.display = "none"
-  $('stage').textContent = STATE.stage || 'M1'
+  $('stage').textContent = STATE.version ? ('v' + STATE.version) : (STATE.stage || 'v0.5.0')
 }
 
 async function save(){
@@ -1371,20 +1437,7 @@ async function saveKey(key, value) {
 
 async function bindTransportCard() {
   const msg = $("trMsg")
-  const modeWrap = $("trMode")
-  if (modeWrap) {
-    Array.prototype.forEach.call(modeWrap.querySelectorAll("button[data-mode]"), function (b) {
-      b.onclick = async function () {
-        const to = b.getAttribute("data-mode")
-        const label = to === "onebot" ? "NapCat / OneBot 11" : "官方 QQ（im-qqbot）"
-        if (!confirm("切到「" + label + "」？\n\n只会写配置，重启 DSH 后才真正生效。")) return
-        try {
-          const j = await saveKey("transport.mode", to)
-          if (msg) msg.textContent = j.ok ? ("已切到「" + label + "」→ 重启 DSH 生效（官方通道配置保留，可随时切回）") : ("切换失败：" + (j.error || ""))
-        } catch (e) { if (msg) msg.textContent = "切换失败：" + e.message }
-      }
-    })
-  }
+  bindModeButtons($("trMode"))
   const ping = $("trPing")
   if (ping) ping.onclick = async function () {
     if (msg) msg.textContent = "测延迟中…"

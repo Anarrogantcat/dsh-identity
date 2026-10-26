@@ -48,7 +48,7 @@ window.__ModuleLoader__.load({
 
       const fab = document.createElement('button')
       fab.id = 'qqrefine-fab'
-      fab.title = 'QQ 机器人增强（控制面板）'
+      fab.title = '大肥鱼 · QQ 增强（控制面板）'
       fab.textContent = '🐟'
       fab.addEventListener('click', () => toggle(true))
       document.body.appendChild(fab)
@@ -62,7 +62,7 @@ window.__ModuleLoader__.load({
       wrap.id = 'qqrefine-wrap'
       wrap.innerHTML = `
         <div id="qqrefine-bar">
-          <span>🐟 QQ 机器人增强</span>
+          <span>🐟 大肥鱼 · QQ 增强</span>
           <span class="grow"></span>
           <button data-act="reload">重新加载</button>
           <button data-act="newtab">新窗口打开</button>

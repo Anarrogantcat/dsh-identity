@@ -183,7 +183,7 @@ function snapshot() {
     ok: true,
     version: '0.5.0',
     install: installInfo(),
-    stage: 'M1–M9（核心）',
+    stage: 'v0.5.0 · S1–S7',
     dshHome: STORE_DIR,
     configPath: CFG_PATH,
     configPathExists: existsSync(CFG_PATH),
