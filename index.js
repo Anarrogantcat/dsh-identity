@@ -18,6 +18,7 @@ import { capabilitySummary } from './lib/capabilities.js'
 import { refreshAll, refreshMembers, rosterStats, groupChoices, groupName } from './lib/roster.js'
 import { loadState, state, newBind, getBind, clearBind } from './lib/state.js'
 import { createGate, startJobs } from './lib/gate.js'
+import { loadCognition, createHooks, cognitionText, consolidatePeers } from './lib/hooks.js'
 import { memoryCard, listMemory, forgetMemory, pinMemory, prunePeer, takePendingRecall, recall } from './lib/memory.js'
 import { personaFor, sessionIdOfContext, peerOfSession } from './lib/persona.js'
 import { readMood, moodToneOf, moodSummary, moodBlock } from './lib/mood.js'
@@ -49,6 +50,7 @@ const API_ACTION = '/api/qqbot-refine/action'
 let botRef = null
 let llmRef = null
 let stopJobs = null
+let modsRef = null
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 
@@ -140,6 +142,8 @@ ${rules.map((r, i) => `${i + 1}. ${r}`).join('\n')}`
     if (body) {
       try { body += topicBlock(peer.peerKey) } catch { /* ignore */ }
     }
+    // 认知四张卡 + 离线摘要（在场的人 / 说过答应过 / 还没答完的 / 群里最近在聊）
+    try { body += cognitionText(mods, peer.peerKey, cfg) } catch { /* ignore */ }
     if (!body || cfg.ui?.markers === false) return body
     return body + `
 
@@ -177,7 +181,7 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.4.0',
+    version: '0.5.0',
     install: installInfo(),
     stage: 'M1–M9（核心）',
     dshHome: STORE_DIR,
@@ -211,6 +215,21 @@ function snapshot() {
         for (const g of cfg.scope?.groups ?? []) map[g] = groupName(g)
         return map
       } catch { return {} }
+    })(),
+    safety: (() => {
+      try {
+        const m = modsRef?.safety
+        if (!m) return null
+        return { profile: String(loadConfig().safety?.profile ?? 'normal'), ...(m.breakerState?.() ?? {}), banned: m.bannedGroups?.() ?? [] }
+      } catch { return null }
+    })(),
+    cognition: (() => {
+      try {
+        return {
+          relations: modsRef?.relations?.relationsStats?.() ?? null,
+          digest: modsRef?.digest?.digestStats?.() ?? null,
+        }
+      } catch { return null }
     })(),
     topics: (() => { try { return topicStats() } catch { return [] } })(),
     matches: (() => { try { return matchStats() } catch { return null } })(),
@@ -257,6 +276,11 @@ export async function apply(ctx, config = {}) {
     try { saveConfig(clone(DEFAULTS)) } catch { /* ignore */ }
   }
 
+  // 认知 / 安全模块（可选；缺了插件照常跑）
+  const mods = await loadCognition(logger)
+  modsRef = mods
+  const hooks = createHooks({ mods, getConfig: loadConfig, logger, saveConfig })
+
   const gate = createGate({
     getLlm: () => llmRef,
     getConfig: loadConfig,
@@ -272,7 +296,7 @@ export async function apply(ctx, config = {}) {
 
   // 1) 通道（单活：tencent 或 onebot；失败降级放行）
   try {
-    const tr = await startTransport(gate, logger, { ctx })
+    const tr = await startTransport(gate, logger, { ctx, hooks })
     logger.info?.(`[qqbot-refine] 通道模式=${tr.mode} 钩子=${tr.hooked ? '已挂' : '未挂'}`)
     const caps = capabilitySummary(loadConfig())
     logger.info?.(`[capability] mode=${caps.mode} 可用 ${caps.available.length}/${caps.total}` + (caps.missing.length ? ` · 缺失：${caps.missingLabels.join('/')}` : ''))
@@ -443,7 +467,7 @@ export async function apply(ctx, config = {}) {
           }
           if (action === "bindCancel") { clearBind(); return sendJson(res, 200, { ok: true }) }
           if (action === "mgmt") {
-            return sendJson(res, 200, { ok: true, ...mgmt.list(body.kind, body.key) })
+            return sendJson(res, 200, { ok: true, ...(await mgmt.list(body.kind, body.key, body)) })
           }
           if (action === "mgmtOp") {
             return sendJson(res, 200, mgmt.op(body.kind, body.op, body))
@@ -497,6 +521,15 @@ export async function apply(ctx, config = {}) {
       installToolGate({ ctx, getConfig: loadConfig, logger })
     }
   } catch (err) { logger.warn?.("[qqbot-refine] 工具闸门安装失败: " + err.message) }
+
+  // 3.6) 离线巩固：每 10 分钟把白名单群的聊天压成一条摘要（本地，0 token）
+  {
+    const t = setInterval(() => {
+      try { consolidatePeers(mods, loadConfig()) } catch { /* ignore */ }
+    }, 10 * 60 * 1000)
+    t.unref?.()
+    timers.push(t)
+  }
 
   // 4) 定时任务
   stopJobs = startJobs({ getConfig: loadConfig, getBot: () => botRef, diagRef: diag, logger, llmRef })
