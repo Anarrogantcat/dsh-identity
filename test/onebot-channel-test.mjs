@@ -112,6 +112,16 @@ await bot.sendFile({ scope: "group", targetId: "1", msgId: "1" }, { localPath: "
 const fileCall = calls[calls.length - 1];
 A("群文件 → upload_group_file", fileCall[0] === "upload_group_file" && fileCall[1].name === "b.zip", fileCall);
 
+// 媒体发送失败要抛（表情才能回落到本地下载）
+const failClient = { connected: true, url: "ws://t", call: async () => { throw new Error("napcat boom") }, onEvent: () => () => {} };
+const botFail = new CH.OneBotBot({ client: failClient, gate: fakeGate, logger: { warn() {} } });
+let threw = false;
+try { await botFail.sendImage({ scope: "group", targetId: "1", msgId: "m9" }, { url: "https://x/a.png" }) } catch { threw = true }
+A("图片发送失败会抛（表情可回落）", threw === true);
+let threw2 = false;
+try { await botFail.sendVoice({ scope: "group", targetId: "1", msgId: "m9" }, { buffer: Buffer.from("x") }) } catch { threw2 = true }
+A("语音发送失败会抛（可回落文字）", threw2 === true);
+
 // ── 7. 通道：事件 → agent，session 事件 → 发送 ──
 const dispatched = [];
 const createdOpts = [];
