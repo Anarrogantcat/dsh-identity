@@ -472,6 +472,12 @@ function fieldRow(f, tabLabel) {
   if (f.t === "bool") ctl = `<label class="switch"><input type="checkbox" data-k="${f.k}" ${v ? "checked" : ""}><i></i></label>`
   else if (f.t === "num") ctl = `<input type="number" data-k="${f.k}" value="${v ?? ""}" step="${f.step || 1}" min="${f.min ?? ""}" max="${f.max ?? ""}">`
   else if (f.t === "list") ctl = `<textarea data-k="${f.k}" spellcheck="false">${(Array.isArray(v) ? v.join("\n") : (v ?? ""))}</textarea>`
+  else if (f.t === "range") {
+    const cur = v == null ? (f.min ?? 0) : v
+    ctl = '<div style="display:flex;align-items:center;gap:10px;width:100%">' +
+      '<input type="range" data-k="' + f.k + '" min="' + (f.min ?? 0) + '" max="' + (f.max ?? 100) + '" step="' + (f.step || 1) + '" value="' + cur + '" style="flex:1;min-width:120px">' +
+      '<span class="hint" data-rv="' + f.k + '" style="min-width:38px;text-align:right">' + cur + '</span></div>'
+  }
   else if (f.t === "select" && Array.isArray(f.options)) {
     const cur = v == null ? "" : String(v)
     const opts = f.options.map((o) => (typeof o === "string" ? { v: o, l: o } : o))
@@ -738,7 +744,19 @@ function renderPersonaPanel() {
       </div>`).join("") : '<div class="hint">私聊白名单里还没有人。</div>'
   }
 
-  el.innerHTML = `
+  const scaleNow = Number((draft['persona.scale'] != null ? draft['persona.scale'] : (STATE.config.persona && STATE.config.persona.scale)) ?? 50)
+  const scaleWord = scaleNow <= 25 ? '保守' : scaleNow <= 50 ? '日常' : scaleNow <= 75 ? '放松' : '放飞'
+  const scaleCard = `<div class="pcard" id="scaleCard">
+    <div class="label">聊天尺度 <span class="badge cur" id="scaleWord">${scaleWord} · ${scaleNow}</span></div>
+    <div class="hint">往左＝克制礼貌，往右＝会接梗、会损人、允许脏话荤段子。只改语气，事实与安全底线不变。改完点右下角「保存」。</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-top:10px">
+      <span class="hint">保守</span>
+      <input type="range" id="pscale" min="0" max="100" step="5" value="${scaleNow}" style="flex:1;min-width:160px">
+      <span class="hint">放飞</span>
+    </div>
+  </div>`
+
+  el.innerHTML = `${scaleCard}
     <div class="pcard">
       <div class="tabs">${tab("global", "全局")}${tab("group", "按群")}${tab("user", "按私聊")}</div>
       <div class="hint">越细越优先：按私聊/按群 → 全局当前。只对 QQ 会话生效，Web 会话不受影响。</div>
@@ -760,6 +778,19 @@ function renderPersonaPanel() {
       <div class="pbtns" style="margin-top:8px"><button id="psave" class="primary">保存为人设</button><button id="pnew">打开编辑器</button><span id="pmsg" class="hint"></span></div>
       </details>
     </div>`
+
+  const sc = el.querySelector('#pscale')
+  if (sc) {
+    const wordOf = (n) => n <= 25 ? '保守' : n <= 50 ? '日常' : n <= 75 ? '放松' : '放飞'
+    const upd = () => {
+      const n = Number(sc.value)
+      const w = el.querySelector('#scaleWord')
+      if (w) w.textContent = wordOf(n) + ' · ' + n
+      put('persona.scale', n)
+    }
+    sc.oninput = upd
+    sc.onchange = upd
+  }
 
   const ptg = el.querySelector("[data-ptoggle]")
   if (ptg) ptg.onclick = async () => {
@@ -1260,7 +1291,9 @@ function bindFields(root) {
       if (f.t === "bool") val = input.type === "checkbox" ? !!input.checked : input.value === "true"
       else if (f.t === "num") val = Number(input.value)
       else if (f.t === "list") val = input.value.split(new RegExp("[\r\n,，]")).map(function (s) { return s.trim() }).filter(Boolean)
+      else if (f.t === "range") val = Number(input.value)
       else val = input.value
+      if (f.t === "range") { const rv = document.querySelector('[data-rv="' + k + '"]'); if (rv) rv.textContent = String(val) }
       put(k, val)
       syncInputs(k, val, input)
     })

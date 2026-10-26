@@ -23,7 +23,7 @@ import { assetStatus, progressOf, downloadAsset, removeAsset, sttAutoCommand, do
 import { resolveRoute, withRoute } from './lib/llmroute.js'
 import { dataPointer, STORE_DIR as DATA_DIR } from './lib/config.js'
 import { memoryCard, listMemory, forgetMemory, pinMemory, prunePeer, takePendingRecall, recall } from './lib/memory.js'
-import { personaFor, sessionIdOfContext, peerOfSession } from './lib/persona.js'
+import { personaFor, sessionIdOfContext, peerOfSession, scaleBlock } from './lib/persona.js'
 import { readMood, moodToneOf, moodSummary, moodBlock } from './lib/mood.js'
 import { llmStats } from './lib/moodllm.js'
 import { knowledgeBlock, lastQueryOf, kbStats } from './lib/knowledge.js'
@@ -130,6 +130,9 @@ function personaSectionText(context) {
     if (!peer) return ''
     const p = personaFor(cfg, peer.scope, peer.peer)
     let body = p?.text ?? ''
+    // 聊天尺度（滑条）：低=克制，高=更放得开
+    try { if (body) body += scaleBlock(cfg.persona?.scale ?? 50) } catch { /* ignore */ }
+
     // 心情 → 语气（只给数值和一句建议，不带主会话里聊过的具体事）
     if (body && cfg.integration?.linkMood !== false && cfg.integration?.moodInPrompt !== false) {
       const tone = moodToneOf(readMood(cfg))
@@ -195,9 +198,9 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.6.3',
+    version: '0.6.4',
     install: installInfo(),
-    stage: 'v0.6.3 · S1–S7',
+    stage: 'v0.6.4 · S1–S7',
     dshHome: STORE_DIR,
     configPath: CFG_PATH,
     configPathExists: existsSync(CFG_PATH),
