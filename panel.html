@@ -1330,7 +1330,7 @@ function usageCardHtml() {
       '<div class="kcell"><span class="k">图库</span><span class="v">' + stickerN + ' 张</span></div>' +
     '</div>' +
     (rows ? '<div class="label" style="margin:12px 0 4px">按会话</div><div class="kgrid" style="grid-template-columns:1fr">' + rows + '</div>' : '') +
-    '<div class="label" style="margin:12px 0 4px">计数器（' + (t.mode === 'onebot' ? '自建通道' : '官方通道') + '）</div>' +
+    '<div class="label" style="margin:12px 0 4px">计数器（' + (t.mode === 'onebot' ? '自建通道' : '官方通道') + (ch.countsSince ? ' · 自 ' + new Date(ch.countsSince).toLocaleDateString() + ' 累计' : '') + '）</div>' +
     '<div class="kgrid">' + counterHtml + '</div>' +
     '<div class="pbtns" style="margin-top:12px"><button id="uReset">重置计数</button><button id="uResetCost">重置花费闸</button><button id="uRoles">清角色缓存</button><span class="hint">花费闸开启后：超限会降级回模板 / 静默</span></div>' +
     '<div class="hint" id="uMsg" style="min-height:16px"></div>' +
