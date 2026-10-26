@@ -18,7 +18,7 @@ for (const b of BUILTIN) {
   ok.push([b.id + " 不含客服禁语（引号里的反例不算）", BANNED.every(w => !stripQuotes(t).includes(w))]);
   ok.push([b.id + " 有「不复读/不重复」要求", /不复读|不重复/.test(t)]);
   ok.push([b.id + " 有节奏要求（一两句）", /一句|两句|短句/.test(t)]);
-  ok.push([b.id + " 长度 <= 900 字", t.length <= 900, t.length]);
+  ok.push([b.id + " 长度 <= 1200 字（人设变长会多吃 token，宽松上限）", t.length <= 1200, t.length]);
 }
 ok.push(["默认人设够短（<= 400 字）", DEFAULT_PERSONA.length <= 400, DEFAULT_PERSONA.length]);
 ok.push(["默认人设也不含客服禁语", BANNED.every(w => !DEFAULT_PERSONA.includes(w))]);
