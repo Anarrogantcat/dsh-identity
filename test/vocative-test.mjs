@@ -36,6 +36,10 @@ T("「大肥鱼在吗」要接", (await send("大肥鱼在吗", "v4")) === false
 T("「@穿云 大肥鱼你别理他」要接", (await send("@穿云 大肥鱼你别理他", "v5", { mentionsOther: [{ id: "10002", name: "穿云" }] })) === false);
 T("「鲸鱼娘 帮我看看」要接", (await send("鲸鱼娘 帮我看看", "v6")) === false);
 T("被真正 @ 到一定接", (await send("在吗", "v7", { mentions: [{ bot: true }] })) === false);
+// 3) 明确 @ 别人、又没叫她：即使刚跟她聊过，也要完全闭嘴
+S.markReplyTo('G1', 'U2')
+T("@别人且没叫她 → 连续话也不接", (await send("@梅塔特隆 图片", "v8", { mentionsOther: [{ id: "10086", name: "梅塔特隆" }] })) === true);
+T("@别人但叫了她名字 → 还是接", (await send("@梅塔特隆 大肥鱼你看这个", "v9", { mentionsOther: [{ id: "10086", name: "梅塔特隆" }] })) === false);
 console.log("=== 叫人 vs 提话题 测试 ===");
 let fail = 0;
 for (const [n, pass, e] of ok) { console.log((pass ? "OK  " : "FAIL ") + n + (pass ? "" : "   " + JSON.stringify(e))); if (!pass) fail++; }
