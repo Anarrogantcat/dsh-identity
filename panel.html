@@ -375,6 +375,8 @@ const COMMON = new Set([
   "integration.linkMood", "integration.moodInPrompt", "integration.moodProactive",
   "integration.linkMoodProbability", "integration.linkMoodVoice",
   "learn.enabled", "learn.injectRules",
+  "transport.mode", "transport.onebot.url", "transport.onebot.token", "transport.onebot.quoteReply",
+  "transport.onebot.preset", "transport.rosterRefreshHours", "safety.profile", "stt.enabled",
 ])
 const isCommon = (k) => COMMON.has(k)
 function advancedOpen(tab) {
@@ -1316,8 +1318,16 @@ function transportCardHtml() {
     ["能力位", capCnt],
     ["另一条通道", other],
   ]
+  const isOb = t.mode === "onebot"
+  const modeBtn = (id, label, on) => '<button data-mode="' + id + '" class="' + (on ? 'primary' : '') + '" ' + (on ? 'disabled' : '') + '>' + label + (on ? " ✓" : "") + '</button>'
   return '<div class="pcard" id="trCard">' +
-    '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta">' +
+    '<div class="label" style="margin:0 0 4px">通道模式（单活：同一时刻只走一条）</div>' +
+    '<div class="pbtns" id="trMode">' +
+      modeBtn("tencent", "官方 QQ（im-qqbot）", !isOb) +
+      modeBtn("onebot", "NapCat / OneBot 11", isOb) +
+      '<span class="hint" style="margin-left:8px">提交后要重启 DSH 才生效；官方号配置会留着，随时能切回</span>' +
+    '</div>' +
+    '<div class="row" style="border-bottom:0;padding:6px 0 6px"><div class="meta">' +
       '<div class="label">当前通道：' + modeTxt + ' ' + healthChip(t.health) + '</div>' +
       '<div class="hint">改通道模式（transport.mode）要重启 DSH 才生效；面板只写配置，不会热切。</div>' +
     '</div><div class="ctl pbtns">' +
@@ -1349,8 +1359,32 @@ function fallbackCapsHtml() {
   }).join("")
 }
 
+async function saveKey(key, value) {
+  const r = await fetch("/api/qqbot-refine/config", {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ patch: { [key]: value } })
+  })
+  const j = await r.json()
+  await load()
+  return j
+}
+
 async function bindTransportCard() {
   const msg = $("trMsg")
+  const modeWrap = $("trMode")
+  if (modeWrap) {
+    Array.prototype.forEach.call(modeWrap.querySelectorAll("button[data-mode]"), function (b) {
+      b.onclick = async function () {
+        const to = b.getAttribute("data-mode")
+        const label = to === "onebot" ? "NapCat / OneBot 11" : "官方 QQ（im-qqbot）"
+        if (!confirm("切到「" + label + "」？\n\n只会写配置，重启 DSH 后才真正生效。")) return
+        try {
+          const j = await saveKey("transport.mode", to)
+          if (msg) msg.textContent = j.ok ? ("已切到「" + label + "」→ 重启 DSH 生效（官方通道配置保留，可随时切回）") : ("切换失败：" + (j.error || ""))
+        } catch (e) { if (msg) msg.textContent = "切换失败：" + e.message }
+      }
+    })
+  }
   const ping = $("trPing")
   if (ping) ping.onclick = async function () {
     if (msg) msg.textContent = "测延迟中…"
