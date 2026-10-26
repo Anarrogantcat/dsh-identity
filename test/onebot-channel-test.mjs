@@ -114,20 +114,23 @@ A("群文件 → upload_group_file", fileCall[0] === "upload_group_file" && file
 
 // ── 7. 通道：事件 → agent，session 事件 → 发送 ──
 const dispatched = [];
+const createdOpts = [];
 const fakeAgents = {
   get: () => null,
   resume: async () => { throw new Error("没有历史") },
-  create: async ({ sessionId }) => ({ agent: { session: { id: sessionId }, followup: (m) => dispatched.push(m) }, dispose: async () => {} }),
+  create: async (o) => { createdOpts.push(o); const { sessionId } = o; return { agent: { session: { id: sessionId }, followup: (m) => dispatched.push(m) }, dispose: async () => {} } },
 };
+const fakeDefaultModel = { currentSelection: () => ({ provider: "deepseek-account", model: "deepseek-flash", reasoningEffort: "high" }) };
 let sessionHandler = null;
 const fakeCtx = {
-  get: (name) => (name === "agents" ? fakeAgents : null),
+  get: (name) => (name === "agents" ? fakeAgents : name === "agentDefaultModel" ? fakeDefaultModel : null),
   on: (ev, fn) => { if (ev === "session/event") sessionHandler = fn; return () => { sessionHandler = null } },
 };
 let evHandler = null;
 const client2 = { connected: true, url: "ws://t", call: async (a, p) => { calls.push([a, p]); return {} }, onEvent: (fn) => { evHandler = fn; return () => {} } };
 const ch = new CH.OneBotChannel({ ctx: fakeCtx, gate: fakeGate, client: client2, logger: { info() {}, warn() {} } });
 ch.start();
+A("建会话时带上宿主默认模型（{{model}} 才有值）", createdOpts.length === 0 || (createdOpts[0].agentOptions && createdOpts[0].agentOptions.provider === "deepseek-account"), createdOpts[0]?.agentOptions);
 A("订阅了 session 事件", typeof sessionHandler === "function");
 A("订阅了 onebot 事件", typeof evHandler === "function");
 await ch.handleEvent(evGroup);
