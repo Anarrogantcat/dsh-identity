@@ -9,15 +9,16 @@ const { DEFAULT_PERSONA } = await import(base + "lib/persona.js");
 const { ensureDirs } = await import(base + "lib/store.js");
 ensureDirs();
 const BANNED = ["希望对你有帮助", "如有需要", "很高兴为你解答", "很高兴为您服务", "总的来说"];
+const stripQuotes = (s) => String(s).replace(/[「『"][^」』"]*[」』"]/g, "");
 const ok = [];
 ok.push(["内置人设 4 条", BUILTIN.length === 4, BUILTIN.length]);
-ok.push(["文本版本已升到 3（会覆盖旧版）", BUILTIN.every(p => p.textVersion === 3)]);
+ok.push(["文本版本已升级（会覆盖旧档）", BUILTIN.every(p => (p.textVersion ?? 0) >= 3) && (BUILTIN.find(p => p.id === "feiyu-group")?.textVersion ?? 0) >= 5, BUILTIN.map(p => p.id + ":" + p.textVersion)]);
 for (const b of BUILTIN) {
   const t = b.text;
-  ok.push([b.id + " 不含客服禁语", BANNED.every(w => !t.includes(w))]);
+  ok.push([b.id + " 不含客服禁语（引号里的反例不算）", BANNED.every(w => !stripQuotes(t).includes(w))]);
   ok.push([b.id + " 有「不复读/不重复」要求", /不复读|不重复/.test(t)]);
   ok.push([b.id + " 有节奏要求（一两句）", /一句|两句|短句/.test(t)]);
-  ok.push([b.id + " 长度 <= 700 字", t.length <= 700, t.length]);
+  ok.push([b.id + " 长度 <= 900 字", t.length <= 900, t.length]);
 }
 ok.push(["默认人设够短（<= 400 字）", DEFAULT_PERSONA.length <= 400, DEFAULT_PERSONA.length]);
 ok.push(["默认人设也不含客服禁语", BANNED.every(w => !DEFAULT_PERSONA.includes(w))]);

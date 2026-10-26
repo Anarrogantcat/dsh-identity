@@ -98,21 +98,21 @@
       radial-gradient(34% 38% at 82% 18%, rgba(120,90,255,.22), transparent 70%),
       radial-gradient(46% 46% at 60% 92%, rgba(55,201,139,.16), transparent 72%),
       radial-gradient(30% 30% at 8% 78%, rgba(240,179,74,.12), transparent 70%);
-    filter: blur(38px) saturate(1.1);
+    filter: blur(28px) saturate(1.05); will-change: auto;
   }
   html.glass-off body::before{display:none}
   html.glass-off .pcard,html.glass-off header,html.glass-off footer,html.glass-off .panel{
     backdrop-filter:none !important;-webkit-backdrop-filter:none !important;
     background:#1a2233 !important;
   }
-  header,footer{background:rgba(15,20,32,.62) !important;backdrop-filter:blur(18px) saturate(1.35);-webkit-backdrop-filter:blur(18px) saturate(1.35)}
-  .pcard{background:rgba(26,34,51,.58) !important;backdrop-filter:blur(16px) saturate(1.3);-webkit-backdrop-filter:blur(16px) saturate(1.3);
+  header,footer{background:rgba(15,20,32,.72) !important;backdrop-filter:blur(8px) saturate(1.2);-webkit-backdrop-filter:blur(18px) saturate(1.35)}
+  .pcard{background:rgba(26,34,51,.72) !important;backdrop-filter:blur(6px) saturate(1.15);-webkit-backdrop-filter:blur(16px) saturate(1.3);
     border-color:rgba(120,150,210,.16) !important;box-shadow:0 10px 30px rgba(0,0,0,.28)}
-  .panel{background:rgba(26,34,51,.42) !important;backdrop-filter:blur(14px) saturate(1.25);-webkit-backdrop-filter:blur(14px) saturate(1.25)}
+  .panel{background:rgba(26,34,51,.62) !important;backdrop-filter:blur(6px) saturate(1.15);-webkit-backdrop-filter:blur(14px) saturate(1.25)}
   .row input,.row select,.row textarea,.searchbar input{background:rgba(13,19,32,.72) !important}
-  .tab{backdrop-filter:blur(8px)}
+  .tab{backdrop-filter:none}
   table,th,td{background:transparent}
-  #qqrefine-wrap{background:rgba(15,20,32,.72) !important;backdrop-filter:blur(20px) saturate(1.3)}
+  #qqrefine-wrap{background:rgba(15,20,32,.92) !important;backdrop-filter:none}
   @media (prefers-reduced-transparency: reduce){ html{--glass:0} }
 
   /* ── S6 面板补齐：常用区 / 通道 / 知识库 / 赛程 / 名册 / 话题 ── */
@@ -408,7 +408,6 @@ function renderPanel(){
     try { el.insertAdjacentHTML("beforeend", topicsCardHtml()) } catch (e) {}
   }
   if (ACTIVE === "usage") {
-    try { el.insertAdjacentHTML("afterbegin", quickCardHtml()) } catch (e) {}
     try { el.insertAdjacentHTML("beforeend", safetyCardHtml()) } catch (e) {}
   }
   if (ACTIVE === "voice") {
@@ -487,11 +486,18 @@ function fieldRow(f, tabLabel) {
 }
 
 async function load(){
+  const sigOf = (s) => {
+    try { return [s.version, JSON.stringify(s.config).length, s.transport && s.transport.mode, (s.transport && s.transport.channel && s.transport.channel.counts && s.transport.channel.counts.inbound) || 0, (s.roster && s.roster.updatedAt) || 0, (s.kb && s.kb.chunks) || 0].join("|") } catch (e) { return String(Date.now()) }
+  }
   const r = await fetch('/api/qqbot-refine/state')
   STATE = await r.json()
   if (!STATE.ok) { $('msg').textContent = '读取失败：' + (STATE.error||''); return }
   for (const k of Object.keys(draft)) delete draft[k]
   try { const hh = (location.hash || "").replace(/^#/, ""); if (hh && STATE.tabs.some((t) => t[0] === hh)) ACTIVE = hh } catch {}
+  // 状态没变就别重画（刷新/切页时的卡顿主要来自整页重建）
+  const sig = sigOf(STATE)
+  if (sig === (window.__qqrefineSig || "") && $("panel").childElementCount > 0) { renderChips(); renderTopbar(); markDirty(); return }
+  window.__qqrefineSig = sig
   await ensurePeerKeys()
   renderQuick()
   renderChips(); renderTopbar(); renderTabs(); renderPanel(); markDirty(); try { updateToolbar() } catch {}
@@ -1074,7 +1080,7 @@ async function copyText(text, btn) {
 // 毛玻璃开关（记住选择）
 ;(function initGlass(){
   let on = true
-  try { on = localStorage.getItem("qqrefine:glass") !== "0" } catch {}
+  try { const saved = localStorage.getItem("qqrefine:glass"); on = saved === null ? false : saved !== "0" } catch { on = false }
   document.documentElement.classList.toggle("glass-off", !on)
   const b = $("glassBtn")
   if (b) { b.textContent = on ? "🫧 毛玻璃：开" : "🫧 毛玻璃：关"; b.onclick = () => {

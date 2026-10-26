@@ -1,0 +1,27 @@
+process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-moodzero';
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+const HOME = process.env.DSH_HOME;
+try { rmSync(HOME, { recursive: true, force: true }) } catch {}
+mkdirSync(HOME + "/profiles/desktop", { recursive: true });
+writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy\n", "utf8");
+const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const M = await import(base + "lib/moodllm.js");
+const ok = [];
+const T = (n, c, e) => ok.push([n, !!c, e]);
+const zero = '{"happy":0,"calm":0,"sweet":0,"heartache":0,"worry":0,"sad":0,"jealous":0,"reason":""}';
+const z = M.parseAppraisal(zero);
+T("全 0 JSON 不再判失败", z && z.complete === true, z);
+T("全 0 时 dims 为空（无变化）", z && Object.keys(z.dims).length === 0, z && z.dims);
+const zr = M.parseAppraisal('{"happy":0,"calm":0,"sweet":0,"heartache":0,"worry":0,"sad":0,"jealous":0,"reason":"没人提她"}');
+T("全 0 + reason 也有效", zr && zr.complete && zr.reason === "没人提她", zr);
+const fenced = "```json\n" + '{"happy":1.2,"calm":0,"sweet":0.5,"heartache":0,"worry":0,"sad":0,"jealous":0,"reason":"被夸"}' + "\n```";
+const pos = M.parseAppraisal(fenced);
+T("代码块 + 正常数值仍能解析", pos && pos.dims.happy === 1.2 && pos.dims.sweet === 0.5, pos);
+T("纯垃圾文本仍判失败", M.parseAppraisal("我觉得今天还行吧") === null, true);
+const partial = M.parseAppraisal('{"happy":1}');
+T("缺字段但有数值 → 有效（complete=false）", partial && partial.dims.happy === 1 && partial.complete === false, partial);
+console.log("=== 心情评估：全 0 语义 测试 ===");
+let fail = 0;
+for (const [n, pass2, e] of ok) { console.log((pass2 ? "OK  " : "FAIL ") + n + (pass2 ? "" : "   " + JSON.stringify(e))); if (!pass2) fail++; }
+console.log(fail ? ("失败 " + fail + "/" + ok.length) : ("全部通过 " + ok.length + "/" + ok.length));
+process.exit(fail ? 1 : 0);
