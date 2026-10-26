@@ -56,7 +56,16 @@ let stopJobs = null
 let modsRef = null
 /** 宿主的 agentDefaultModel 服务（拿「默认用哪个模型」） */
 let defaultModelSvc = null
+/** 宿主可用的 agent 预设（QQ 会话最好选一个纯聊天的） */
+let agentPresetList = null
 
+/** QQ 群聊模式的硬约束：抵消宿主「编程 agent」提示词带来的助理腔 */
+const CHAT_MODE_TEXT = [
+  '你现在是在 QQ 群/私聊里聊天，不是在执行编码任务。',
+  '宿主给你的开发环境说明、技能目录、沙箱、工作目录、工具清单都与你此刻无关：不要提它们，也不要用它们的口吻说话。',
+  '禁止助理腔：不说「收到」「好的」「明白」「已记录」「需要我帮忙吗」「希望对你有帮助」。',
+  '一次只回一两句人话；接不下去就吐槽或反问一句；对方只发了个表情时不要接。',
+].join('\n')
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 
 function isLoopback(req) {
@@ -227,6 +236,7 @@ function snapshot() {
         return map
       } catch { return {} }
     })(),
+    agentPresets: agentPresetList,
     llmRoute: (() => {
       try {
         const cfg0 = loadConfig()
@@ -299,6 +309,11 @@ export async function apply(ctx, config = {}) {
   const mods = await loadCognition(logger)
   modsRef = mods
   try { defaultModelSvc = ctx.get?.('agentDefaultModel') ?? null } catch { defaultModelSvc = null }
+  try {
+    const ps = ctx.get?.('agentPresets')
+    const list = ps?.list ? await ps.list() : null
+    if (Array.isArray(list)) agentPresetList = list.map((p) => ({ id: p.id, name: p.name ?? p.id, description: p.description ?? '' }))
+  } catch { agentPresetList = null }
 
   /** 配置里没写模型就用宿主默认；返回配置副本（不落盘） */
   const withLlmRoute = (c, section) => {
@@ -352,6 +367,12 @@ export async function apply(ctx, config = {}) {
   // 2) 系统提示：人格 + 记忆
   if (typeof ctx.inject === 'function') {
     ctx.inject(['systemPrompt'], (scope) => {
+      scope.effect(() => scope.systemPrompt.section({
+        name: 'qqbot-refine:chat-mode',
+        order: 10,
+        interpolate: false,
+        text: () => CHAT_MODE_TEXT,
+      }), 'qqbot-refine: chat-mode section')
       scope.effect(() => scope.systemPrompt.section({
         name: 'qqbot-refine:persona',
         order: loadConfig().persona.order ?? 120,

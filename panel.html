@@ -402,6 +402,7 @@ function renderPanel(){
   }
   if (ACTIVE === "channel") {
     try { el.insertAdjacentHTML("afterbegin", transportCardHtml()) } catch (e) {}
+    try { el.insertAdjacentHTML("beforeend", presetPickerHtml()) } catch (e) {}
   }
   if (ACTIVE === "freq") {
     try { el.insertAdjacentHTML("beforeend", topicsCardHtml()) } catch (e) {}
@@ -1462,9 +1463,38 @@ async function saveKey(key, value) {
   return j
 }
 
+function presetPickerHtml() {
+  const list = STATE.agentPresets
+  if (!Array.isArray(list) || !list.length) {
+    return '<div class="pcard"><div class="label">agent 预设</div><div class="hint">宿主没报可用预设（或服务未就绪）。留空 = 用宿主默认；默认预设带编程 agent 的工具/技能说明，容易说话像助理。</div></div>'
+  }
+  const cur = String(get("transport.onebot.preset") || "")
+  const rows = list.map(function (p) {
+    const on = String(p.id) === cur
+    return '<div class="kcell"><span class="k">' + escapeHtml(p.name || p.id) + '</span>' +
+      '<span class="v">' + escapeHtml(p.id) + (p.description ? ' <span class="hint">' + escapeHtml(String(p.description).slice(0, 60)) + '</span>' : "") + '</span>' +
+      '<span class="pbtns"><button data-preset="' + escapeHtml(String(p.id)) + '"' + (on ? ' disabled' : '') + '>' + (on ? '当前' : '选用') + '</button></span></div>'
+  }).join("")
+  return '<div class="pcard" id="presetCard"><div class="label">agent 预设（QQ 会话用哪个）</div>' +
+    '<div class="hint">选一个「纯聊天/不带工具」的预设，能明显减掉编程 agent 的说话腔；选完记得点右下角「保存」，然后重启 DSH。</div>' +
+    '<div class="kgrid" style="grid-template-columns:1fr;margin-top:6px">' + rows + '</div>' +
+    '<div class="hint" id="presetMsg" style="min-height:16px"></div></div>'
+}
+
 async function bindTransportCard() {
   const msg = $("trMsg")
   bindModeButtons($("trMode"))
+  ;[...document.querySelectorAll("[data-preset]")].forEach(function (b) {
+    b.onclick = function () {
+      const id = b.getAttribute("data-preset")
+      put("transport.onebot.preset", id)
+      const input = document.querySelector('input[data-k="transport.onebot.preset"]')
+      if (input) input.value = id
+      const m = $("presetMsg")
+      if (m) m.textContent = "已选 " + id + "（还没保存；点右下角「保存」后重启 DSH 生效）"
+      try { renderPanel(); bindTabCards() } catch (e) {}
+    }
+  })
   const ping = $("trPing")
   if (ping) ping.onclick = async function () {
     if (msg) msg.textContent = "测延迟中…"
