@@ -15,7 +15,7 @@ import { ensureDirs, readJson, writeJson, dirs, peerKey, audit } from './lib/sto
 import { diag, loadQQBot, installHooks } from './lib/diag.js'
 import { startTransport, stopTransport, transportDescribe, getOneBotClient } from './lib/transport.js'
 import { capabilitySummary } from './lib/capabilities.js'
-import { refreshAll, refreshMembers, rosterStats, groupChoices, groupName } from './lib/roster.js'
+import { refreshAll, refreshMembers, rosterStats, groupChoices, groupName, loadRoster } from './lib/roster.js'
 import { loadState, state, newBind, getBind, clearBind } from './lib/state.js'
 import { createGate, startJobs } from './lib/gate.js'
 import { loadCognition, createHooks, cognitionText, consolidatePeers } from './lib/hooks.js'
@@ -474,6 +474,13 @@ export async function apply(ctx, config = {}) {
           }
           if (action === "profileList") {
             return sendJson(res, 200, { ok: true, group: body.group, stats: profile.stats(body.group), members: profile.listMembers(body.group) })
+          }
+          if (action === "profileSeed") {
+            const roster = loadRoster()
+            const list = roster.members[String(body.group)]?.list ?? []
+            if (!list.length) return sendJson(res, 200, { ok: false, error: "名册里还没有这个群的成员（先刷新名册）" })
+            const r = profile.seedMembers(body.group, list, cfg)
+            return sendJson(res, 200, { ok: true, ...r, members: profile.listMembers(body.group) })
           }
           if (action === "profileInduce") {
             const r = profile.induce(body.group, cfg)
