@@ -114,6 +114,24 @@
   table,th,td{background:transparent}
   #qqrefine-wrap{background:rgba(15,20,32,.72) !important;backdrop-filter:blur(20px) saturate(1.3)}
   @media (prefers-reduced-transparency: reduce){ html{--glass:0} }
+
+  /* ── S6 面板补齐：常用区 / 通道 / 知识库 / 赛程 / 名册 / 话题 ── */
+  .qgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px 16px;margin-top:8px}
+  .qcell{min-width:0}
+  .qcell .label{font-size:12.5px;color:#cfdcf3}
+  .qctl{display:flex;align-items:center;gap:8px;margin-top:4px}
+  .qctl input[type=text],.qctl input[type=number],.qctl select{width:100%;min-width:0}
+  .kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:2px 18px}
+  .kcell{display:flex;gap:8px;align-items:baseline;font-size:12.5px;padding:4px 0;border-bottom:1px dashed rgba(38,49,74,.55);min-width:0}
+  .kcell .k{color:var(--dim);flex:0 0 84px;word-break:break-all}
+  .kcell .v{color:#cfdcf3;word-break:break-all;flex:1;min-width:0}
+  .kcell .v.bad{color:var(--bad)}
+  .kcell .ago{color:#7f8ca6;font-size:11.5px;flex:0 0 auto}
+  .kcell.hl{background:rgba(77,141,255,.10);border-radius:6px;padding-left:6px;padding-right:6px}
+  .caplist{background:#0d1320;border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+  .cap{display:flex;gap:8px;align-items:baseline;font-size:12.5px;padding:2px 0}
+  .cap.miss{color:#7d8aa3}
+  .cap .why{color:#6f7d96;font-size:11.5px;margin-left:auto;text-align:right}
 </style>
 </head>
 <body>
@@ -124,6 +142,7 @@
   <button id="glassBtn" style="position:absolute;right:22px;top:18px;font-size:12px;padding:4px 10px">🫧 毛玻璃</button>
 </header>
 <main>
+  <div id="quick" class="panel" style="margin-bottom:12px"></div>
   <div class="tabs" id="tabs"></div>
   <div class="searchbar"><input type="text" id="q" placeholder="搜索设置项（跨页签）…"><span class="hint" id="qhint"></span></div>
   <div class="toolbar">
@@ -148,6 +167,15 @@ let STATE = null
 let ACTIVE = 'scope'
 let SEARCH = ""
 const draft = {}
+
+// S6：字段表里没有的 key 不进通用渲染；这两个是「面板补录」项（保存后单独核对是否生效）
+const SKIP_KEYS = new Set(["frequency.chatMode", "sticker.remoteSource"])
+const QUICK_KEYS = ["usage.hardLimitEnabled", "usage.dailyYuanHardLimit", "usage.onExceed", "integration.llmEnabled", "knowledge.enabled"]
+const EXTRA_FIELDS = [
+  { k: "memory.wBaseline", t: "num", tab: "memory", l: "基础权重 wBaseline（记忆底分）", hint: "召回打分 = wBaseline + 激活 + 重要性 + 情绪；调大 = 更容易想起老事", step: 0.01, min: 0, max: 1 },
+  { k: "sticker.genProvider.apiKey", t: "text", tab: "sticker", l: "图像 provider API Key", hint: "自生成表情用的图像接口密钥（字段表里没有它，保存后会核对有没有真的写进去）" },
+]
+const EXTRA_KEYS = new Set(EXTRA_FIELDS.map((f) => f.k))
 
 function fmt(v){
   if (Array.isArray(v)) return v.join('\n')
@@ -256,10 +284,12 @@ function renderPanel(){
   if (ACTIVE === "persona") { renderPersonaPanel(); return }
   if (ACTIVE === "profile") { renderProfilePanel(); return }
   if (ACTIVE === "scope") { renderScopeClaim(); return }
+  if (ACTIVE === "knowledge") { renderKbPanel(); return }
+  if (ACTIVE === "matches") { renderMatchesPanel(); return }
 
   const el = $("panel")
   const q = (SEARCH || "").trim().toLowerCase()
-  const allFields = STATE.fields
+  const allFields = (STATE.fields || []).filter((f) => !SKIP_KEYS.has(f.k))
   const fields = q
     ? allFields.filter((f) => (f.l + " " + f.k + " " + (f.hint || "")).toLowerCase().includes(q))
     : allFields.filter((f) => f.tab === ACTIVE)
@@ -285,6 +315,20 @@ function renderPanel(){
 
   if (ACTIVE === "memory") {
     try { el.insertAdjacentHTML("afterbegin", learnCardHtml()) } catch (e) {}
+    try { el.insertAdjacentHTML("beforeend", extraFieldsCard("memory") + cardsCardHtml()) } catch (e) {}
+  }
+  if (ACTIVE === "sticker") {
+    try { el.insertAdjacentHTML("beforeend", extraFieldsCard("sticker")) } catch (e) {}
+  }
+  if (ACTIVE === "channel") {
+    try { el.insertAdjacentHTML("afterbegin", transportCardHtml()) } catch (e) {}
+  }
+  if (ACTIVE === "freq") {
+    try { el.insertAdjacentHTML("beforeend", topicsCardHtml()) } catch (e) {}
+  }
+  if (ACTIVE === "usage") {
+    try { el.insertAdjacentHTML("afterbegin", quickCardHtml()) } catch (e) {}
+    try { el.insertAdjacentHTML("beforeend", safetyCardHtml()) } catch (e) {}
   }
   if (ACTIVE === "mood") {
     try {
@@ -295,18 +339,8 @@ function renderPanel(){
     } catch (e) {}
   }
 
-  ;[...el.querySelectorAll("[data-k]")].forEach((input) => {
-    const k = input.dataset.k
-    const f = STATE.fields.find((x) => x.k === k)
-    if (!f) return
-    const ev = (f.t === "bool" || f.t === "list" || f.t === "text") ? "change" : "input"
-    input.addEventListener(ev, () => {
-      if (f.t === "bool") put(k, input.checked)
-      else if (f.t === "num") put(k, Number(input.value))
-      else if (f.t === "list") put(k, input.value.split(/[\r\n,，]/).map((s) => s.trim()).filter(Boolean))
-      else put(k, input.value)
-    })
-  })
+  bindFields(el)
+  try { bindTabCards() } catch (e) {}
   const det = el.querySelector("details[data-advtab]")
   if (det) det.addEventListener("toggle", () => { try { localStorage.setItem("qqrefine:adv:" + ACTIVE, det.open ? "1" : "0") } catch {} })
 
@@ -363,6 +397,8 @@ async function load(){
   if (!STATE.ok) { $('msg').textContent = '读取失败：' + (STATE.error||''); return }
   for (const k of Object.keys(draft)) delete draft[k]
   try { const hh = (location.hash || "").replace(/^#/, ""); if (hh && STATE.tabs.some((t) => t[0] === hh)) ACTIVE = hh } catch {}
+  await ensurePeerKeys()
+  renderQuick()
   renderChips(); renderTabs(); renderPanel(); markDirty(); try { updateToolbar() } catch {}
   const qi = $("q"); if (qi) { qi.value = SEARCH; qi.oninput = () => { SEARCH = qi.value; renderPanel() } }
   const rbox = $("recent"); if (rbox) rbox.style.display = "none"
@@ -377,8 +413,24 @@ async function save(){
       body: JSON.stringify({patch: draft})
     })
     const j = await r.json()
-    if (j.ok){ for (const k of Object.keys(draft)) delete draft[k]; await load(); $('msg').textContent='已保存 ✓（热生效）' }
-    else { $('msg').textContent = '保存失败：' + (j.error||'') }
+    if (j.ok){
+      const sent = Object.assign({}, draft)
+      for (const k of Object.keys(draft)) delete draft[k]
+      await load()
+      const bad = verifyExtras(sent)
+      $('msg').textContent = bad.length
+        ? ('已保存，但没有生效：' + bad.join('、') + '（宿主字段表里还没有它 → 更新/重启 DSH 后再试）')
+        : '已保存 ✓（热生效）'
+    }
+    else {
+      const keys = Object.keys(draft)
+      const known = new Set((STATE.fields || []).map((f) => f.k))
+      const onlyExtra = keys.length > 0 && keys.every((k) => EXTRA_KEYS.has(k) && !known.has(k))
+      const noField = /没有可应用的字段/.test(j.error || '')
+      $('msg').textContent = (onlyExtra || noField) && onlyExtra
+        ? ('这次只有面板补录字段（' + keys.join('、') + '），宿主字段表里还没有它们，写不进去 → 更新/重启 DSH 后再试')
+        : '保存失败：' + (j.error||'')
+    }
   }catch(e){ $('msg').textContent = '保存失败：' + e.message }
   finally{ btn.disabled = false }
 }
@@ -680,7 +732,7 @@ function renderMgmt(kind, data, box, items) {
     const left = b ? Math.max(1, Math.round((b.expiresAt - Date.now()) / 60000)) : 0
     html += `<div class="row"><div class="meta"><div class="label">绑定码</div><div class="hint">${b ? `当前：<b>${b.code}</b>（用途 ${b.purpose}，剩 ${left} 分钟）` : "生成后，在 QQ 里发：#绑定 <码>"}</div></div><div class="ctl pbtns"><button data-bind="owner">绑 Owner</button><button data-bind="group">绑本群</button><button data-bind="dm">绑私聊</button>${b ? '<button data-bindcancel>作废</button>' : ""}</div></div>`
   }
-  if (kind === "usage") html += '<div class="pbtns" style="margin-top:8px"><button id="mreset">重置计数</button><button id="mroles">清角色缓存</button></div>'
+  if (kind === "usage") html += '<div class="pbtns" style="margin-top:8px"><button id="mreset">重置计数</button><button id="mresetCost">重置花费闸</button><span class="hint">花费闸：超限会降级回模板 / 静默</span><button id="mroles">清角色缓存</button></div>'
   if (kind === "memoryPeers" && items) {
     html += `<div class="hint" style="margin:10px 0 6px">peer ${MPICK} 的记忆（${(items.rows || []).length} 条）</div>`
     html += '<div style="background:#0d1320;border:1px solid var(--line);border-radius:8px;padding:4px 10px">' +
@@ -720,7 +772,9 @@ function renderMgmt(kind, data, box, items) {
   const bc = box.querySelector("[data-bindcancel]")
   if (bc) bc.onclick = async () => { await mg({ action: "bindCancel" }); await load(); await loadMgmt(kind, $("mgmt")) }
   const rs = $("mreset")
-  if (rs) rs.onclick = async () => { await mg({ action: "mgmtOp", kind: "usage", op: "reset" }); await loadMgmt(kind, $("mgmt")) }
+  if (rs) rs.onclick = async () => { await mg({ action: "mgmtOp", kind: "usage", op: "resetDiag" }); await loadMgmt(kind, $("mgmt")) }
+  const rc2 = $("mresetCost")
+  if (rc2) rc2.onclick = async () => { await mg({ action: "mgmtOp", kind: "usage", op: "resetCost" }); await loadMgmt(kind, $("mgmt")) }
   const rc = $("mroles")
   if (rc) rc.onclick = async () => { await mg({ action: "mgmtOp", kind: "roles", op: "clearCache" }); await loadMgmt(kind, $("mgmt")) }
 }
@@ -749,6 +803,8 @@ function renderScopeClaim() {
   // §scope-clear§ 这里必须清空：后面用 beforeend 追加
   const el = $("panel")
   el.innerHTML = ""
+  el.insertAdjacentHTML("beforeend", rosterCardHtml())
+  try { bindRosterCard() } catch (e) {}
   const cfg = STATE.config
   const groups = cfg.scope.groups || []
   const dms = cfg.scope.dmUsers || []
@@ -841,7 +897,7 @@ function renderScopeClaim() {
         </div>
       </details>
     </div>
-    ${listCard("白名单群", "groups", groups)}
+    ${groupListCard(groups)}
     ${listCard("私聊白名单", "dmUsers", dms)}
     ${listCard("Owner", "owners", owners, "最高权限")}
     ${listCard("手动 Admin", "admins", admins, "QQ 群主/群管自动成为 Admin")}
@@ -1059,6 +1115,760 @@ function renderPermCard() {
     }
   })
 }
+// ── S6 面板补齐：常用区 / 通道 / 知识库 / 赛程 / 名册 / 话题 / 四张卡 ──
+let PK_MAP = {}
+let PK_BY_GROUP = {}
+let PK_ERROR = ""
+let MATCH_NOTICE = ""
+const CAP_NAMES = {
+  groupAllMessages: "群全量消息", groupCard: "群名片", memberList: "群成员列表",
+  recallEvent: "撤回事件", pokeEvent: "戳一戳", mergedForwardIn: "合并转发",
+  reactionEvent: "表情回应", quoteOut: "引用回复", voiceOut: "语音发送",
+  fileOut: "文件发送", videoOut: "视频发送", groupAdmin: "群管理",
+  realUsage: "真实用量", stt: "语音转写", roster: "名册（群/好友列表）",
+}
+
+function escapeHtml(s) {
+  return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+}
+
+// 字段绑定（面板内 + 顶部常用区共用）：只认 STATE.fields 与 EXTRA_FIELDS
+function bindFields(root) {
+  if (!root) return
+  ;[...root.querySelectorAll("[data-k]")].forEach(function (input) {
+    const k = input.dataset.k
+    const f = (STATE.fields || []).find(function (x) { return x.k === k }) ||
+      EXTRA_FIELDS.find(function (x) { return x.k === k })
+    if (!f) return
+    const ev = (f.t === "bool" || f.t === "list" || f.t === "text") ? "change" : "input"
+    input.addEventListener(ev, function () {
+      let val
+      if (f.t === "bool") val = input.type === "checkbox" ? !!input.checked : input.value === "true"
+      else if (f.t === "num") val = Number(input.value)
+      else if (f.t === "list") val = input.value.split(new RegExp("[\r\n,，]")).map(function (s) { return s.trim() }).filter(Boolean)
+      else val = input.value
+      put(k, val)
+      syncInputs(k, val, input)
+    })
+  })
+}
+
+// 同一个字段可能在「顶部常用区」和「页内」各有一份，改一处同步另一处
+function syncInputs(k, val, skipEl) {
+  ;[...document.querySelectorAll('[data-k="' + k + '"]')].forEach(function (el) {
+    if (!el || el === skipEl) return
+    if (el.type === "checkbox") { el.checked = !!val; return }
+    if (el.tagName === "SELECT") { el.value = String(val == null ? "" : val); return }
+    el.value = Array.isArray(val) ? val.join("\n") : String(val == null ? "" : val)
+  })
+}
+
+// 补录字段核对：字段表里没有的 key，服务端会静默丢掉，这里保存后查一次
+function verifyExtras(sent) {
+  const bad = []
+  const known = new Set((STATE.fields || []).map(function (f) { return f.k }))
+  Object.keys(sent || {}).forEach(function (k) {
+    if (known.has(k) || !EXTRA_KEYS.has(k)) return
+    const cur = k.split(".").reduce(function (o, x) { return o == null ? undefined : o[x] }, STATE.config)
+    const want = sent[k]
+    const same = (typeof want === "number" && typeof cur === "number")
+      ? Math.abs(want - cur) < 1e-9
+      : String(cur) === String(want)
+    if (!same) bad.push(k)
+  })
+  return bad
+}
+
+// 群号 → peerKey（g_ + sha256 前 12 位），与服务端 store.peerKey 一致
+async function ensurePeerKeys() {
+  PK_MAP = {}
+  PK_BY_GROUP = {}
+  PK_ERROR = ""
+  const choices = STATE.groupChoices || []
+  if (!choices.length) return
+  if (typeof crypto === "undefined" || !crypto.subtle || typeof TextEncoder === "undefined") {
+    PK_ERROR = "这个页面拿不到 SHA-256（不是安全上下文），单群文件名请手动填"
+    return
+  }
+  try {
+    for (const g of choices) {
+      const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(g.id)))
+      const hex = Array.prototype.map.call(new Uint8Array(buf), function (b) { return ("0" + b.toString(16)).slice(-2) }).join("").slice(0, 12)
+      const pk = "g_" + hex
+      PK_BY_GROUP[String(g.id)] = pk
+      PK_MAP[pk] = { id: g.id, name: g.name || "" }
+    }
+  } catch (e) {
+    PK_ERROR = "算群标识失败：" + e.message
+  }
+}
+
+function groupLabelOfPeer(pk) {
+  const hit = PK_MAP[String(pk)]
+  if (hit) return "群 " + (hit.name || String(hit.id))
+  return String(pk || "").slice(0, 12)
+}
+
+function renderKv(rows) {
+  const list = rows || []
+  if (!list.length) return '<div class="hint">没有数据</div>'
+  return '<div class="kgrid">' + list.map(function (r) {
+    return '<div class="kcell"><span class="k">' + escapeHtml(r.k) + '</span><span class="v">' + escapeHtml(r.v) + '</span></div>'
+  }).join("") + '</div>'
+}
+
+function fmtAgo(ts) {
+  const n = Number(ts)
+  if (!n) return "还没有"
+  const s = Math.max(0, Math.round((Date.now() - n) / 1000))
+  if (s < 60) return s + " 秒前"
+  if (s < 3600) return Math.round(s / 60) + " 分钟前"
+  return Math.round(s / 3600) + " 小时前"
+}
+
+function healthChip(h) {
+  const map = { ok: ["ok", "🟢 正常"], warn: ["warn", "🟡 可疑"], bad: ["bad", "🔴 异常"] }
+  const m = map[h] || ["warn", "⚪ 未知"]
+  return '<span class="chip ' + m[0] + '">' + m[1] + '</span>'
+}
+
+function formCell(label, ctl) {
+  return '<div class="qcell"><div class="label">' + escapeHtml(label) + '</div><div class="qctl">' + ctl + '</div></div>'
+}
+
+// ── 常用区（5 个最常改的开关）──
+function quickCellHtml(f) {
+  const v = get(f.k)
+  let ctl = ""
+  if (f.t === "bool") {
+    ctl = '<label class="switch"><input type="checkbox" data-k="' + f.k + '" ' + (v ? "checked" : "") + '><i></i></label>'
+  } else if (f.k === "usage.onExceed") {
+    const cur = String(v == null ? "" : v)
+    const known = cur === "degrade" || cur === "mute"
+    ctl = '<select data-k="' + f.k + '">' +
+      '<option value="degrade"' + (cur === "mute" ? "" : " selected") + '>degrade · 降级回模板</option>' +
+      '<option value="mute"' + (cur === "mute" ? " selected" : "") + '>mute · 直接静默</option>' +
+      (known ? "" : '<option value="' + escapeHtml(cur) + '" selected>' + escapeHtml(cur) + '</option>') +
+      '</select>'
+  } else if (f.t === "num") {
+    ctl = '<input type="number" data-k="' + f.k + '" value="' + (v == null ? "" : v) + '" step="' + (f.step || 1) + '" min="' + (f.min == null ? "" : f.min) + '" max="' + (f.max == null ? "" : f.max) + '">'
+  } else {
+    ctl = '<input type="text" data-k="' + f.k + '" value="' + String(v == null ? "" : v).replace(/"/g, "&quot;") + '">'
+  }
+  return '<div class="qcell"><div class="label">' + escapeHtml(f.l) + '</div><div class="qctl">' + ctl + '</div></div>'
+}
+
+function quickCardHtml() {
+  const rows = QUICK_KEYS.map(function (k) {
+    const f = (STATE.fields || []).find(function (x) { return x.k === k })
+    return f ? quickCellHtml(f) : ""
+  }).join("")
+  if (!rows) return ""
+  return '<div class="pcard" id="quickCard">' +
+    '<div class="label" style="margin-bottom:2px">常用（这几项最常改）</div>' +
+    '<div class="hint" style="margin-bottom:4px">花费硬闸 / 每日上限 / 超限动作 / 心情模型 / 知识库总闸。改完点右下角「保存」热生效。</div>' +
+    '<div class="qgrid">' + rows + '</div></div>'
+}
+
+function renderQuick() {
+  const box = $("quick")
+  if (!box) return
+  box.innerHTML = quickCardHtml()
+  bindFields(box)
+}
+
+// 补录字段（字段表里没有的两项，单独成卡 + 保存后核对）
+function extraFieldsCard(tab) {
+  const rows = EXTRA_FIELDS.filter(function (f) {
+    if (f.tab !== tab) return false
+    return !(STATE.fields || []).some(function (x) { return x.k === f.k })
+  })
+  if (!rows.length) return ""
+  return '<div class="pcard"><div class="label" style="margin-bottom:6px">补充字段</div>' +
+    '<div class="hint" style="margin-bottom:4px">这几项面板原来没有入口；保存后会核对是否真的写进配置（写不进去会明确提示）。</div>' +
+    rows.map(function (f) { return fieldRow(f, "") }).join("") + '</div>'
+}
+
+// ── 通道卡片 ──
+function transportCardHtml() {
+  const t = STATE.transport
+  if (!t) return '<div class="pcard"><div class="label">通道</div><div class="hint">读不到通道状态（宿主没返回 transport）</div></div>'
+  const caps = STATE.capabilities || t.capabilities || null
+  const capCnt = caps ? ((caps.available || []).length + "/" + caps.total) : "—"
+  const acct = (t.account && t.account.uin) ? (String(t.account.uin) + (t.account.nickname ? "（" + t.account.nickname + "）" : "")) : "—"
+  const breaker = !!(t.breaker && t.breaker.open)
+  const sent = t.sentToday == null ? null : t.sentToday
+  const failed = t.failedToday == null ? null : t.failedToday
+  const rate = t.successRate == null ? "—" : (t.successRate + "%")
+  const modeTxt = t.mode === "onebot" ? "OneBot（自建 / NapCat）" : "官方 QQ（im-qqbot）"
+  const other = t.mode === "onebot" ? "官方 QQ · 未启用" : "OneBot · 未启用"
+  const items = [
+    ["连接", t.connected ? "已连接" : "未连接"],
+    ["账号", acct],
+    ["地址", t.endpoint || "—"],
+    ["延迟", t.latencyMs == null ? "—" : (t.latencyMs + " ms")],
+    ["最近事件", fmtAgo(t.lastEventAt)],
+    ["重连", (t.reconnects == null ? 0 : t.reconnects) + " 次"],
+    ["今日发送", "成功 " + (sent == null ? "—" : sent) + " · 失败 " + (failed == null ? "—" : failed) + " · 成功率 " + rate],
+    ["会话数", t.channel && t.channel.sessions != null ? t.channel.sessions : 0],
+    ["熔断", breaker ? ("保护中（到 " + new Date(t.breaker.until).toLocaleString() + "）") : "正常"],
+    ["最后错误", t.lastError || "—"],
+    ["能力位", capCnt],
+    ["另一条通道", other],
+  ]
+  return '<div class="pcard" id="trCard">' +
+    '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta">' +
+      '<div class="label">当前通道：' + modeTxt + ' ' + healthChip(t.health) + '</div>' +
+      '<div class="hint">改通道模式（transport.mode）要重启 DSH 才生效；面板只写配置，不会热切。</div>' +
+    '</div><div class="ctl pbtns">' +
+      '<button id="trPing">测延迟</button>' +
+      (breaker ? '<button id="trBreaker">重置熔断</button>' : "") +
+      '<button id="trReload">重新读状态</button>' +
+    '</div></div>' +
+    '<div class="kgrid">' + items.map(function (x) {
+      const bad = x[0] === "最后错误" && !!t.lastError
+      return '<div class="kcell"><span class="k">' + x[0] + '</span><span class="v' + (bad ? " bad" : "") + '">' + escapeHtml(x[1]) + '</span></div>'
+    }).join("") + '</div>' +
+    '<div class="hint" id="trMsg" style="margin-top:8px;min-height:16px"></div>' +
+    '<div class="label" style="margin:10px 0 4px">能力位清单（缺失的置灰）</div>' +
+    '<div id="trCaps" class="caplist"><div class="hint">加载能力位…</div></div>' +
+    '<details class="adv"><summary>通道数据（服务端原样）</summary><div id="trRows" style="margin-top:6px"><div class="hint">加载…</div></div></details>' +
+  '</div>'
+}
+
+function fallbackCapsHtml() {
+  const c = STATE.capabilities || (STATE.transport && STATE.transport.capabilities)
+  if (!c) return '<div class="hint">能力位读不到</div>'
+  const ok = c.available || []
+  const miss = c.missing || []
+  return ok.map(function (k) {
+    return '<div class="cap"><span>✅</span><span>' + escapeHtml(CAP_NAMES[k] || k) + '</span></div>'
+  }).join("") + miss.map(function (k) {
+    const why = c.mode === "tencent" ? "官方模式不支持，切 onebot 可用" : "当前不可用"
+    return '<div class="cap miss"><span>⬜</span><span>' + escapeHtml(CAP_NAMES[k] || k) + '</span><span class="why">' + escapeHtml(why) + '</span></div>'
+  }).join("")
+}
+
+async function bindTransportCard() {
+  const msg = $("trMsg")
+  const ping = $("trPing")
+  if (ping) ping.onclick = async function () {
+    if (msg) msg.textContent = "测延迟中…"
+    try {
+      const j = await mg({ action: "mgmtOp", kind: "transport", op: "ping" })
+      if (msg) msg.textContent = j.ok ? "已发出测活，1 秒后重读状态…" : ("测延迟失败：" + (j.error || ""))
+      if (j.ok) setTimeout(function () { load() }, 1000)
+    } catch (e) { if (msg) msg.textContent = "测延迟失败：" + e.message }
+  }
+  const br = $("trBreaker")
+  if (br) br.onclick = async function () {
+    try {
+      const j = await mg({ action: "mgmtOp", kind: "safety", op: "resetBreaker" })
+      if (msg) msg.textContent = j.ok ? "熔断已重置" : ("重置失败：" + (j.error || ""))
+      if (j.ok) await load()
+    } catch (e) { if (msg) msg.textContent = "重置失败：" + e.message }
+  }
+  const rl = $("trReload")
+  if (rl) rl.onclick = function () { load() }
+  const capsBox = $("trCaps")
+  const rowsBox = $("trRows")
+  try {
+    const j = await mg({ action: "mgmt", kind: "transport" })
+    const rows = (j && j.rows) || []
+    if (rowsBox) rowsBox.innerHTML = rows.length ? renderKv(rows) : '<div class="hint">没有数据</div>'
+    const capRows = rows.filter(function (r) { return /^[✅⬜]/.test(String(r.k || "")) })
+    if (capsBox) {
+      if (capRows.length) {
+        capsBox.innerHTML = capRows.map(function (r) {
+          const ok = String(r.k).charAt(0) === "✅"
+          const name = String(r.k).slice(2)
+          const why = ok ? "" : '<span class="why">' + escapeHtml(r.v || "") + '</span>'
+          return '<div class="cap ' + (ok ? "" : "miss") + '"><span>' + (ok ? "✅" : "⬜") + '</span><span>' + escapeHtml(name) + '</span>' + why + '</div>'
+        }).join("")
+      } else {
+        capsBox.innerHTML = fallbackCapsHtml()
+      }
+    }
+  } catch (e) {
+    if (capsBox) capsBox.innerHTML = fallbackCapsHtml()
+    if (rowsBox) rowsBox.innerHTML = '<div class="hint" style="color:#ff6b6b">读通道数据失败：' + escapeHtml(e.message) + '</div>'
+  }
+}
+
+// ── 「本群正在聊」小卡 ──
+function topicsRowsHtml(rows) {
+  if (!rows || !rows.length) return '<div class="hint" style="padding:4px 0">还没有记录（群里有人说话后就有了）</div>'
+  return '<div class="kgrid">' + rows.map(function (r) {
+    const at = typeof r.at === "number" ? (r.at ? new Date(r.at).toLocaleTimeString() : "") : String(r.at || "")
+    const m = r.match ? ' <span class="badge">' + escapeHtml(String(r.match)) + '</span>' : ""
+    return '<div class="kcell"><span class="k">' + escapeHtml(groupLabelOfPeer(r.peerKey)) + '</span>' +
+      '<span class="v">' + escapeHtml(r.text || "（空）") + m + '</span>' +
+      '<span class="ago">' + escapeHtml(at) + '</span></div>'
+  }).join("") + '</div>'
+}
+
+function topicsCardHtml() {
+  const t = STATE.topics || {}
+  return '<div class="pcard" id="topicsCard">' +
+    '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta">' +
+      '<div class="label">本群正在聊</div>' +
+      '<div class="hint">每个群最后一句 + 当时指认到的赛程。只给面板看，不进提示词。</div>' +
+    '</div><div class="ctl pbtns"><button id="topicsReload">刷新</button></div></div>' +
+    '<div id="topicsBox">' + topicsRowsHtml(t.rows || []) + '</div>' +
+  '</div>'
+}
+
+// ── 认知四张卡预览（记忆页底部）──
+function cardsCardHtml() {
+  const cfg = STATE.config || {}
+  const groups = (cfg.scope && cfg.scope.groups) || []
+  const names = STATE.groupNames || {}
+  const ids = groups.length ? groups : (STATE.groupChoices || []).map(function (g) { return g.id })
+  const opts = ids.map(function (gid) {
+    const nm = names[gid] || ""
+    return '<option value="' + escapeHtml(gid) + '">' + escapeHtml(gid) + (nm ? "（" + escapeHtml(nm) + "）" : "") + '</option>'
+  }).join("")
+  return '<div class="pcard" id="cardsCard">' +
+    '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta">' +
+      '<div class="label">认知卡预览（在场的人 / 我说过答应过 / 还没答完的）</div>' +
+      '<div class="hint">' + escapeHtml(PK_ERROR || "和她注入提示词的是同一份数据，只读。") + '</div>' +
+    '</div><div class="ctl pbtns">' +
+      '<select id="cardsGroup">' + (opts || '<option value="">（还没有群）</option>') + '</select>' +
+      '<button id="cardsGo">看四张卡</button>' +
+    '</div></div>' +
+    '<pre class="pv" id="cardsOut" style="max-height:300px">还没看</pre></div>'
+}
+
+function bindCardsCard() {
+  const b = $("cardsGo")
+  const out = $("cardsOut")
+  if (!b) return
+  b.onclick = async function () {
+    const sel = $("cardsGroup")
+    const gid = sel ? sel.value : ""
+    if (!gid) { if (out) out.textContent = "先选一个群（白名单里还没有群的话先去「白名单 / 层级」加一个）"; return }
+    const pk = PK_BY_GROUP[String(gid)]
+    if (!pk) { if (out) out.textContent = PK_ERROR || "算不出这个群的标识"; return }
+    if (out) out.textContent = "读取中…"
+    try {
+      const j = await mg({ action: "mgmt", kind: "cards", key: pk })
+      if (!j || j.ok === false) { if (out) out.textContent = "失败：" + ((j && j.error) || ""); return }
+      const rows = j.rows || []
+      if (out) out.textContent = rows.length ? rows.map(function (r) { return String(r.v == null ? "" : r.v) }).join("\n") : "（没有内容）"
+    } catch (e) { if (out) out.textContent = "失败：" + e.message }
+  }
+}
+
+// ── 安全 / 熔断卡（用量页）──
+function safetyCardHtml() {
+  return '<div class="pcard" id="safetyCard"><div class="label" style="margin-bottom:6px">安全 / 熔断</div>' +
+    '<div id="safetyBox"><div class="hint">加载中…</div></div></div>'
+}
+
+async function loadSafety(box) {
+  if (!box) return
+  try {
+    const j = await mg({ action: "mgmt", kind: "safety" })
+    const rows = (j && j.rows) || []
+    box.innerHTML = renderKv(rows) +
+      '<div class="row" style="border-bottom:0;padding:8px 0 0"><div class="meta">' +
+        '<div class="label">熔断 / 被踢的群</div>' +
+        '<div class="hint">连续 3 次发送失败会自动保护 30 分钟并通知 Owner；被踢的群会自动从白名单摘掉。</div>' +
+      '</div><div class="ctl pbtns">' +
+        '<input type="text" id="safetyGroup" placeholder="群号（解封用）" style="width:150px">' +
+        '<button id="safetyUnban">解封</button><button id="safetyReset">重置熔断</button>' +
+      '</div></div>' +
+      '<div class="hint" id="safetyMsg" style="min-height:16px"></div>'
+    const rs = $("safetyReset")
+    if (rs) rs.onclick = async function () {
+      try {
+        const r = await mg({ action: "mgmtOp", kind: "safety", op: "resetBreaker" })
+        const m = $("safetyMsg")
+        if (m) m.textContent = r.ok ? "熔断已重置" : ("失败：" + (r.error || ""))
+        if (r.ok) await loadSafety(box)
+      } catch (e) { const m = $("safetyMsg"); if (m) m.textContent = "失败：" + e.message }
+    }
+    const ub = $("safetyUnban")
+    if (ub) ub.onclick = async function () {
+      const gi = $("safetyGroup")
+      const v = gi ? gi.value.trim() : ""
+      const m = $("safetyMsg")
+      if (!v) { if (m) m.textContent = "先填群号"; return }
+      try {
+        const r = await mg({ action: "mgmtOp", kind: "safety", op: "unban", group: v })
+        if (m) m.textContent = r.ok ? ("已解封 " + v) : ("失败：" + (r.error || ""))
+        if (r.ok) await loadSafety(box)
+      } catch (e) { if (m) m.textContent = "失败：" + e.message }
+    }
+  } catch (e) {
+    box.innerHTML = '<div class="hint" style="color:#ff6b6b">读安全状态失败：' + escapeHtml(e.message) + '</div>'
+  }
+}
+
+// ── 名册卡片（白名单页顶部）──
+function rosterCardHtml() {
+  const r = STATE.roster || {}
+  const choices = STATE.groupChoices || []
+  const inList = new Set(((STATE.config.scope && STATE.config.scope.groups) || []))
+  const opts = choices.map(function (g) {
+    return '<option value="' + escapeHtml(g.id) + '">' + escapeHtml(g.id) + (g.name ? "（" + escapeHtml(g.name) + "）" : "") +
+      " · " + (g.count == null ? 0 : g.count) + " 人" + (inList.has(g.id) ? " · 已在白名单" : "") + '</option>'
+  }).join("")
+  const items = [
+    ["群", r.groups == null ? "—" : r.groups],
+    ["好友", r.friends == null ? "—" : r.friends],
+    ["缓存成员", (r.members == null ? "—" : r.members) + (r.cachedGroups == null ? "" : "（" + r.cachedGroups + " 群）")],
+    ["上次刷新", r.updatedAt ? new Date(r.updatedAt).toLocaleString() : "还没刷新"],
+    ["模式", r.supported ? "支持名册" : "当前通道不支持名册（切 onebot）"],
+  ]
+  return '<div class="pcard" id="rosterCard">' +
+    '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta">' +
+      '<div class="label">名册</div>' +
+      '<div class="hint">' + (r.supported ? "群/好友/成员来自通道接口，刷新后可以用来一键填白名单。" : "当前通道拿不到名册；切 onebot 模式（NapCat）后可用。") + '</div>' +
+    '</div><div class="ctl pbtns"><button id="rosterRefresh">刷新名册</button></div></div>' +
+    '<div class="kgrid">' + items.map(function (x) {
+      return '<div class="kcell"><span class="k">' + x[0] + '</span><span class="v">' + escapeHtml(x[1]) + '</span></div>'
+    }).join("") + '</div>' +
+    (opts
+      ? '<div class="row" style="border-bottom:0;padding:10px 0 0"><div class="meta"><div class="label">从群列表加入白名单</div>' +
+        '<div class="hint">选中一个群 → [加入白名单]；已经在白名单里的按钮会禁用。</div></div>' +
+        '<div class="ctl pbtns"><select id="rosterGroup">' + opts + '</select><button id="rosterAdd">加入白名单</button></div></div>'
+      : '<div class="hint" style="margin-top:8px">名册里还没有群（点 [刷新名册]，或切到 onebot 通道）</div>') +
+    '<div class="hint" id="rosterMsg" style="min-height:16px;margin-top:6px"></div>' +
+    '<details class="adv"><summary>名册明细（服务端原样）</summary><div id="rosterRows" style="margin-top:6px"><div class="hint">加载…</div></div></details>' +
+  '</div>'
+}
+
+async function bindRosterCard() {
+  const say = function (s) { const m = $("rosterMsg"); if (m) m.textContent = s }
+  const rf = $("rosterRefresh")
+  if (rf) rf.onclick = async function () {
+    say("刷新中…（1 秒后自动重读）")
+    try {
+      const j = await mg({ action: "mgmtOp", kind: "roster", op: "refresh" })
+      if (!j.ok) { say("刷新失败：" + (j.error || "")); return }
+      say("已提交刷新，1 秒后重读…")
+      setTimeout(function () { load() }, 1000)
+    } catch (e) { say("刷新失败：" + e.message) }
+  }
+  const sel = $("rosterGroup")
+  const add = $("rosterAdd")
+  if (add) {
+    const syncBtn = function () {
+      const gid = sel ? sel.value : ""
+      const inList = ((STATE.config.scope && STATE.config.scope.groups) || []).indexOf(gid) >= 0
+      add.disabled = !gid || inList
+      add.textContent = inList ? "已在白名单" : "加入白名单"
+    }
+    if (sel) sel.onchange = syncBtn
+    syncBtn()
+    add.onclick = async function () {
+      const gid = sel ? sel.value : ""
+      if (!gid) { say("先选一个群"); return }
+      try {
+        const j = await mg({ action: "mgmtOp", kind: "groups", op: "add", value: gid })
+        if (!j.ok) { say("加入失败：" + (j.error || "")); return }
+        say("已加入白名单：" + gid)
+        await load()
+      } catch (e) { say("加入失败：" + e.message) }
+    }
+  }
+  const box = $("rosterRows")
+  if (box) {
+    try {
+      const j = await mg({ action: "mgmt", kind: "roster" })
+      box.innerHTML = (j && j.rows && j.rows.length) ? renderKv(j.rows) : '<div class="hint">没有名册数据</div>'
+    } catch (e) {
+      box.innerHTML = '<div class="hint" style="color:#ff6b6b">读名册失败：' + escapeHtml(e.message) + '</div>'
+    }
+  }
+}
+
+// 白名单群（带群名 + 复制/删除）
+function groupListCard(groups) {
+  const names = STATE.groupNames || {}
+  const body = (groups || []).length
+    ? groups.map(function (g) {
+        const nm = names[g] || ""
+        return '<div class="prow"><div class="grow"><div class="label">' + escapeHtml(g) +
+          (nm ? ' <span class="badge">' + escapeHtml(nm) + '</span>' : "") + '</div></div>' +
+          '<div class="pbtns"><button class="copy" data-copy="' + escapeHtml(g) + '">复制</button>' +
+          '<button data-rm2="groups|' + escapeHtml(g) + '">删除</button></div></div>'
+      }).join("")
+    : '<div class="hint" style="padding:6px 0">暂无</div>'
+  return '<div class="pcard"><div class="label" style="margin-bottom:6px">白名单群</div>' + body + '</div>'
+}
+
+// ── 知识库页 ──
+async function renderKbPanel() {
+  const el = $("panel")
+  try {
+    const kb = STATE.kb || {}
+    const cfg = STATE.config || {}
+    const kcfg = cfg.knowledge || {}
+    const choices = STATE.groupChoices || []
+    const gopts = '<option value="">（全群共用 common.md）</option>' + choices.map(function (g) {
+      return '<option value="' + escapeHtml(g.id) + '">' + escapeHtml(g.id) + (g.name ? "（" + escapeHtml(g.name) + "）" : "") +
+        " · " + (g.count == null ? 0 : g.count) + " 人</option>"
+    }).join("")
+    const kbOn = kcfg.enabled !== false
+    el.innerHTML =
+      '<div class="pcard">' +
+        '<div class="label" style="margin-bottom:6px">知识库</div>' +
+        '<div class="hint">目录：<span class="kv">' + escapeHtml(kb.dir || "（未配置）") + '</span></div>' +
+        '<div class="hint">文件 ' + (kb.files == null ? "—" : kb.files) + ' · 段 ' + (kb.chunks == null ? "—" : kb.chunks) +
+          (kb.providers && kb.providers.length ? " · 来源 " + escapeHtml(kb.providers.join(" / ")) : "") +
+          (kb.esports == null ? "" : " · 赛程段 " + kb.esports) + '</div>' +
+        '<div class="hint">common.md 所有群共享；g_xxx.md 只给那个群。markdown 改完立即生效（每次检索都重读）。总闸：' +
+          (kbOn ? "已开启" : "已关闭（去「记忆」页打开 knowledge.enabled）") + '</div>' +
+        '<div id="kbStats" style="margin-top:8px"><div class="hint">加载统计…</div></div>' +
+      '</div>' +
+      '<div class="pcard">' +
+        '<div class="label" style="margin-bottom:6px">预览</div>' +
+        '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta"><div class="label">看哪个群的文件</div>' +
+          '<div class="hint" id="kbHint">' + escapeHtml(PK_ERROR || "选群自动填单群文件名；不知道就手动输入") + '</div></div>' +
+          '<div class="ctl"><select id="kbGroup">' + gopts + '</select></div></div>' +
+        '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta"><div class="label">文件名</div>' +
+          '<div class="hint">单群文件名 = g_ + 群号 sha256 前 12 位 + .md</div></div>' +
+          '<div class="ctl"><input type="text" id="kbFile" value="common.md"></div></div>' +
+        '<div class="pbtns" style="margin-top:6px"><button id="kbPreview">预览</button><span id="kbMsg" class="hint"></span></div>' +
+        '<pre class="pv" id="kbOut" style="max-height:300px;margin-top:8px">还没预览</pre>' +
+      '</div>' +
+      '<div class="pcard">' +
+        '<div class="label" style="margin-bottom:6px">检索试跑</div>' +
+        '<div class="hint">输入一句话，看会命中哪几段（top 5；分越高越相关）。</div>' +
+        '<div class="row" style="border-bottom:0;padding:6px 0"><div class="meta"><input type="text" id="kbQ" placeholder="例如：今天谁打谁"></div>' +
+          '<div class="ctl pbtns"><button id="kbGo" class="primary">试跑</button></div></div>' +
+        '<div id="kbHits"><div class="hint">还没有试跑</div></div>' +
+      '</div>'
+
+    const gsel = $("kbGroup")
+    if (gsel) gsel.onchange = function () {
+      const gid = gsel.value
+      const fi = $("kbFile")
+      const msg = $("kbMsg")
+      if (!gid) { if (fi) fi.value = "common.md"; return }
+      const pk = PK_BY_GROUP[String(gid)]
+      if (pk) { if (fi) fi.value = pk + ".md"; if (msg) msg.textContent = "" }
+      else if (msg) msg.textContent = PK_ERROR || "算不出这个群的标识，单群文件请在下面输入文件名"
+    }
+    const pv = $("kbPreview")
+    if (pv) pv.onclick = async function () {
+      const fi = $("kbFile")
+      const out = $("kbOut")
+      const msg = $("kbMsg")
+      const file = fi ? fi.value.trim() : ""
+      if (!file) { if (msg) msg.textContent = "先填文件名"; return }
+      if (msg) msg.textContent = "读取中…"
+      try {
+        const j = await mg({ action: "mgmt", kind: "knowledgePreview", key: file })
+        if (!j || j.ok === false) { if (msg) msg.textContent = "失败：" + ((j && j.error) || ""); return }
+        const rows = j.rows || []
+        const txt = rows.map(function (r) { return String(r.v == null ? "" : r.v) }).join("\n")
+        if (out) out.textContent = txt || "（空文件）"
+        if (msg) msg.textContent = j.hint || "读完 ✓"
+      } catch (e) {
+        if (msg) msg.textContent = "失败：" + e.message
+        if (out) out.textContent = ""
+      }
+    }
+    const go = $("kbGo")
+    if (go) go.onclick = async function () {
+      const qi = $("kbQ")
+      const box = $("kbHits")
+      const q = qi ? qi.value.trim() : ""
+      if (!q) { if (box) box.innerHTML = '<div class="hint">先输入一句话</div>'; return }
+      if (box) box.innerHTML = '<div class="hint">检索中…</div>'
+      try {
+        const j = await mg({ action: "mgmt", kind: "knowledgeSearch", key: q })
+        const rows = (j && j.rows) || []
+        if (box) box.innerHTML = rows.length
+          ? '<div class="kgrid">' + rows.map(function (r) {
+              return '<div class="kcell"><span class="k">' + escapeHtml(r.title || "") + '</span>' +
+                '<span class="v">' + escapeHtml(r.text || "") + '</span>' +
+                '<span class="ago">' + escapeHtml(r.score || "") + '</span></div>'
+            }).join("") + '</div>' +
+              '<div class="hint" style="margin-top:6px">' + escapeHtml((j && j.hint) || "") + '</div>'
+          : '<div class="hint">没命中（换句话试试，或检查文件里有没有对应关键词）</div>'
+      } catch (e) {
+        if (box) box.innerHTML = '<div class="hint" style="color:#ff6b6b">检索失败：' + escapeHtml(e.message) + '</div>'
+      }
+    }
+    const stats = $("kbStats")
+    if (stats) {
+      try {
+        const j = await mg({ action: "mgmt", kind: "knowledge" })
+        stats.innerHTML = (j && j.rows && j.rows.length) ? renderKv(j.rows) : '<div class="hint">统计读不到</div>'
+      } catch (e) {
+        stats.innerHTML = '<div class="hint" style="color:#ff6b6b">统计读不到：' + escapeHtml(e.message) + '</div>'
+      }
+    }
+  } catch (e) {
+    el.innerHTML = '<div class="pcard"><div class="hint" style="color:#ff6b6b">知识库页渲染失败：' + escapeHtml(e.message) + '</div></div>'
+  }
+}
+
+// ── 赛程页 ──
+async function renderMatchesPanel() {
+  const el = $("panel")
+  try {
+    const st = STATE.matches || {}
+    const d = new Date()
+    const todayStr = d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2)
+    const notice = MATCH_NOTICE
+    MATCH_NOTICE = ""
+    const latest = st.latest
+      ? ("最近：" + String(st.latest.date || "") + " " + String(st.latest.team1 || "") + " vs " + String(st.latest.team2 || ""))
+      : "还没有记录"
+    el.innerHTML =
+      '<div class="pcard">' +
+        '<div class="label" style="margin-bottom:6px">赛程速查</div>' +
+        '<div class="hint">已录 ' + (st.total == null ? "—" : st.total) + ' 场 · 涉及战队 ' + (st.teams == null ? "—" : st.teams) + ' · ' + escapeHtml(latest) + '</div>' +
+        '<div class="hint">群里发「#赛程 …」也能录；面板录入会覆盖「同一天 + 同一对阵」的旧记录。</div>' +
+      '</div>' +
+      '<div class="pcard">' +
+        '<div class="label" style="margin-bottom:6px">录入</div>' +
+        '<div class="qgrid">' +
+          formCell("日期", '<input type="text" id="mDate" value="' + todayStr + '" placeholder="YYYY-MM-DD">') +
+          formCell("队 1", '<input type="text" id="mTeam1" placeholder="HLE">') +
+          formCell("队 2", '<input type="text" id="mTeam2" placeholder="IG">') +
+          formCell("比分", '<input type="text" id="mScore" placeholder="2:1（可留空）">') +
+          formCell("联赛", '<input type="text" id="mLeague" placeholder="Worlds 2026">') +
+          formCell("备注", '<input type="text" id="mNote" placeholder="瑞士轮 R3">') +
+        '</div>' +
+        '<div class="row" style="border-bottom:0;padding:8px 0 0"><div class="meta"><div class="hint" id="matchMsg">' +
+          escapeHtml(notice || "今天的比赛录进来，面板会高亮。") + '</div></div>' +
+          '<div class="ctl pbtns"><button id="matchSave" class="primary">保存</button></div></div>' +
+      '</div>' +
+      '<div class="pcard">' +
+        '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta"><div class="label">全部记录（最新 30 条）</div>' +
+          '<div class="hint">今天的行高亮；「待补」= 比分还没录。</div></div>' +
+          '<div class="ctl pbtns"><button id="matchesReload">刷新</button></div></div>' +
+        '<div id="matchesBox"><div class="hint">加载…</div></div>' +
+      '</div>' +
+      '<div class="pcard">' +
+        '<div class="label" style="margin-bottom:6px">交手查询</div>' +
+        '<div class="qgrid">' +
+          formCell("队 A", '<input type="text" id="h2hA" placeholder="HLE">') +
+          formCell("队 B（留空 = 关键词搜索）", '<input type="text" id="h2hB" placeholder="IG">') +
+        '</div>' +
+        '<div class="pbtns" style="margin-top:8px"><button id="h2hGo">查交手</button>' +
+          '<span class="hint">两边都填 = 交手记录；只填 A = 关键词搜索</span></div>' +
+        '<div id="h2hBox" style="margin-top:8px"><div class="hint">还没有查</div></div>' +
+      '</div>'
+
+    const val = function (id) { const e2 = $(id); return e2 ? e2.value.trim() : "" }
+    const saveBtn = $("matchSave")
+    if (saveBtn) saveBtn.onclick = async function () {
+      const msg = $("matchMsg")
+      const payload = {
+        action: "mgmtOp", kind: "matches", op: "add",
+        date: val("mDate"), team1: val("mTeam1"), team2: val("mTeam2"),
+        score: val("mScore"), league: val("mLeague"), note: val("mNote"),
+      }
+      if (!payload.team1 || !payload.team2) { if (msg) msg.textContent = "两个队名都要填"; return }
+      saveBtn.disabled = true
+      try {
+        const j = await mg(payload)
+        if (!j.ok) { if (msg) msg.textContent = "保存失败：" + (j.error || ""); return }
+        MATCH_NOTICE = "已保存：" + payload.date + " " + payload.team1 + " vs " + payload.team2 +
+          "（共 " + (j.total == null ? "?" : j.total) + " 场）"
+        await load()
+      } catch (e) {
+        if (msg) msg.textContent = "保存失败：" + e.message
+      } finally {
+        saveBtn.disabled = false
+      }
+    }
+    const rel = $("matchesReload")
+    if (rel) rel.onclick = function () { loadMatchesTable() }
+    const h2h = $("h2hGo")
+    if (h2h) h2h.onclick = async function () {
+      const box = $("h2hBox")
+      const A = val("h2hA")
+      const B = val("h2hB")
+      if (!A) { if (box) box.innerHTML = '<div class="hint">先填队名 A</div>'; return }
+      if (box) box.innerHTML = '<div class="hint">查询中…</div>'
+      try {
+        const j = await mg({ action: "mgmt", kind: "matchesH2H", key: A, b: B })
+        const rows = (j && j.rows) || []
+        if (box) box.innerHTML = (j && j.hint ? '<div class="hint">' + escapeHtml(j.hint) + '</div>' : "") +
+          (rows.length
+            ? '<div class="kgrid">' + rows.map(function (r) {
+                return '<div class="kcell"><span class="k">' + escapeHtml(r.date || "") + '</span>' +
+                  '<span class="v">' + escapeHtml(r.teams || "") + '</span>' +
+                  '<span class="ago">' + escapeHtml(r.score || "") + '</span></div>'
+              }).join("") + '</div>'
+            : '<div class="hint">没有交手记录</div>')
+      } catch (e) {
+        if (box) box.innerHTML = '<div class="hint" style="color:#ff6b6b">查询失败：' + escapeHtml(e.message) + '</div>'
+      }
+    }
+    await loadMatchesTable()
+  } catch (e) {
+    el.innerHTML = '<div class="pcard"><div class="hint" style="color:#ff6b6b">赛程页渲染失败：' + escapeHtml(e.message) + '</div></div>'
+  }
+}
+
+async function loadMatchesTable() {
+  const box = $("matchesBox")
+  if (!box) return
+  try {
+    const j = await mg({ action: "mgmt", kind: "matches" })
+    const rows = (j && j.rows) || []
+    box.innerHTML = rows.length
+      ? '<div class="kgrid" style="grid-template-columns:1fr">' + rows.map(function (r) {
+          const isToday = !!r.today
+          const parts = String(r.teams || "").split(" vs ")
+          const t1 = parts[0] || ""
+          const t2 = parts[1] || ""
+          return '<div class="kcell' + (isToday ? " hl" : "") + '">' +
+            '<span class="k">' + escapeHtml(r.date || "") + (isToday ? ' <span class="badge cur">今天</span>' : "") + '</span>' +
+            '<span class="v">' + escapeHtml(r.teams || "") + '</span>' +
+            '<span class="ago">' + escapeHtml(r.score || "") + (r.league ? " · " + escapeHtml(r.league) : "") + '</span>' +
+            '<span class="pbtns"><button data-mdel2="' + escapeHtml((r.date || "") + "|" + t1 + "|" + t2) + '">删除</button></span></div>'
+        }).join("") + '</div>'
+      : '<div class="hint">还没有赛程记录；上面录一条试试。</div>'
+    ;[...box.querySelectorAll("[data-mdel2]")].forEach(function (b) {
+      b.onclick = async function () {
+        const seg = String(b.dataset.mdel2).split("|")
+        const msg = $("matchMsg")
+        if (!confirm("删除 " + seg[0] + " " + seg[1] + " vs " + seg[2] + " ？")) return
+        try {
+          const r = await mg({ action: "mgmtOp", kind: "matches", op: "remove", date: seg[0], team1: seg[1], team2: seg[2] })
+          if (!r.ok) { if (msg) msg.textContent = "删除失败：" + (r.error || ""); return }
+          if (msg) msg.textContent = "已删除 " + (r.removed == null ? 0 : r.removed) + " 条"
+          await loadMatchesTable()
+        } catch (e) { if (msg) msg.textContent = "删除失败：" + e.message }
+      }
+    })
+  } catch (e) {
+    box.innerHTML = '<div class="hint" style="color:#ff6b6b">读赛程失败：' + escapeHtml(e.message) + '</div>'
+  }
+}
+
+// ── 页签卡片的事件绑定 ──
+function bindTabCards() {
+  if (ACTIVE === "channel") bindTransportCard()
+  if (ACTIVE === "freq") {
+    const b = $("topicsReload")
+    if (b) b.onclick = async function () {
+      const box = $("topicsBox")
+      if (box) box.innerHTML = '<div class="hint">刷新中…</div>'
+      try {
+        const j = await mg({ action: "mgmt", kind: "topics" })
+        if (box) box.innerHTML = (j && j.ok !== false)
+          ? topicsRowsHtml(j.rows || [])
+          : ('<div class="hint" style="color:#ff6b6b">读话题失败：' + escapeHtml((j && j.error) || "") + '</div>')
+      } catch (e) {
+        if (box) box.innerHTML = '<div class="hint" style="color:#ff6b6b">读话题失败：' + escapeHtml(e.message) + '</div>'
+      }
+    }
+  }
+  if (ACTIVE === "memory") bindCardsCard()
+  if (ACTIVE === "usage") loadSafety($("safetyBox"))
+}
+
 // 工具栏按页签显示，避免每个页都堆一排按钮
 const TOOLBAR_OF = {
   syncSticker: ["sticker"],
