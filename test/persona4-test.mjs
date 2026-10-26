@@ -1,0 +1,19 @@
+process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-home3';
+const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/lib/";
+const P = await import(base + "presets.js");
+const { ensureDirs } = await import(base + "store.js");
+ensureDirs();
+const db = P.listPresets();
+const ok=[];
+const groups = db.presets.filter(p=>p.id.startsWith("feiyu-group"));
+ok.push(["两个群聊版", groups.length===2]);
+ok.push(["群聊短句在", db.presets.some(p=>p.id==="feiyu-group")]);
+ok.push(["群聊克制在", db.presets.some(p=>p.id==="feiyu-group-quiet")]);
+const a=P.getPresetText("feiyu-group").text, b=P.getPresetText("feiyu-group-quiet").text;
+ok.push(["两版内容不同", a!==b]);
+ok.push(["克制版两句话", b.includes("两句话以内")]);
+ok.push(["总数 4 套", db.presets.filter(p=>p.builtin).length===4]);
+console.log("=== 群聊版测试 ==="); let fail=0;
+for(const [n,v] of ok){ console.log(`${v?"✅":"❌"} ${n}`); if(!v) fail++ }
+console.log("字数：", a.length, "/", b.length);
+console.log(fail?`失败 ${fail}`:"全部通过");

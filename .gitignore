@@ -6,3 +6,4 @@ Thumbs.db
 *.bak-*
 tmp/
 backups/
+dsh-test-*

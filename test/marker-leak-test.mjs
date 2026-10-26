@@ -1,0 +1,35 @@
+process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-marker';
+import { mkdirSync, writeFileSync, rmSync } from "node:fs";
+const HOME = process.env.DSH_HOME;
+try { rmSync(HOME, { recursive: true, force: true }) } catch {}
+mkdirSync(HOME + "/profiles/desktop", { recursive: true });
+writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy-secret-for-test\n", "utf8");
+const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const { createGate } = await import(base + "lib/gate.js");
+const { loadConfig, saveConfig, clone, DEFAULTS } = await import(base + "lib/config.js");
+const { ensureDirs } = await import(base + "lib/store.js");
+ensureDirs();
+const cfg = clone(DEFAULTS);
+Object.assign(cfg.frequency, { typingEnabled: false });
+cfg.sticker.enabled = false; cfg.memory.enabled = false; cfg.privacy.enabled = false;
+saveConfig(cfg);
+const diagRef = { counts: { markers: 0 } };
+const bot = { sendText: async () => {}, sendMarkdown: async () => {}, sendImage: async () => {} };
+const gate = createGate({ getConfig: loadConfig, saveConfig, diagRef, onBot(){}, logger:{ info(){}, warn(){}, error(){} } });
+const target = { scope: "group", targetId: "G1" };
+const ok = [];
+const run = async (txt) => { const r = await gate.onOutbound(bot, 'sendText', [target, txt]); return r?.args?.[1] ?? "" };
+const a = await run('好的 [[voice: 你好呀]]');
+ok.push(["只写 voice 也会被剥离", !a.includes("[[voice"), a]);
+const b = await run('记一下 [[recall: 上周比赛]]');
+ok.push(["只写 recall 也会被剥离", !b.includes("[[recall"), b]);
+const c = await run('嗯 [[sticker:开心]] [[remember: 喜欢吃白饭]]');
+ok.push(["sticker/remember 照旧剥离", !c.includes("[[") , c]);
+ok.push(["标记计数包含 voice/recall", diagRef.counts.markers === 4, diagRef.counts.markers]);
+const d = await run('普通一句话');
+ok.push(["无标记不动", d === '普通一句话', d]);
+console.log("=== 标记泄漏 测试 ===");
+let fail = 0;
+for (const [n, pass, e] of ok) { console.log((pass ? "OK  " : "FAIL ") + n + (pass ? "" : "   " + JSON.stringify(e))); if (!pass) fail++ }
+console.log(fail ? ("失败 " + fail) : "全部通过");
+process.exit(fail ? 1 : 0);

@@ -1,0 +1,22 @@
+const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const { moodToneOf, voiceStyleOf, stickerMoodOf, normalizeDims } = await import(base + "lib/mood.js");
+const ok = [];
+const real = { mood: 81, dims: { happy: 32, calm: 26, sweet: 8, heartache: 2, worry: 6, sad: 5, jealous: 0 } };
+const tone = moodToneOf(real);
+ok.push(["真实刻度(0~100) 81 分 → 松快", tone && tone.tone === '松快', tone && tone.tone]);
+ok.push(["心里难过 5/100 不该判低落", tone && tone.tone !== '低落']);
+ok.push(["语音风格按高心情给 cute", voiceStyleOf(real) === 'cute', voiceStyleOf(real)]);
+const sadReal = { mood: 30, dims: { happy: 4, calm: 6, sweet: 2, heartache: 70, worry: 20, sad: 65, jealous: 5 } };
+ok.push(["心疼70/难过65 → 低落", moodToneOf(sadReal)?.tone === '低落', moodToneOf(sadReal)?.tone]);
+ok.push(["难过高 → 语音 gentle", voiceStyleOf(sadReal) === 'gentle', voiceStyleOf(sadReal)]);
+const local = { mood: 62, dims: { happy: 4, calm: 2, sweet: 1.5, heartache: 0, worry: 0.5, sad: 0.2, jealous: 0 }, source: 'local' };
+ok.push(["本地刻度(0~10) 也判对", moodToneOf(local)?.tone === '平和' || moodToneOf(local)?.tone === '松快', moodToneOf(local)?.tone]);
+const jealousHigh = { mood: 55, dims: { jealous: 80 } };
+ok.push(["吃醋80/100 → 别扭", moodToneOf(jealousHigh)?.tone === '别扭', moodToneOf(jealousHigh)?.tone]);
+ok.push(["归一函数把 0~100 压到 0~1", Math.abs(normalizeDims({ happy: 50 }).happy - 0.5) < 1e-9]);
+ok.push(["归一函数把 0~10 压到 0~1", Math.abs(normalizeDims({ happy: 5 }).happy - 0.5) < 1e-9]);
+console.log("=== 心情维度刻度 测试 ===");
+let fail = 0;
+for (const [n, pass, extra] of ok) { console.log((pass ? "OK  " : "FAIL ") + n + (pass ? "" : "   " + JSON.stringify(extra))); if (!pass) fail++ }
+console.log(fail ? ("失败 " + fail) : "全部通过");
+process.exit(fail ? 1 : 0);

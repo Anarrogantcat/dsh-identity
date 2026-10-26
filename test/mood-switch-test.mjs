@@ -1,0 +1,68 @@
+process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-moodsw';
+import { mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
+try { rmSync(process.env.DSH_HOME, { recursive: true, force: true }) } catch {}
+mkdirSync(process.env.DSH_HOME + "/profiles/desktop", { recursive: true });
+mkdirSync(process.env.DSH_HOME + "/feiyu-mood", { recursive: true });
+const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const mood = await import(base + "lib/mood.js");
+const { loadConfig, saveConfig, clone, DEFAULTS, FIELDS } = await import(base + "lib/config.js");
+const persona = await import(base + "lib/persona.js");
+const { apply } = await import(base + "index.js");
+const { ensureDirs, peerKey } = await import(base + "lib/store.js");
+ensureDirs();
+const writeMood = (score, dims, ageHours = 0) => writeFileSync(process.env.DSH_HOME + "/feiyu-mood/state.json", JSON.stringify({ version:2, lastActive:"fish", moods:{ fish:{ mood:score, dims, updatedAt: Date.now() - ageHours*3600000 } } }));
+const ok = [];
+// 总开关关掉 → 人设不注入心情
+writeMood(80, { happy: 9 });
+const sections = new Map();
+const scope = { logger: console, effect: (fn) => { const d = fn(); return typeof d === "function" ? d : () => {} }, webServer: { register: () => () => {} }, systemPrompt: { section: (s) => { sections.set(s.name, s); return () => sections.delete(s.name) } } };
+const ctx = { logger: console, inject: (n, cb) => cb(scope), effect: (fn) => fn() };
+const c = clone(DEFAULTS);
+c.scope.groups = ["G1"]; c.roles.owners = ["U-OWNER"]; c.persona.enabled = true; c.ui.markers = true;
+saveConfig(c);
+await apply(ctx, {});
+await new Promise(r => setTimeout(r, 600));
+const sec = sections.get('qqbot-refine:persona');
+const sid = await persona.sessionIdFor('1905982004', 'group', 'G1');
+persona.rememberSession(sid, peerKey('group','G1'), 'group', 'G1');
+const ctxObj = { session: { id: sid } };
+const on = await sec.text(ctxObj);
+ok.push(["总开关开 → 有心情段", /这会儿的心情/.test(on)]);
+const off = loadConfig(); off.integration.linkMood = false; saveConfig(off);
+const t1 = await sec.text(ctxObj);
+ok.push(["总开关关 → 心情段消失", !/这会儿的心情/.test(t1)]);
+ok.push(["总开关关 → 仍保留可用标记", /\[\[sticker:auto\]\]/.test(t1)]);
+const off2 = loadConfig(); off2.integration.linkMood = true; off2.integration.moodInPrompt = false; saveConfig(off2);
+const t2 = await sec.text(ctxObj);
+ok.push(["关 moodInPrompt → 只关语气，不影响别的心情联动", !/这会儿的心情/.test(t2) && mood.probabilityFactor(mood.readMood()) > 1, mood.probabilityFactor(mood.readMood())]);
+// 过期保护
+writeMood(95, { happy: 9 }, 30);
+const stale = mood.readPluginMood();
+ok.push(["30 小时没更新 → 标记过期", stale.stale === true, stale.ageHours]);
+ok.push(["过期（插件模式）→ 不注入语气", mood.moodToneOf(mood.readMood({ integration: { moodSource: 'plugin' } })) === null]);
+ok.push(["过期 → 概率不缩放", mood.probabilityFactor(stale) === 1]);
+ok.push(["过期 → 主动倍率不缩放", mood.proactiveFactor(stale) === 1]);
+ok.push(["过期 → 语音不挑风格", mood.voiceStyleOf(stale) === null]);
+const off3 = loadConfig(); off3.integration.moodInPrompt = true; off3.integration.moodSource = 'plugin'; saveConfig(off3);
+const t3 = await sec.text(ctxObj);
+ok.push(["插件过期且只认插件 → 人设不带心情", !/这会儿的心情/.test(t3)]);
+const localMod = await import(base + "lib/moodlocal.js");
+localMod.noteLocalMood("大肥鱼你好厉害");
+const off4 = loadConfig(); off4.integration.moodSource = 'auto'; saveConfig(off4);
+const t4 = await sec.text(ctxObj);
+ok.push(["插件过期但本地有信号 → 本地顶上", /这会儿的心情/.test(t4)]);
+writeMood(88, { happy: 9 });
+const fresh = mood.readMood();
+ok.push(["刚更新的心情有效", fresh.stale === false && mood.moodToneOf(fresh).tone === '松快']);
+// 面板与字段
+const cfgFields = FIELDS.map(f => f.k);
+ok.push(["面板有 5 个心情开关", ["integration.linkMood","integration.moodInPrompt","integration.moodProactive","integration.linkMoodProbability","integration.linkMoodVoice"].every(k => cfgFields.includes(k)), cfgFields.filter(k=>k.startsWith("integration."))]);
+const lbl = FIELDS.find(f => f.k === "integration.linkMood");
+ok.push(["总开关标签写清楚了", /总开关/.test(lbl.l) && /24 小时/.test(lbl.hint), lbl]);
+const panel = readFileSync("C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/panel.html", "utf8");
+ok.push(["面板常用区露出手开关", ["integration.moodInPrompt","integration.moodProactive","integration.linkMoodProbability","integration.linkMoodVoice"].every(k => panel.includes(k))]);
+console.log("=== 心情总开关 / 过期保护 测试 ===");
+let fail = 0;
+for (const [n, pass, extra] of ok) { console.log((pass ? "OK  " : "FAIL ") + n + (pass ? "" : "   " + JSON.stringify(extra))); if (!pass) fail++ }
+console.log(fail ? ("失败 " + fail) : "全部通过");
+process.exit(fail ? 1 : 0);
