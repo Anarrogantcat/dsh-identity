@@ -27,6 +27,13 @@ await send('画吧', 'd2');
 await new Promise((r) => setTimeout(r, 2500));
 T("确认后真的发图", images.length >= 1, { images, texts: texts.slice(-2) });
 const p = images[0] && (images[0].localPath || images[0].url);
+// 再说一次「生成一张图」——没有任何描述，也应该走草稿
+texts.length = 0; images.length = 0;
+await send('生成一张图', 'd3');
+T("「生成一张图」（无描述）也出草稿", texts.some((s) => s.includes("我准备这样画")), texts.slice(-1));
+await send('画吧', 'd4');
+await new Promise((r) => setTimeout(r, 2500));
+T("无描述确认后也能出图", images.length >= 1, { images: images.length });
 T("发的是本地 PNG", !!p && /\.png$/i.test(String(p)), p);
 console.log("warns:", warns.slice(0, 4));
 console.log("texts:", texts.slice(0, 3));
