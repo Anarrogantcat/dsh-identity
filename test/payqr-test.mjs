@@ -1,0 +1,35 @@
+process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-payqr';
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+const HOME = process.env.DSH_HOME;
+try { rmSync(HOME, { recursive: true, force: true }) } catch {}
+mkdirSync(HOME + "/profiles/desktop", { recursive: true });
+writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy\n", "utf8");
+const { pathToFileURL } = await import("node:url");
+const { homedir } = await import("node:os");
+const { join } = await import("node:path");
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
+const { ensureDirs } = await import(base + "lib/store.js");
+ensureDirs();
+const M = await import(base + "lib/meal.js");
+const { clone, DEFAULTS } = await import(base + "lib/config.js");
+const ok = []; const A = (n, c, e) => ok.push([n, !!c, e]);
+const cfg = clone(DEFAULTS);
+const png = HOME + '/qr.png';
+writeFileSync(png, Buffer.from('89504e470d0a1a0a', 'hex'));
+A("默认关着：不发", M.payQrOf(cfg).ok === false && M.payQrOf(cfg).reason === "off");
+cfg.usage.payQrEnabled = true;
+A("开了但没配路径：不发", M.payQrOf(cfg).reason === "nopath");
+cfg.usage.payQrPath = png;
+A("开了且路径存在：发", M.payQrOf(cfg).ok === true && M.payQrOf(cfg).path === png);
+cfg.usage.payQrPath = HOME + '/nope.png';
+A("路径不存在：不发", M.payQrOf(cfg).reason === "nofile");
+cfg.usage.payQrPath = HOME;
+A("指到目录：不发", M.payQrOf(cfg).reason === "nofile");
+cfg.usage.payQrEnabled = false; cfg.usage.payQrPath = png;
+A("再关掉：立刻不发（开关优先）", M.payQrOf(cfg).reason === "off");
+console.log("=== 收款码开关 测试 ===");
+let fail = 0;
+for (const [n, pass, e] of ok) { console.log((pass ? "OK  " : "FAIL ") + n + (pass ? "" : "   " + JSON.stringify(e || {}).slice(0, 140))); if (!pass) fail++; }
+console.log(fail ? ("失败 " + fail) : ("全部通过 " + ok.length + "/" + ok.length));
+await new Promise((r) => setTimeout(r, 150));
+process.exitCode = fail ? 1 : 0;
