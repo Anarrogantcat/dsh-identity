@@ -88,6 +88,22 @@ cmd /c mklink /J "%USERPROFILE%\.dsh\profiles\desktop\node_modules\dsh-qqbot-ref
 
 服务端部署见本仓库 `docs/voice-service.md`（可选，不装也能正常聊天）。
 
+## 5.5 知识库与导入
+
+面板「认知 · 知识库」可直接编辑 md；也支持从本机路径批量导入（文件或文件夹，递归）：
+
+| 类型 | 说明 |
+|---|---|
+| md / markdown / txt / csv / json | 原生支持（csv 会转成「列: 值」） |
+| html / htm | 去标签提纯文本 |
+| pdf | 需要 WSL + python3 + `pip install pypdf` |
+| docx | 直接解析（zip+xml，无需依赖） |
+| db / sqlite / sqlite3 | 读取所有表前 500 行（WSL python3） |
+
+PDF/SQLite 依赖 WSL 里的脚本：`scripts/kbimport.py` 复制到 WSL 的 `/root/kbimport.py`，
+并把 pypdf 装进插件用的 python（示例：`/root/venv-stt/bin/python -m pip install pypdf`）。
+没有 WSL 时这两种类型会给出明确错误提示，其它类型不受影响。
+
 ## 6. 常见问题
 
 | 现象 | 处理 |

@@ -201,9 +201,9 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.8.9',
+    version: '0.9.0',
     install: installInfo(),
-    stage: 'v0.8.9 · S1–S7',
+    stage: 'v0.9.0 · S1–S7',
     dshHome: STORE_DIR,
     configPath: CFG_PATH,
     configPathExists: existsSync(CFG_PATH),
