@@ -139,6 +139,21 @@ function personaSectionText(context) {
     if (!peer) return ''
     const p = personaFor(cfg, peer.scope, peer.peer)
     let body = p?.text ?? ''
+    // 诊断模式：只读排查，产出原因 + diff 补丁，不直接改文件
+    try {
+      const dg = takeDiag(peer.peer)
+      if (dg) {
+        body += [
+          '',
+          '# 现在是诊断模式（Owner 发起的排查）',
+          dg.task ? ('排查目标：' + dg.task) : '排查目标：按我说的现象定位原因',
+          '- 只用 read/grep/glob/pwsh 读代码和日志，**不要改动任何文件**',
+          '- 结论说清：现象 → 根因 → 证据（文件:行）',
+          '- 需要改代码时，把补丁贴在 diff 代码块里（git apply 能直接用的格式），不要自己动手改',
+          '- 最后一行写明「要不要 #合并」',
+        ].join('\n')
+      }
+    } catch { /* ignore */ }
     // 聊天尺度（滑条）：低=克制，高=更放得开
     try { if (body) body += scaleBlock(cfg.persona?.scale ?? 50) } catch { /* ignore */ }
 
@@ -207,9 +222,9 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.9.20',
+    version: '0.9.21',
     install: installInfo(),
-    stage: 'v0.9.20 · S1–S7',
+    stage: 'v0.9.21 · S1–S7',
     dshHome: STORE_DIR,
     configPath: CFG_PATH,
     configPathExists: existsSync(CFG_PATH),
