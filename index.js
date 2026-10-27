@@ -249,7 +249,7 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.9.32',
+    version: '0.10.0',
     install: installInfo(),
     stage: 'v0.9.32 · S1–S7',
     dshHome: STORE_DIR,

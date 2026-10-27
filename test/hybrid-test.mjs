@@ -33,3 +33,4 @@ console.log("=== 混合模式测试 ==="); let fail=0;
 for(const [n,v] of ok){ console.log(`${v?"✅":"❌"} ${n}`); if(!v) fail++ }
 console.log(fail?`失败 ${fail}`:"全部通过");
 
+process.exitCode = fail ? 1 : 0;

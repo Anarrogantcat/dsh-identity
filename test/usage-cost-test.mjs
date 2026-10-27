@@ -52,7 +52,8 @@ const table = mgmt.list('usage');
 const labels = table.rows.map(r => r.k);
 ok.push(["面板显示今日花费（元）", labels.includes('今日花费（估算）'), labels.slice(0, 6)]);
 ok.push(["面板显示今日 tokens", labels.includes('今日 tokens')]);
-ok.push(["面板显示单价", labels.includes('单价（元/百万）')]);
+ok.push(["面板显示高峰单价", labels.includes('高峰单价（元/百万）')]);
+ok.push(["面板显示空闲单价", labels.includes('空闲单价（元/百万）')]);
 ok.push(["面板显示每群明细", labels.some(k => k.includes('群 6EC25148'))]);
 ok.push(["金额带 ¥ 符号", table.rows.some(r => String(r.v).includes('¥'))]);
 // 重置基线
