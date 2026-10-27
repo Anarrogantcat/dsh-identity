@@ -59,6 +59,35 @@ pnpm install
 cmd /c mklink /J "%USERPROFILE%\.dsh\profiles\desktop\node_modules\dsh-qqbot-refine" "%USERPROFILE%\.dsh\plugins\dsh-qqbot-refine"
 ```
 
+## 2.5 更新到最新版
+
+装过一次之后，**再跑一遍同一条 add 命令就是更新**（pnpm 会重新解析到 master 最新那条）：
+
+```sh
+dsh plugin --profile web add github:Anarrogantcat/dsh-qqbot-refine
+```
+
+git 拉不动（公司网 / TLS 握手失败 / 代理）时，用 GitHub 打的 tar 包，效果一样、不经过 git：
+
+```sh
+dsh plugin --profile web add "https://github.com/Anarrogantcat/dsh-qqbot-refine/archive/refs/heads/master.tar.gz"
+```
+
+想钉死某个版本（推荐给别人的稳定版）：把 `master` 换成 tag，例如
+`.../archive/refs/tags/v0.10.0.tar.gz`。
+
+更新完**重启 DSH**。你的设置、数据（`~/.dsh/storages/dsh-qqbot-refine`）、
+`pay-browser` 登录态都不在这个包里，不会被覆盖；别手动删它们。
+
+**确认装到的是哪版**：
+
+```powershell
+node -p "require('$env:USERPROFILE/.dsh/profiles/web/node_modules/dsh-qqbot-refine/package.json').version"
+# 桌面端把 web 换成 desktop
+```
+
+跟仓库最新 tag 对一下就知道是不是最新（仓库 tag 形如 `v0.10.0`）。
+
 ## 3. 重启 DSH
 
 插件是宿主进程内的 cordis 插件，**必须重启 DSH** 才会加载。
