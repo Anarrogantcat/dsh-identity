@@ -43,6 +43,7 @@
 | 部署目录（DSH 加载） | `C:\Users\Ranmi\.dsh\plugins\dsh-qqbot-refine` |
 | 加载入口 | `profiles/desktop/node_modules/dsh-qqbot-refine`（junction → 部署目录） |
 | 数据 | `C:\Users\Ranmi\.dsh\storages\dsh-qqbot-refine`（settings.json / roster.json / usage*.json / bond.json / topics.json …） |
+| 充值码专用浏览器 | `storages\dsh-qqbot-refine\pay-browser`（登录态，别删）+ `scripts/pay-browser.ps1`（CDP 9333） |
 | 蓝图 | `docs/qqbot-refine-PLAN-FINAL.md` |
 | NapCat 开服方案 | `docs/napcat-ws-server-plan.md` |
 
@@ -74,7 +75,7 @@
 4. 工具闸门只在**会话创建时**扫一遍该会话的工具容器（`gateAgent`）；MCP 工具是懒加载的，
    如果某个 MCP 服务是会话建好之后才注册进这个会话，需要重新开会话才会被包上。
 
-### 0.10.0 修掉的三件事（2026-10-27 深夜）
+### 0.10.0 修掉的事（2026-10-27 深夜）
 
 | 问题 | 处理 |
 |---|---|
@@ -86,6 +87,7 @@
 | **「连续对话」判定太松**：只要她处理过这个人的上一条，同一个人的下一句就被当成接续，绕过一切自然接话判定 → 群里一直插嘴、白烧 token | 现在必须**她真的发过话**（`lastSpoke` 在窗口内）才算接续；`judge` / `natural` / `nm` / `gear` / `mention-raw` 五个测试一起转绿 |
 | 命令卡片在 `DSH_HOME` 被改写时画不出来（只找临时 profile 的 sharp） | `getSharp()` 再兜底真实 `~/.dsh/profiles/*/node_modules`；`finish-test` 的 B 站卡片恢复 |
 | 21 个老测试打印 ❌ 却从不设退出码 | 全部补 `process.exitCode`，`run-all` 的绿灯现在可信；`persona3/persona4` 的文案断言按现版本更新 |
+| 想让 `#充值码` 发**真实当次**的充值二维码 | 新增 `lib/payqr.js`：CDP 驱动专用 Edge（`scripts/pay-browser.ps1`，登录态在 `storages/…/pay-browser`）→ 选金额/方式 → 点「去支付」→ 截 `.ds-qr-code`；配置 `usage.payLive*`；失败回落静态码 |
 
 > 测试坑（本轮已清）：`run-all.mjs` 只按 exit code 计数，之前 24 个老测试从不设 `process.exitCode`，
 > 打印 ❌ 也算「通过」。现在这些测试都补了退出码，`voice-test` 缺 silk 时明确跳过。
@@ -97,13 +99,13 @@ cd 'D:\AI\DeepSeek Harness Workspace\dsh-qqbot-refine'
 node test/run-all.mjs
 ```
 
-本轮结果（2026-10-28 01:xx，v0.10.0，约 10 分钟）：
+本轮结果（2026-10-28 02:xx，v0.10.0，约 10 分钟）：
 
 ```
-测试文件：100  通过：100  失败：0      # 断言 1087 条，❌ 0 条
+测试文件：101  通过：101  失败：0      # 断言 1102 条，❌ 0 条
 ```
 
-注：`test/run-all.mjs` 只是入口，不算用例文件；目录里现在是 101 个 `.mjs`（100 个测试 + 1 个入口）。
+注：`test/run-all.mjs` 只是入口，不算用例文件；目录里现在是 102 个 `.mjs`（101 个测试 + 1 个入口）。
 `media-dl-test`（连外网图床）和 `voice-test`（缺 silk-wasm 时自动跳过）都不会再拖红。
 
 **这次绿灯是真绿灯**：`run-all` 只看 exit code，所以给 21 个「打印 ❌ 但不设退出码」的老测试
