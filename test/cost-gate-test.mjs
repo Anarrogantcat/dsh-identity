@@ -1,10 +1,13 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-cost';
 import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(HOME + "/profiles/desktop", { recursive: true });
 writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy-secret-for-test\n", "utf8");
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const C = await import(base + "lib/cost.js");
 const U = await import(base + "lib/usage.js");
 const { loadConfig, saveConfig, clone, DEFAULTS } = await import(base + "lib/config.js");
@@ -40,7 +43,7 @@ const m1 = C.gateDecision(loadConfig());
 A("超限 → 静默（mute）", m1.block === true && m1.speak === false && m1.action === "mute", m1);
 // 4) 阈值提醒只一次
 C.resetCostGuard();
-const c4 = loadConfig(); c4.usage.onExceed = "degrade"; c4.usage.dailyYuanHardLimit = 1; c4.usage.warnAt = 0.1; saveConfig(c4);
+const c4 = loadConfig(); c4.usage.onExceed = "degrade"; c4.usage.dailyYuanHardLimit = 1; c4.usage.warnAt = 0.01; saveConfig(c4);
 writeTotals(0, 0, 0); U.resetToday(); U.usageReport(loadConfig()); writeTotals(200000, 0, 0);  // 约 ¥0.4
 const w1 = C.gateDecision(loadConfig());
 A("接近阈值 → 提醒一次且不拦", w1.block === false && w1.state === "warn" && w1.notifyOwner === true, w1);

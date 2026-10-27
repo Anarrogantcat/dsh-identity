@@ -1,9 +1,12 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-moodsw';
 import { mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 try { rmSync(process.env.DSH_HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(process.env.DSH_HOME + "/profiles/desktop", { recursive: true });
 mkdirSync(process.env.DSH_HOME + "/feiyu-mood", { recursive: true });
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const mood = await import(base + "lib/mood.js");
 const { loadConfig, saveConfig, clone, DEFAULTS, FIELDS } = await import(base + "lib/config.js");
 const persona = await import(base + "lib/persona.js");
@@ -59,7 +62,7 @@ const cfgFields = FIELDS.map(f => f.k);
 ok.push(["面板有 5 个心情开关", ["integration.linkMood","integration.moodInPrompt","integration.moodProactive","integration.linkMoodProbability","integration.linkMoodVoice"].every(k => cfgFields.includes(k)), cfgFields.filter(k=>k.startsWith("integration."))]);
 const lbl = FIELDS.find(f => f.k === "integration.linkMood");
 ok.push(["总开关标签写清楚了", /总开关/.test(lbl.l) && /24 小时/.test(lbl.hint), lbl]);
-const panel = readFileSync("C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/panel.html", "utf8");
+const panel = readFileSync(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine', 'panel.html'), "utf8");
 ok.push(["面板常用区露出手开关", ["integration.moodInPrompt","integration.moodProactive","integration.linkMoodProbability","integration.linkMoodVoice"].every(k => panel.includes(k))]);
 console.log("=== 心情总开关 / 过期保护 测试 ===");
 let fail = 0;

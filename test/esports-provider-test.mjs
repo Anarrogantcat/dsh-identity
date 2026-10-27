@@ -1,3 +1,6 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-esports-provider';
 
 import { mkdirSync, writeFileSync, rmSync } from "node:fs";
@@ -5,7 +8,7 @@ const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(HOME + "/profiles/desktop", { recursive: true });
 
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const E = await import(base + "lib/esports.js");
 const K = await import(base + "lib/knowledge.js");
 const { ensureDirs, peerKey } = await import(base + "lib/store.js");

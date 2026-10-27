@@ -1,10 +1,13 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-dlp';
 import { mkdirSync, rmSync, writeFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(HOME + "/profiles/desktop", { recursive: true });
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const D = await import(base + "lib/downloads.js");
 const { ensureDirs, dirs } = await import(base + 'lib/store.js');
 ensureDirs();

@@ -1,4 +1,7 @@
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/@tencent-connect/dsh-qqbot/dist/transport/attachment.js";
+import { pathToFileURL } from 'node:url';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', '@tencent-connect', 'dsh-qqbot', 'dist', 'transport', 'attachment.js')).href;
 const { downloadMediaAttachments } = await import(base);
 import { existsSync, statSync, unlinkSync } from "node:fs";
 const logger = { debug: (m) => {}, warn: (m) => console.log("WARN", m), info: () => {} };

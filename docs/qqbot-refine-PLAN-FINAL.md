@@ -50,10 +50,10 @@ if (stickerMoods.length || remembers.length) {   // 只有 sticker/remember 才�
 ### 1.1 环境
 | 项 | 事实 |
 |---|---|
-| NapCat | `D:\AI\QQBOT\NapCat`，账号 **690618714（小号，已跑几个月）** |
+| NapCat | `D:\AI\QQBOT\NapCat`，账号 **100000001（小号，已跑几个月）** |
 | NapCat 连接（**实测**） | NapCat 只有一个 `websocketClients` 条目，**主动拨到** `ws://localhost:2536/OneBotv11`；`websocketServers` 为空（NapCat 自己不监听 OneBot 端口） |
 | Yunzai | `D:\AI\QQBOT\Yunzai`，node PID 11964，监听 2536（B站推送等） |
-| DSH 通道 | `im-qqbot`，账号 **1905982004**（腾讯官方 API） |
+| DSH 通道 | `im-qqbot`，账号 **100000000**（腾讯官方 API） |
 | 未挂载 | `dsh-onebot-qq@0.9.6`（OneBot 11 通道，支持反向 WS 8643 / 正向 3001） |
 | 使用面 | **单群**，token 有开销 |
 
@@ -97,10 +97,10 @@ if (stickerMoods.length || remembers.length) {   // 只有 sticker/remember 才�
 ## 3. 架构
 
 ```
-QQ 690618714（小号）
+QQ 100000001（小号）
   └─ NapCat ══ WS ══> dsh-onebot-qq（通道层）─┐
                                               ├─> DSH Agent（每群一个会话）
-QQ 1905982004（官方）─ im-qqbot ══ 备胎 ──────┘
+QQ 100000000（官方）─ im-qqbot ══ 备胎 ──────┘
                         ▲
                  dsh-qqbot-refine
    ┌──────────┬────────┴────────┬──────────┬──────────┐
@@ -158,7 +158,7 @@ identity:
 - **不共用连接**：NapCat 的每个 `websocketClients` 条目是一条独立长连接，各自推一份完整事件流，各自断线重连、各自 token
 - 不动 Yunzai 任何配置
 
-> **共用的是什么？** 只共用「同一个 NapCat 进程 + 同一个 QQ 号（690618714）」这个事件源。
+> **共用的是什么？** 只共用「同一个 NapCat 进程 + 同一个 QQ 号（100000001）」这个事件源。
 > 连接本身**不共用**——把两条框架塞进同一条 WS 是不可能的（一条 OneBot 连接只对应一个服务端）。
 
 > **分工（已确认）**：Yunzai **不参与对话**，只做 **B 站动态推送 + 链接识别**；DSH 接管聊天/记忆/心情/群管。
@@ -211,12 +211,12 @@ dsh-onebot 自带连接层（`OneBotConnection`：重连退避、心跳、鉴权
 #### 4.5.3 面板要显示的（「通道」页）
 
 ```
-当前通道：OneBot（690618714 · 已连接）
+当前通道：OneBot（100000001 · 已连接）
   ws://127.0.0.1:3001    延迟 12ms    最近事件 8 秒前
   重连 0 次 · 心跳正常 · 今日发 24 条 / 失败 0 条
   健康度：🟢 正常
 
-另一条：官方 QQ（1905982004）· 未启用
+另一条：官方 QQ（100000000）· 未启用
 ```
 
 #### 4.5.4 健康度判定规则
@@ -234,7 +234,7 @@ dsh-onebot 自带连接层（`OneBotConnection`：重连退避、心跳、鉴权
 {
   mode: 'onebot',
   connected: true,
-  account: { uin: 690618714, nickname: '...' },
+  account: { uin: 100000001, nickname: '...' },
   endpoint: 'ws://127.0.0.1:3001',
   latencyMs: 12,
   lastEventAt: 1792950000000,
@@ -495,7 +495,7 @@ storage: <store>/roster.json
 ```json
 {
   "updatedAt": "2026-10-26T20:00:00Z",
-  "self": { "uin": 690618714, "nickname": "..." },
+  "self": { "uin": 100000001, "nickname": "..." },
   "groups": [ { "id": 123456789, "name": "群名", "count": 42, "max": 200 } ],
   "friends": [ { "id": 10001, "nickname": "染喵", "remark": "" } ],
   "members": {
@@ -735,7 +735,7 @@ export async function loadChunks() {
 |---|---|---|
 | 通道 | **OneBot 主线，官方备胎**，单活切换 | §4 |
 | 依赖 | 不硬依赖腾讯插件 | S1 |
-| 账号 | **共用 690618714**（NapCat 两条独立连接：Yunzai 2536 / DSH 8643） | §4.2.1 |
+| 账号 | **共用 100000001**（NapCat 两条独立连接：Yunzai 2536 / DSH 8643） | §4.2.1 |
 | Yunzai 分工 | **只做 B站推送 + 链接识别**，不参与对话 | §4.2.2 |
 | B站链接解析 | **归 Yunzai** → DSH `bili.parseEnabled = false`、`bili.pushEnabled = false` | 避免双卡 |
 | 使用面 | **单群** | §17 单群基线 |

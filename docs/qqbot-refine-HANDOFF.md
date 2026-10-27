@@ -1,8 +1,8 @@
 # dsh-qqbot-refine · 交接备忘（全面检查后）
 
 生成：2026-10-26 00:1x
-插件：C:\Users\Ranmi\.dsh\profiles\desktop\node_modules\dsh-qqbot-refine
-数据：C:\Users\Ranmi\.dsh\storages\dsh-qqbot-refine
+插件：C:\Users\user\.dsh\profiles\desktop\node_modules\dsh-qqbot-refine
+数据：C:\Users\user\.dsh\storages\dsh-qqbot-refine
 面板：http://127.0.0.1:<DSH端口>/qqbot-refine
 
 ## 一、健康检查结果

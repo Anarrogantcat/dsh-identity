@@ -1,8 +1,9 @@
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-media';
 import { mkdirSync, rmSync } from "node:fs";
 try { rmSync(process.env.DSH_HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(process.env.DSH_HOME + "/profiles/desktop", { recursive: true });
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const T = await import(base + "lib/toolgate.js");
 const { ensureDirs } = await import(base + "lib/store.js");
 const { loadConfig, saveConfig, clone, DEFAULTS } = await import(base + "lib/config.js");

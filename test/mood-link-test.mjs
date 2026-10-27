@@ -1,7 +1,10 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-home4';
 const fs = await import("node:fs"); const path = await import("node:path");
 const home = process.env.DSH_HOME; fs.mkdirSync(path.join(home,"feiyu-mood"), { recursive: true });
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/lib/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine', 'lib/')).href;
 const M = await import(base + "mood.js");
 const ok=[];
 function setMood(mood, dims){ fs.writeFileSync(path.join(home,"feiyu-mood","state.json"), JSON.stringify({version:2,moods:{__default__:{mood,dims}},lastActive:"__default__"})) }

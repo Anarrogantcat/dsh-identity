@@ -1,3 +1,6 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-usage-onebot';
 
 import { mkdirSync, writeFileSync, rmSync } from "node:fs";
@@ -7,7 +10,7 @@ const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(HOME + "/profiles/desktop", { recursive: true });
 
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const U = await import(base + "lib/usage.js");
 const OB = await import(base + "lib/onebot-channel.js");
 const { ensureDirs } = await import(base + "lib/store.js");
@@ -57,7 +60,9 @@ writeFileSync(sessDir + "/" + sidG + ".json", snap(21000, 5200, 53000));
 const second = U.usageReport(onebotCfg);
 add("今日增量算得对（群：入 20000 出 5000 命中 50000）",
   second.totals.input === 20000 && second.totals.output === 5000 && second.totals.hit === 50000 && second.totals.total === 75000, second.totals);
-add("金额 = 0.065 元", second.totals.yuan === 0.065, second.totals.yuan);
+const _p = U.pricesOf(onebotCfg);
+const _exp = Number(U.costOf({ uncachedInputTokens: 20000, outputTokens: 5000, cacheReadTokens: 50000, cacheWriteTokens: 0 }, _p).toFixed(4));
+add("金额按当前单价与校准系数算（对比 costOf）", second.totals.yuan === _exp, { got: second.totals.yuan, exp: _exp, prices: _p });
 add("usageReportOneBot 结构与 usageReport 同形（mode 除外）", (() => {
   const a = U.usageReportOneBot(onebotCfg);
   const b = U.usageReport({ ...onebotCfg, transport: { ...onebotCfg.transport, mode: "onebot" } });

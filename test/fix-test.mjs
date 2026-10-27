@@ -1,3 +1,6 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-fix';
 import { mkdirSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import { execFileSync } from 'node:child_process';
@@ -5,7 +8,7 @@ const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(HOME + "/profiles/desktop", { recursive: true });
 writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy\n", "utf8");
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const { ensureDirs } = await import(base + "lib/store.js");
 ensureDirs();
 const F = await import(base + "lib/fix.js");

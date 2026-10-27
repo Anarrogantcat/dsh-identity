@@ -1,8 +1,11 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-home' // __TEST_HOME__ 隔离，绝不写真实配置
 import { mkdirSync as _mk, writeFileSync as _wf } from "node:fs";
 { const _h = process.env.DSH_HOME + "/profiles/desktop"; _mk(_h, { recursive: true });
   _wf(_h + "/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy-secret-for-test\n", "utf8"); }
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const { createGate } = await import(base + "lib/gate.js");
 const { loadConfig, saveConfig, clone, DEFAULTS } = await import(base + "lib/config.js");
 const S = await import(base + "lib/state.js");

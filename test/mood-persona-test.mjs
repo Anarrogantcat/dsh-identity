@@ -1,10 +1,13 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-mood';
 import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(HOME + "/profiles/desktop", { recursive: true });
 writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\\n  config:\\n    appId: '1905982004'\\n    appSecret: dummy-secret-for-test\\n", "utf8");
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const mood = await import(base + "lib/mood.js");
 const persona = await import(base + "lib/persona.js");
 const { loadConfig, saveConfig, clone, DEFAULTS } = await import(base + "lib/config.js");

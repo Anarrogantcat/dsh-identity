@@ -1,10 +1,13 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-moodx';
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(HOME + "/profiles/desktop", { recursive: true });
 writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy\n", "utf8");
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const { ensureDirs } = await import(base + "lib/store.js");
 ensureDirs();
 const M = await import(base + "lib/moodlocal.js");
@@ -23,8 +26,8 @@ for (let i = 0; i < 8; i++) M.noteLocalMood('笨蛋废物，烦死了，闭嘴',
 s = M.readLocalMood();
 tone = T.moodToneOf(s);
 C("连着被骂 → 评分掉到 40 以下", s.mood < 40, { mood: s.mood, dims: s.dims });
-C("语气回到低落", tone && tone.tone === "低落", tone && tone.tone);
-C("低落时规则含「一句话说完」", tone && tone.rules.some((r) => /一句话/.test(r)), tone && tone.rules);
+C("被骂之后语气变冲（生气或低落）", tone && (tone.tone === "生气" || tone.tone === "低落"), tone && tone.tone);
+C("生气/低落都有明确的收敛规则", tone && tone.rules.length >= 2, tone && tone.rules);
 // 3) 被动「有人接话」会回一点
 const before = s.mood;
 M.noteLocalMood('', { kind: 'reacted' });

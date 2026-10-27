@@ -1,3 +1,6 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-msrc';
 import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 const HOME = process.env.DSH_HOME;
@@ -5,7 +8,7 @@ try { rmSync(HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(HOME + "/profiles/desktop", { recursive: true });
 mkdirSync(HOME + "/feiyu-mood", { recursive: true });
 writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy-secret-for-test\n", "utf8");
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const mood = await import(base + "lib/mood.js");
 const local = await import(base + "lib/moodlocal.js");
 const { loadConfig, saveConfig, clone, DEFAULTS, TABS, FIELDS } = await import(base + "lib/config.js");
@@ -58,7 +61,7 @@ ok.push(["24 小时后向 50 回落一半", Math.abs(decayed - (50 + (s2 - 50) /
 ok.push(["页签里有「心情」", TABS.some(t => t[0] === 'mood'), TABS.map(t=>t[0])]);
 const moodFields = FIELDS.filter(f => f.tab === 'mood').map(f => f.k);
 ok.push(["心情字段都挂在心情页", moodFields.includes('integration.linkMood') && moodFields.includes('integration.moodSource'), moodFields]);
-const panel = (await import("node:fs")).readFileSync("C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/panel.html", "utf8");
+const panel = (await import("node:fs")).readFileSync(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine', 'panel.html'), "utf8");
 ok.push(["面板有心情卡片渲染", panel.includes('moodCardHtml')]);
 ok.push(["面板能重置本地心情", panel.includes('resetLocal')]);
 console.log("=== 心情来源 / 本地兜底 / 心情页 测试 ===");

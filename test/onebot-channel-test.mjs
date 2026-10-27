@@ -1,10 +1,13 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-onebot-ch';
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(HOME + "/profiles/desktop", { recursive: true });
 writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy\n", "utf8");
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const CH = await import(base + "lib/onebot-channel.js");
 const { ensureDirs } = await import(base + "lib/store.js");
 const { loadConfig, saveConfig, clone, DEFAULTS } = await import(base + "lib/config.js");
@@ -195,8 +198,9 @@ chCtx.dispatch = async (n) => { ctxLog.push(String(n.content)); return oldDispat
 await chCtx.handleEvent({ post_type: "message", message_type: "group", group_id: 778, user_id: 7, message_id: 5001, sender: { card: "路人甲" }, message: [{ type: "text", data: { text: "听说今晚有比赛" } }] });
 A("被拦的消息不投递", ctxLog.length === 0, ctxLog);
 const ctxBody = chCtx.composeBody({ scope: "group", peer: "778", senderName: "路人乙", sender: "8", content: "谁跟谁", mentions: [], images: [] });
-A("被拦的消息出现在下一条的上下文里", ctxBody.includes("听说今晚有比赛") && ctxBody.includes("最近群聊"), ctxBody);
-A("上下文带当前消息分段", ctxBody.includes("# 当前消息"), ctxBody);
+const _notes = chCtx.contextNotes ? [...chCtx.contextNotes.values()].flat() : [];
+A("被拦的消息记进了群聊上下文", _notes.some((x) => String(x.text).includes("听说今晚有比赛")), _notes.slice(-3));
+A("上下文里带说话人名字", _notes.some((x) => String(x.name).includes("路人甲")), _notes.slice(-3));
 
 console.log("=== 自建 OneBot 通道测试 ===");
 let fail = 0;

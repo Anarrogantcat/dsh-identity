@@ -1,4 +1,7 @@
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const { moodToneOf, voiceStyleOf, stickerMoodOf, normalizeDims } = await import(base + "lib/mood.js");
 const ok = [];
 const real = { mood: 81, dims: { happy: 32, calm: 26, sweet: 8, heartache: 2, worry: 6, sad: 5, jealous: 0 } };

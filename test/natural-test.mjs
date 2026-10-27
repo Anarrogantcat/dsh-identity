@@ -1,5 +1,8 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-final';
-const base="file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/lib/";
+const base=pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine', 'lib/')).href;
 const { createGate } = await import(base+"gate.js");
 const { loadConfig, saveConfig, clone, DEFAULTS } = await import(base+"config.js");
 const S = await import(base+"state.js");

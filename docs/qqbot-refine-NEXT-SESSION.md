@@ -34,9 +34,9 @@
 入站看图已补（0.6.3）：图片 → 宿主 attachment → 图像内容块；`transport.onebot.vision/maxImages/maxImageMB`；模型拒图自动降级。
 ## 0. 真机现状（2026-10-26 21:5x）
 
-- 通道 **已连上**：mode=onebot / connected=true / health=ok / 能力位 15/15，账号 690618714（鲸鱼娘）
+- 通道 **已连上**：mode=onebot / connected=true / health=ok / 能力位 15/15，账号 100000001（鲸鱼娘）
 - NapCat：websocketServers 127.0.0.1:3001（Array、上报自身消息关、token 与插件一致）；Yunzai 的 2536 反向连接不受影响
-- 白名单已换成真实群号：983577123（九喵、梨落、祈风、鲸鱼娘）；roles.owners = 1368695212（染喵）
+- 白名单已换成真实群号：983577123（九喵、梨落、祈风、鲸鱼娘）；roles.owners = 100000002（染喵）
 - 旧 openid 数据已归档：storages/dsh-qqbot-refine/backups/openid-2026-10-26T13-44-33/（记忆 4 份等 7 个文件）
 - 画像已按名册重建 4 人（群名片 + 角色，统计从 0 开始）
 - 待重启生效的最后一轮改动：profile.seedMembers / speedCard 用群名片 / 面板「清理旧通道条目」
@@ -71,7 +71,7 @@
 | 角色 | 路径 |
 |---|---|
 | **项目目录（唯一开发处）** | `D:\AI\DeepSeek Harness Workspace\dsh-qqbot-refine`（git 仓库：源码 + docs/ + test/ + scripts/，最新 `65a4e59`） |
-| 部署目录（DSH 加载） | `C:\Users\Ranmi\.dsh\plugins\dsh-qqbot-refine`（**改完要跑 scripts/sync-to-deploy.ps1**） |
+| 部署目录（DSH 加载） | `C:\Users\user\.dsh\plugins\dsh-qqbot-refine`（**改完要跑 scripts/sync-to-deploy.ps1**） |
 | 加载入口 | `profiles/desktop/node_modules/dsh-qqbot-refine`（junction → 部署目录） |
 | 数据 | `storages/dsh-qqbot-refine`（relations/ self/ todos/ digest/ topics.json safety.json） |
 | 蓝图 | 项目里 `docs/qqbot-refine-PLAN-FINAL.md` |

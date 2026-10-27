@@ -1,10 +1,13 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-lobs';
 import { mkdirSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(HOME + "/profiles/desktop", { recursive: true });
 writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy-secret-for-test\n", "utf8");
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const learn = await import(base + "lib/learn.js");
 const { createGate } = await import(base + "lib/gate.js");
 const { loadConfig, saveConfig, clone, DEFAULTS } = await import(base + "lib/config.js");
@@ -37,9 +40,9 @@ said.length = 0;
 await gate.onInbound(bot, { group_openid:'G1', author:{ member_openid:'U-MEMBER', member_role:'member' }, content:'#学到的', id:'m2' });
 ok.push(["普通群友 #学到的 被挡", said.length === 0, said]);
 // 面板快照字段 + 卡片
-const panel = readFileSync("C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/panel.html", "utf8");
+const panel = readFileSync(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine', 'panel.html'), "utf8");
 ok.push(["面板有学习卡片", panel.includes('learnCardHtml') && panel.includes('STATE.learnDetail')]);
-const idx = readFileSync("C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/index.js", "utf8");
+const idx = readFileSync(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine', 'index.js'), "utf8");
 ok.push(["快照输出 learnDetail", idx.includes('learnDetail:')]);
 console.log("=== 学习可见性 测试 ===");
 let fail = 0;

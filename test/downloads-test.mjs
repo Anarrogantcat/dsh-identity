@@ -1,3 +1,5 @@
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-dl';
 import { mkdirSync, rmSync, writeFileSync, existsSync, statSync, readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -30,7 +32,7 @@ const out2 = execFileSync(process.execPath, [probe], { encoding: "utf8", env: { 
 const pj2 = JSON.parse(out2.split("\n").pop());
 T("环境变量 QQBOT_REFINE_HOME 优先", pj2.store.toLowerCase() === join(HOME, "env-data").toLowerCase(), pj2.store);
 
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const D = await import(base + "lib/downloads.js");
 const { loadConfig, saveConfig, clone, DEFAULTS } = await import(base + "lib/config.js");
 const { ensureDirs, dirs } = await import(base + "lib/store.js");

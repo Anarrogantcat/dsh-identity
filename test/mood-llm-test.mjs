@@ -1,9 +1,12 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-mllm';
 import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(HOME + "/profiles/desktop", { recursive: true });
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const L2 = await import(base + "lib/moodllm.js");
 const M = await import(base + "lib/moodlocal.js");
 const { ensureDirs } = await import(base + "lib/store.js");
@@ -51,7 +54,7 @@ for (let i = 0; i < 3; i++) L2.pushMessage('g_err', '在吗 ' + i, 'member');
 const r5 = await L2.appraiseWithLlm(cfg(), boomLlm, 'g_err');
 ok.push(["模型抛错 → 优雅失败", r5.ok === false && /rate limit/.test(r5.error), r5]);
 // 7) 理由不进提示词
-const idx = (await import("node:fs")).readFileSync("C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/lib/mood.js", "utf8");
+const idx = (await import("node:fs")).readFileSync(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine', 'lib/mood.js'), "utf8");
 const block = (await import(base + "lib/mood.js")).moodBlock({ score: 70, tone: '松快', hint: 'h', rules: ['r'], particles: ['p'] });
 ok.push(["注入段落里没有理由字段", !/lastReason|理由/.test(block), block]);
 ok.push(["心情段落不含具体聊天内容", !/夸她厉害/.test(block), block]);

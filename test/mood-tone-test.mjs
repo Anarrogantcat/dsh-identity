@@ -1,8 +1,11 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-tones';
 import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 try { rmSync(process.env.DSH_HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(process.env.DSH_HOME + "/feiyu-mood", { recursive: true });
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const mood = await import(base + "lib/mood.js");
 const write = (s, dims) => writeFileSync(process.env.DSH_HOME + "/feiyu-mood/state.json", JSON.stringify({ version:2, lastActive:"fish", moods:{ fish:{ mood:s, dims } } }));
 const cases = [["松快", 80, {happy:9,calm:5}], ["平和", 55, {happy:3,calm:5}], ["有点闷", 35, {worry:5}], ["低落", 18, {sad:9,heartache:6}], ["别扭", 52, {jealous:8}]];

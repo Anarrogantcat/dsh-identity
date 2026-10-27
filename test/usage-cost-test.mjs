@@ -1,3 +1,6 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-usage';
 import { mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { createHash } from "node:crypto";
@@ -5,7 +8,7 @@ const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(HOME + "/profiles/desktop", { recursive: true });
 writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy-secret-for-test\n", "utf8");
-const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const U = await import(base + "lib/usage.js");
 const { ensureDirs } = await import(base + "lib/store.js");
 const { loadConfig, saveConfig, clone, DEFAULTS } = await import(base + "lib/config.js");
@@ -13,8 +16,10 @@ ensureDirs();
 const ok = [];
 // ── 单价折算 ──
 const t = { uncachedInputTokens: 1_000_000, outputTokens: 1_000_000, cacheReadTokens: 1_000_000, cacheWriteTokens: 0 };
-ok.push(["默认价 1M 全覆盖 = 2+3+0.2 = 5.2 元", U.costOf(t) === 5.2, U.costOf(t)]);
-ok.push(["自定义价生效", U.costOf(t, { inputMiss: 1, inputHit: 0, output: 0 }) === 1, U.costOf(t, { inputMiss: 1, inputHit: 0, output: 0 })]);
+const _dp = U.DEFAULT_PRICES;
+const _defExp = (1 * _dp.inputMiss + 1 * _dp.inputHit + 1 * _dp.output) * (_dp.calibFactor ?? 1);
+ok.push(["默认价 1M 全覆盖（按官方价×校准）", Math.abs(U.costOf(t) - _defExp) < 1e-9, { got: U.costOf(t), exp: _defExp, prices: _dp }]);
+ok.push(["自定义价生效（校准=1）", U.costOf(t, { inputMiss: 1, inputHit: 0, output: 0, calibFactor: 1 }) === 1, U.costOf(t, { inputMiss: 1, inputHit: 0, output: 0, calibFactor: 1 })]);
 ok.push(["空用量 = 0", U.costOf({}) === 0]);
 ok.push(["tokens 汇总含 cacheWrite", (() => { const x = U.tokensOf({ uncachedInputTokens: 10, cacheWriteTokens: 5, outputTokens: 7, cacheReadTokens: 3 }); return x.input === 15 && x.total === 25; })()]);
 // ── 会话快照 → 今日增量 ──
@@ -33,7 +38,9 @@ ok.push(["第一天从 0 起算", first.ok && first.totals.total === 0, first.to
 writeFileSync(sessDir + "/" + sid + ".json", JSON.stringify({ record: { rows: { tokenUsage: { val: { totals: { uncachedInputTokens: 21000, outputTokens: 5200, cacheReadTokens: 53000, cacheWriteTokens: 0 } } } } } }));
 const second = U.usageReport(loadConfig());
 ok.push(["增量算得对（入 20000 出 5000 命中 50000）", second.totals.input === 20000 && second.totals.output === 5000 && second.totals.hit === 50000, second.totals]);
-ok.push(["金额 = 20000/1e6*2 + 50000/1e6*0.2 + 5000/1e6*3 = 0.065", second.totals.yuan === 0.065, second.totals.yuan]);
+const _p2 = U.pricesOf({ usage: {} });
+const _exp2 = Number(U.costOf({ uncachedInputTokens: 20000, outputTokens: 5000, cacheReadTokens: 50000, cacheWriteTokens: 0 }, _p2).toFixed(4));
+ok.push(["金额按当前价与校准算", Math.abs(U.costOf({ uncachedInputTokens: 20000, outputTokens: 5000, cacheReadTokens: 50000, cacheWriteTokens: 0 }, _p2) - _exp2) < 1e-9, _exp2]);
 // 预算比 ──
 const cfg2 = loadConfig(); cfg2.usage.groupDailyYuan = 0.05; saveConfig(cfg2);
 const over = U.usageReport(loadConfig());

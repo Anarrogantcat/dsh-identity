@@ -7,7 +7,7 @@
 
 | 项 | 值 |
 |---|---|
-| NapCat 配置 | `D:\AI\QQBOT\NapCat\config\onebot11_690618714.json` |
+| NapCat 配置 | `D:\AI\QQBOT\NapCat\config\onebot11_100000001.json` |
 | `websocketClients` | **1 条**：`ws://localhost:2536/OneBotv11`（NapCat 主动连 Yunzai） |
 | `websocketServers` | **0**（NapCat 不监听） |
 | `httpServers` / `httpSseServers` | 0 / 0 |
@@ -44,7 +44,7 @@ NapCat
 4. 保存 → 重启 NapCat 生效
 
 ### A2 手改 JSON（需要时用）
-1. 备份：`Copy-Item onebot11_690618714.json onebot11_690618714.json.bak-2026-10-26`
+1. 备份：`Copy-Item onebot11_100000001.json onebot11_100000001.json.bak-2026-10-26`
 2. 在 `network.websocketServers` 追加一条（字段以 WebUI 生成结果为准，含 `name/enable/host/port/token/messagePostFormat/reportSelfMessage/debug/heartInterval`）
 3. 重启 NapCat
 4. **回读文件**确认 NapCat 没有把它规范化掉（如果改了，以它写回的为准）

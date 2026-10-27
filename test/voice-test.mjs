@@ -1,8 +1,11 @@
+import { join } from 'node:path';
+import { homedir } from 'node:os';
+import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-home' // __TEST_HOME__ 隔离，绝不写真实配置
 import http from "node:http";
 import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
-const base="file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
 const V = await import(base+"lib/voice.js");
 const { ensureDirs, dirs } = await import(base+"lib/store.js");
 ensureDirs();

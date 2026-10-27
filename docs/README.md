@@ -39,5 +39,5 @@ dsh-qqbot-refine/
 └─ docs/               本目录
 
 > 项目目录：`D:\AI\DeepSeek Harness Workspace\dsh-qqbot-refine`
-> 部署目录（DSH 加载）：`C:\Users\Ranmi\.dsh\plugins\dsh-qqbot-refine`
+> 部署目录（DSH 加载）：`C:\Users\user\.dsh\plugins\dsh-qqbot-refine`
 ```
