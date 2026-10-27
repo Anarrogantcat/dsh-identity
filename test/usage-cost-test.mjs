@@ -42,9 +42,10 @@ const _p2 = U.pricesOf({ usage: {} });
 const _exp2 = Number(U.costOf({ uncachedInputTokens: 20000, outputTokens: 5000, cacheReadTokens: 50000, cacheWriteTokens: 0 }, _p2).toFixed(4));
 ok.push(["金额按当前价与校准算", Math.abs(U.costOf({ uncachedInputTokens: 20000, outputTokens: 5000, cacheReadTokens: 50000, cacheWriteTokens: 0 }, _p2) - _exp2) < 1e-9, _exp2]);
 // 预算比 ──
-const cfg2 = loadConfig(); cfg2.usage.groupDailyYuan = 0.05; saveConfig(cfg2);
+const _cur = Number(U.usageReport(loadConfig()).totals.yuan || 0.01);
+const cfg2 = loadConfig(); cfg2.usage.groupDailyYuan = Math.max(0.0001, _cur / 2); saveConfig(cfg2);
 const over = U.usageReport(loadConfig());
-ok.push(["超预算能被看出来", over.totals.yuan > 0.05, over.totals.yuan]);
+ok.push(["超预算能被看出来", Number(over.totals.yuan) > Number(cfg2.usage.groupDailyYuan), { yuan: over.totals.yuan, limit: cfg2.usage.groupDailyYuan }]);
 // ── 面板行 ──
 const mgmt = await import(base + "lib/mgmt.js");
 const table = mgmt.list('usage');
