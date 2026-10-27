@@ -1,0 +1,37 @@
+process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-kbimp';
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+const HOME = process.env.DSH_HOME;
+try { rmSync(HOME, { recursive: true, force: true }) } catch {}
+mkdirSync(HOME + "/profiles/desktop", { recursive: true });
+writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy\n", "utf8");
+const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const { ensureDirs } = await import(base + "lib/store.js");
+ensureDirs();
+const K = await import(base + "lib/knowledge.js");
+const src = HOME + '/import-src';
+mkdirSync(src, { recursive: true });
+writeFileSync(src + '/群规.md', '# 群规\n禁止刷屏');
+writeFileSync(src + '/faq.txt', 'Q: 怎么加群\nA: 找管理员');
+writeFileSync(src + '/members.csv', 'name,role,note\n染喵,群主,爱吃\n穿云,管理,爱玩梗');
+writeFileSync(src + '/data.json', JSON.stringify({ a: 1, b: '二' }));
+writeFileSync(src + '/skip.bin', 'x');
+const ok = []; const T = (n, c, e) => ok.push([n, !!c, e]);
+const r = K.importKbFromPath(src);
+T("目录导入成功", r.ok && r.imported === 4, r);
+const list = K.listKbFiles().map((x) => x.file);
+T("四个文件都进了知识库", ["import-src-群规.md", "import-src-faq.md", "import-src-members.md", "import-src-data.md"].every((f) => list.includes(f)), list);
+const kb = K.loadKnowledge();
+T("chunks 里能检索到内容", kb.chunks.some((c) => String(c.text || "").includes("禁止刷屏")), kb.chunks.length);
+const csvOk = kb.chunks.some((c) => /name: 染喵|role: 群主/.test(String(c.text || '')));
+T("CSV 被转成键值对", csvOk, "csv");
+const single = K.importKbFromPath(src + '/群规.md', { asName: 'rule.md' });
+T("单文件导入 + 指定文件名", single.ok && single.imported === 1 && K.listKbFiles().some((x) => x.file === "rule.md"), single);
+const bad = K.importKbFromPath(src + '/skip.bin');
+T("不支持的类型被拒", bad.ok === false, bad);
+const missing = K.importKbFromPath(src + '/不存在.md');
+T("路径不存在给提示", missing.ok === false && String(missing.error).includes("不存在"), missing);
+console.log("=== 知识库导入 测试 ===");
+let fail = 0;
+for (const [n, pass, e] of ok) { console.log((pass ? "OK  " : "FAIL ") + n + (pass ? "" : "   " + JSON.stringify(e || {}).slice(0, 160))); if (!pass) fail++; }
+console.log(fail ? ("失败 " + fail) : ("全部通过 " + ok.length + "/" + ok.length));
+process.exit(fail ? 1 : 0);

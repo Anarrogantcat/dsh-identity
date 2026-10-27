@@ -2024,6 +2024,7 @@ function kbEditorCard() {
     '</div><div class="ctl pbtns"><button id="kbRefreshList">刷新列表</button><button id="kbNew">新建</button></div></div>' +
     '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta"><div class="label">文件</div></div>' +
       '<div class="ctl"><select id="kbPick" style="min-width:220px"><option value="">（选择文件）</option></select></div></div>' +
+    '<div class="row" style="border-bottom:0;padding:6px 0 0"><div class="meta"><div class="label">从本机路径导入</div><div class="hint">填文件或文件夹的绝对路径；支持 md/txt/csv/json，文件夹会递归（最多 200 个），导入后自动转成 .md 片段</div></div><div class="ctl"><input type="text" id="kbImportPath" placeholder="D:\\资料\\群规.md 或 D:\\资料\\docs" style="min-width:260px"><button id="kbImportGo">导入</button></div></div>' +
     '<textarea id="kbText" spellcheck="false" placeholder="markdown 内容…" style="width:100%;min-height:180px;margin-top:6px"></textarea>' +
     '<div class="pbtns" style="margin-top:8px">' +
       '<button id="kbSave" class="primary">保存</button>' +
@@ -2068,6 +2069,17 @@ async function bindKbEditor() {
     try {
       const j = await pfetch({ action: 'knowledgeSave', file: file, text: text, append: append === true })
       say(j && j.ok ? ('已' + (append ? '追加' : '保存') + ' ' + file + '（' + j.bytes + ' 字节）') : ('失败：' + ((j && j.error) || '')))
+      await refresh()
+    } catch (e) { say('失败：' + e.message) }
+  }
+  const importGo = $('kbImportGo')
+  if (importGo) importGo.onclick = async function () {
+    const ip = $('kbImportPath'); const path = ip ? ip.value.trim() : ''
+    if (!path) { say('先填路径'); return }
+    say('导入中…')
+    try {
+      const j = await pfetch({ action: 'knowledgeImport', path: path })
+      say(j && j.ok ? ('已导入 ' + j.imported + '/' + j.total + ' 个文件' + ((j.errors || []).length ? '（' + j.errors[0] + '）' : '')) : ('失败：' + ((j && j.error) || ((j && j.errors && j.errors[0]) || ''))))
       await refresh()
     } catch (e) { say('失败：' + e.message) }
   }
