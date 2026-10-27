@@ -42,10 +42,14 @@ const c2 = loadConfig(); c2.frequency.nonMentionEvery = 0; S.state.nm={}; saveCo
 const off = await gate.onInbound(bot, raw("没 @ 你"));
 ok.push(["N=0 时不回", off===true]);
 
-// 业主豁免
+// 业主：mention-only 模式下默认也守 N（免得主人一说话就必回）
 const c3 = loadConfig(); c3.frequency.nonMentionEvery = 0; saveConfig(c3);
 const owner = await gate.onInbound(bot, raw("我是主人", "U1"));
-ok.push(["Owner 不受限", owner===false]);
+ok.push(["mention 模式：Owner 也守 N", owner===true]);
+// 只有 ownerPriority=always 才豁免
+const c4 = loadConfig(); c4.frequency.ownerPriority = 'always'; saveConfig(c4); S.state.nm = {};
+const owner2 = await gate.onInbound(bot, raw("我是主人", "U1"));
+ok.push(["always 档：Owner 豁免", owner2===false]);
 
 saveConfig(clone(DEFAULTS)); S.state.nm={};
 console.log("=== 非@每N条 测试 ==="); let fail=0;

@@ -35,8 +35,16 @@ ok.push(["自然冷却生效（第二次被挡）", a===false && b2===true]);
 const c3=await gate.onInbound(bot,raw("大肥鱼 还在吗"));
 ok.push(["叫小名不占自然冷却额度", c3===false]);
 // 闭麦
-saveConfig(mk({})); reset(); S.setMute("G1", 60000, "U1");
+saveConfig(mk({naturalCooldownSec:0})); reset(); S.setMute("G1", 60000, "U1");
 ok.push(["闭麦后普通成员不回", (await gate.onInbound(bot,raw("大肥鱼 在吗")))===true]);
+reset();
+// Owner 优先度：只有 always 才「说啥都回」；high / normal 走自然接话判定
+saveConfig(mk({ownerPriority:"normal", probabilityPercent:0})); reset();
+ok.push(["Owner 普通档：闲聊不接", (await gate.onInbound(bot,raw("今天天气不错","U1")))===true]);
+saveConfig(mk({ownerPriority:"high", probabilityPercent:0})); reset();
+ok.push(["Owner 高档：闲聊也走判定", (await gate.onInbound(bot,raw("今天天气不错","U1")))===true]);
+saveConfig(mk({ownerPriority:"always", probabilityPercent:0})); reset();
+ok.push(["Owner 最高档：说啥都接", (await gate.onInbound(bot,raw("今天天气不错","U1")))===false]);
 reset();
 console.log("=== 最终验收 ==="); let fail=0;
 for (const [n,p] of ok){ console.log(`${p?"✅":"❌"} ${n}`); if(!p) fail++ }

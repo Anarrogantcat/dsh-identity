@@ -31,12 +31,13 @@ let g1 = gateFor(loadConfig());
 const r1 = [];
 for (let i = 0; i < 3; i++) r1.push(await send(g1, 'U-OWNER', '在吗', 'o' + i));
 T("ownerPriority=always：Owner 连发 3 条全放行", r1.every((x) => x === false), r1);
-// 2) normal：Owner 第 2 条被群冷却挡住
+// 2) normal：Owner 的闲聊也走自然判定（概率 0 → 不回）；叫名字照样回
 reset(); saveConfig(mkCfg('normal'));
 let g2 = gateFor(loadConfig());
 const a = await send(g2, 'U-OWNER', '在吗', 'n1');
-const b = await send(g2, 'U-OWNER2', '在吗2', 'n2');
-T("ownerPriority=normal：第二条被冷却挡", a === false && b === true, { a, b });
+T('ownerPriority=normal：闲聊也按自然判定挡', a === true, a);
+const c1 = await send(g2, 'U-OWNER2', '大肥鱼 在吗', 'n2');
+T('ownerPriority=normal：叫名字照样回', c1 === false, c1);
 // 3) 普通成员：概率 0 → 一律挡
 reset(); saveConfig(mkCfg('always'));
 let g3 = gateFor(loadConfig());
