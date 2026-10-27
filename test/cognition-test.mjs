@@ -83,6 +83,10 @@ t('无自述词的句子被丢弃', !K.selfCard(PS).includes('嗯嗯好的'))
 for (let i = 0; i < 25; i++) K.noteSelf(PS, '我记住第 ' + i + ' 件事')
 const selfRaw = JSON.parse(rawRead(path.join(STORE, 'self', PS + '.json')))
 t('自我卡最多 20 条', selfRaw.self.length === 20)
+const ss = K.selfStats()
+t('自我卡统计：条目数 > 0', ss.items >= 20, ss)
+t('自我卡统计：有最近更新时间', ss.lastAt > 0, ss)
+t('自我卡统计：会话数 ≥ 1', ss.peers >= 1, ss)
 
 // ── 6. 待办卡：记录 / 取出 / 不重复 / 过期 ──
 const PT = 'g_todo'

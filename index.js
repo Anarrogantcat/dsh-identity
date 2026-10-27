@@ -45,6 +45,7 @@ import * as profile from './lib/profile.js'
 import * as mgmt from './lib/mgmt.js'
 import { installToolGate, toolGate } from './lib/toolgate.js'
 import { PERM_LEVELS, levelOf } from './lib/permgear.js'
+import { currentVersion, latestCached, checkLatest, applyUpdate, pluginDirOf, isPnpmManaged, compareVersions, readCache } from './lib/update.js'
 
 export const name = 'qqbot-refine'
 export const inject = ['webServer']
@@ -249,7 +250,7 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.10.0',
+    version: '0.11.0',
     install: installInfo(),
     stage: 'v0.9.32 · S1–S7',
     dshHome: STORE_DIR,
@@ -295,6 +296,23 @@ function snapshot() {
     esports: (() => { try { const c = esportsCache(); return { at: c.at || 0, source: c.source || '', count: c.count || 0, today: dayMatches().length, errors: (c.errors || []).slice(0, 3), attempts: (c.attempts || []).slice(0, 4) } } catch (e) { return null } })(),
     mutedGroups: (() => { try { return Object.keys(state.muted ?? {}) } catch (e) { return [] } })(),
     voiceProbe: (() => { try { return (globalThis.__qqrefineVoiceProbe ?? null) } catch (e) { return null } })(),
+    update: (() => {
+      try {
+        const cur = currentVersion()
+        const c = readCache()
+        const latest = c?.ok ? String(c.latest ?? '') : ''
+        const dir = pluginDirOf()
+        return {
+          current: cur,
+          latest,
+          hasUpdate: !!(latest && compareVersions(latest, cur) > 0),
+          checkedAt: Number(c?.checkedAt ?? 0),
+          error: c?.ok === false ? String(c.error ?? '') : '',
+          dir,
+          pnpmManaged: isPnpmManaged(dir),
+        }
+      } catch (e) { return { current: currentVersion(), error: String(e?.message ?? e) } }
+    })(),
     voiceLast: (() => { try { return lastJobInfo() } catch (e) { return null } })(),
     usage: (() => { try { const c0 = loadConfig(); return { ...usageReport(c0), buckets: (() => { try { return bucketsReport(c0) } catch { return null } })() } } catch (e) { return { ok: false, error: String(e && e.message || e) } } })(),
     llmRoute: (() => {
@@ -317,6 +335,7 @@ function snapshot() {
         return {
           relations: modsRef?.relations?.relationsStats?.() ?? null,
           digest: modsRef?.digest?.digestStats?.() ?? null,
+          self: modsRef?.cards?.selfStats?.() ?? null,
         }
       } catch { return null }
     })(),
@@ -530,6 +549,14 @@ export async function apply(ctx, config = {}) {
           if (action === 'clearRoleCache') {
             clearRoleCache()
             return sendJson(res, 200, { ok: true })
+          }
+          if (action === 'updateCheck') {
+            const r = await checkLatest()
+            return sendJson(res, 200, { ok: true, ...r, current: currentVersion(), hasUpdate: r.ok ? compareVersions(r.latest, currentVersion()) > 0 : false })
+          }
+          if (action === 'updateApply') {
+            const r = await applyUpdate({ logger })
+            return sendJson(res, 200, r)
           }
           if (action === 'groupDiag') {
             return sendJson(res, 200, { ok: true, groups: (cfg.scope.groups ?? []).map((g) => ({ group: g, ...roleDiagnostics(g) })) })
@@ -753,6 +780,14 @@ export async function apply(ctx, config = {}) {
     const tU = setInterval(take, 5 * 60 * 1000)
     tU.unref?.()
     ctx.effect?.(() => () => { clearInterval(tU) }, 'qqbot-refine: usage-buckets')
+  }
+  // 版本检查：启动 1 分钟后一次，之后每 6 小时一次（只读 raw package.json，很轻）
+  {
+    const tick = () => { void latestCached(6 * 3600 * 1000).catch(() => {}) }
+    setTimeout(tick, 60 * 1000).unref?.()
+    const tV = setInterval(tick, 6 * 3600 * 1000)
+    tV.unref?.()
+    ctx.effect?.(() => () => { clearInterval(tV) }, 'qqbot-refine: update-check')
   }
   // 赛事赛程自动同步：每小时检查一次，按 esports.refreshHours 决定要不要真拉
   {

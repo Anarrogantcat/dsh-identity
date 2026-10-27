@@ -177,9 +177,10 @@ MCP 只读工具桥（自带一个本地沙箱 MCP 服务器）、`#诊断 → d
 dsh plugin --profile web add github:Anarrogantcat/dsh-qqbot-refine
 ```
 
-**更新**：再跑一遍同一条命令就拉到 master 最新，然后重启 DSH；git 拉不动就用
-`.../archive/refs/heads/master.tar.gz`（钉版本用 `.../refs/tags/v0.10.0.tar.gz`）。
-设置和数据在 `~/.dsh/storages/dsh-qqbot-refine`，更新不会动它们。详见 [INSTALL.md](docs/INSTALL.md#25-更新到最新版)。
+**更新**：面板右上角「⟳ 检查更新」→ 有新版就变成「↑ 更新到 vX」→ 点一下、确认、等十几秒，
+会先把当前版本备份到 `~/.dsh/storages/dsh-qqbot-refine/backups/update-<时间>/`，然后**重启 DSH** 生效。
+（也支持命令行：再跑一遍 add，或 tarball；设置和数据不受影响。）
+详见 [INSTALL.md](docs/INSTALL.md#25-更新到最新版)。
 
 > **不修改**宿主与第三方插件源码：全部通过 `QQBot.prototype` 的运行时钩子（入站 `handleInboundMessage`、出站 `sendText/sendMarkdown/send/sendFile`）与 `systemPrompt.section` 实现。
 > 钩子装不上时**自动降级放行**，绝不吞消息。

@@ -79,6 +79,15 @@ dsh plugin --profile web add "https://github.com/Anarrogantcat/dsh-qqbot-refine/
 更新完**重启 DSH**。你的设置、数据（`~/.dsh/storages/dsh-qqbot-refine`）、
 `pay-browser` 登录态都不在这个包里，不会被覆盖；别手动删它们。
 
+**更省事：插件内一键更新**（0.11.0 起）
+
+打开控制面板，右上角点「⟳ 检查更新」：有新版本时按钮变成「↑ 更新到 vX」，
+点它 → 确认 → 自动下载 master 的 tar、**先备份到 `backups/update-<时间>/`**、覆盖当前插件目录，
+然后提示你重启 DSH。备份目录留着，翻车了就把它拷回去。
+
+> 限制：如果插件是被 pnpm 装进 `node_modules/.pnpm/…` 的，面板会拒绝原地覆盖（会破坏 pnpm 的 store），
+> 这种情况请用上面的 `dsh plugin add` 更新。
+
 **确认装到的是哪版**：
 
 ```powershell

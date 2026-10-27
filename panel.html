@@ -219,6 +219,7 @@ footer .pbtns{gap:8px}
   <h1>🐟 大肥鱼 <span class="tag">QQ 增强</span> <span class="tag" id="stage">v0.5.0</span></h1>
   <div class="sub" id="paths"></div>
   <div class="chips" id="chips"></div>
+  <button id="updateBtn" title="检查更新" style="position:absolute;right:128px;top:18px;font-size:12px;padding:4px 10px">⟳ 检查更新</button>
   <button id="glassBtn" style="position:absolute;right:22px;top:18px;font-size:12px;padding:4px 10px">🫧 毛玻璃</button>
 </header>
 <main>
@@ -644,6 +645,7 @@ async function load(){
   const qi = $("q"); if (qi) { qi.value = SEARCH; qi.oninput = () => { SEARCH = qi.value; renderPanel() } }
   const rbox = $("recent"); if (rbox) rbox.style.display = "none"
   $('stage').textContent = STATE.version ? ('v' + STATE.version) : (STATE.stage || 'v0.5.0')
+  try { renderUpdateBtn() } catch {}
 }
 
 async function save(){
@@ -1258,6 +1260,39 @@ async function copyText(text, btn) {
     try { localStorage.setItem("qqrefine:glass", next ? "1" : "0") } catch {}
   } }
 })()
+
+// ── 自更新按钮 ──
+function renderUpdateBtn(){
+  const b = $("updateBtn"); if (!b) return
+  const st = (STATE && STATE.update) || {}
+  b.textContent = st.hasUpdate ? ('↑ 更新到 v' + st.latest) : '⟳ 检查更新'
+  b.title = '当前 v' + (st.current || '?') + (st.latest ? ' / 最新 v' + st.latest : '') + (st.checkedAt ? ' · 查于 ' + new Date(st.checkedAt).toLocaleString() : '') + (st.dir ? '\n目录：' + st.dir : '')
+  b.onclick = async () => {
+    const s = (STATE && STATE.update) || {}
+    if (s.pnpmManaged) { alert('这个安装目录由 pnpm 管理（.pnpm），请用 dsh plugin add 更新'); return }
+    if (!s.hasUpdate) {
+      b.disabled = true; b.textContent = '检查中…'
+      try {
+        const r = await pfetch({ action: 'updateCheck' })
+        if (r && r.ok) {
+          STATE.update = Object.assign({}, s, { current: r.current, latest: r.latest, hasUpdate: !!r.hasUpdate, checkedAt: r.checkedAt, error: '' })
+          if (!r.hasUpdate) alert('已经是最新版 v' + r.current)
+        } else alert('检查失败：' + ((r && (r.error || r.message)) || '网络错误'))
+      } catch (e) { alert('检查失败：' + (e && e.message || e)) }
+      b.disabled = false; renderUpdateBtn(); return
+    }
+    if (!confirm('更新到 v' + s.latest + '？\n当前 v' + s.current + '\n会先备份当前版本；更新完需要重启 DSH 才生效。')) return
+    b.disabled = true; b.textContent = '更新中…'
+    try {
+      const r = await pfetch({ action: 'updateApply' })
+      if (r && r.ok) {
+        alert('已更新 v' + r.from + ' → v' + r.to + '\n备份：' + r.backup + '\n现在重启 DSH 生效。')
+        STATE.update = Object.assign({}, s, { current: r.to, latest: r.to, hasUpdate: false, checkedAt: Date.now() })
+      } else alert('更新失败：' + ((r && (r.error || r.message)) || '未知原因') + (r && r.needManual ? '\n（pnpm 装的就用 dsh plugin add 更新）' : ''))
+    } catch (e) { alert('更新失败：' + (e && e.message || e)) }
+    b.disabled = false; renderUpdateBtn()
+  }
+}
 
 // ── 画像页（自定义渲染）──
 let PROFILE = null
