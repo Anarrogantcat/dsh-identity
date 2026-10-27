@@ -33,7 +33,14 @@ await ch.handleEvent({ post_type: 'message', message_type: 'group', group_id: 83
 await new Promise((r) => setTimeout(r, 300));
 const ok = []; const T = (n, c, e) => ok.push([n, !!c, e]);
 T("图文分开发：后被 @ 时带上了刚才那张图", followed.length >= 1 && followed[followed.length - 1].content.some((p) => p.type === "image"), followed.map((m) => m.content.map((p) => p.type)));
+// 3) 别人发的图 + 她没点名 → 另一个人 @ 她 → 也应借到群里最近那张
+followed.length = 0;
+await ch.handleEvent({ post_type: 'message', message_type: 'group', group_id: 830148935, user_id: 9, message_id: 7201, sender: { card: '艾尔' }, message: [{ type: 'image', data: { file: 'y.jpg', url: 'http://127.0.0.1:' + port + '/y.png' } }] });
+await new Promise((r) => setTimeout(r, 200));
+await ch.handleEvent({ post_type: 'message', message_type: 'group', group_id: 830148935, user_id: 10, message_id: 7202, sender: { card: '染喵' }, message: [{ type: 'at', data: { qq: '690618714' } }, { type: 'text', data: { text: '看看上面那张图' } }] });
+await new Promise((r) => setTimeout(r, 300));
 server.close();
+T("别人的图 + 你 @ 她 → 也能借到", followed.length >= 1 && followed[followed.length - 1].content.some((p) => p.type === "image"), followed.map((m) => m.content.map((p) => p.type)));
 console.log("=== 图文分开 借用 测试 ===");
 let fail = 0;
 for (const [n, pass, e] of ok) { console.log((pass ? "OK  " : "FAIL ") + n + (pass ? "" : "   " + JSON.stringify(e || {}).slice(0, 200))); if (!pass) fail++; }
