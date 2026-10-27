@@ -21,7 +21,7 @@ import { createGate, startJobs } from './lib/gate.js'
 import { loadCognition, createHooks, cognitionText, consolidatePeers } from './lib/hooks.js'
 import { probeService as probeVoice, lastJobInfo } from './lib/voice.js'
 import { assetStatus, progressOf, downloadAsset, removeAsset, sttAutoCommand, downloadsStats } from './lib/downloads.js'
-import { usageReport } from './lib/usage.js'
+import { usageReport, sampleBuckets, bucketsReport, sidOfForConfig, usageTargets } from './lib/usage.js'
 import { syncFromApi as syncEsports, loadCache as esportsCache, dayMatches } from './lib/esports.js'
 import { resolveRoute, withRoute } from './lib/llmroute.js'
 import { dataPointer, STORE_DIR as DATA_DIR } from './lib/config.js'
@@ -207,9 +207,9 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.9.17',
+    version: '0.9.18',
     install: installInfo(),
-    stage: 'v0.9.17 · S1–S7',
+    stage: 'v0.9.18 · S1–S7',
     dshHome: STORE_DIR,
     configPath: CFG_PATH,
     configPathExists: existsSync(CFG_PATH),
@@ -254,7 +254,7 @@ function snapshot() {
     mutedGroups: (() => { try { return Object.keys(state.muted ?? {}) } catch (e) { return [] } })(),
     voiceProbe: (() => { try { return (globalThis.__qqrefineVoiceProbe ?? null) } catch (e) { return null } })(),
     voiceLast: (() => { try { return lastJobInfo() } catch (e) { return null } })(),
-    usage: (() => { try { return usageReport(loadConfig()) } catch (e) { return { ok: false, error: String(e && e.message || e) } } })(),
+    usage: (() => { try { const c0 = loadConfig(); return { ...usageReport(c0), buckets: (() => { try { return bucketsReport(c0) } catch { return null } })() } } catch (e) { return { ok: false, error: String(e && e.message || e) } } })(),
     llmRoute: (() => {
       try {
         const cfg0 = loadConfig()
@@ -697,6 +697,21 @@ export async function apply(ctx, config = {}) {
     t3.unref?.()
     setTimeout(() => { void daily() }, 30 * 1000).unref?.()
   ctx.effect?.(() => () => { clearInterval(t3) }, 'qqbot-refine: profile-daily')
+
+  // 用量采样：每 5 分钟把增量记进「峰/谷」桶（历史无法回溯，从现在开始准）
+  {
+    const take = () => {
+      try {
+        const cfg = loadConfig()
+        const sidOf = sidOfForConfig(cfg)
+        sampleBuckets(cfg, sidOf, usageTargets(cfg))
+      } catch { /* ignore */ }
+    }
+    take()
+    const tU = setInterval(take, 5 * 60 * 1000)
+    tU.unref?.()
+    ctx.effect?.(() => () => { clearInterval(tU) }, 'qqbot-refine: usage-buckets')
+  }
   // 赛事赛程自动同步：每小时检查一次，按 esports.refreshHours 决定要不要真拉
   {
     const tick4 = () => {
