@@ -7,3 +7,4 @@ Thumbs.db
 tmp/
 backups/
 dsh-test-*
+*.tgz
