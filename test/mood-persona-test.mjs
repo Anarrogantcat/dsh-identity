@@ -20,22 +20,23 @@ const writeMood = (moodScore, dims = {}) => {
 };
 const ok = [];
 writeMood(80, { happy: 10, calm: 6 });
-ok.push(["心情 80 → 松快", mood.moodToneOf(mood.readMood())?.tone === '松快', mood.moodToneOf(mood.readMood())]);
+ok.push(["心情 80 → 松快", mood.moodToneOf(mood.readMood({ integration: { moodSource: 'auto' } }))?.tone === '松快', mood.moodToneOf(mood.readMood({ integration: { moodSource: 'auto' } }))]);
 writeMood(55, { happy: 3, calm: 5 });
-ok.push(["心情 55 → 平和", mood.moodToneOf(mood.readMood())?.tone === '平和']);
+ok.push(["心情 55 → 平和", mood.moodToneOf(mood.readMood({ integration: { moodSource: 'auto' } }))?.tone === '平和']);
 writeMood(35, { happy: 2, worry: 5 });
-ok.push(["心情 35 → 有点闷", mood.moodToneOf(mood.readMood())?.tone === '有点闷']);
+ok.push(["心情 35 → 有点闷", mood.moodToneOf(mood.readMood({ integration: { moodSource: 'auto' } }))?.tone === '有点闷']);
 writeMood(20, { happy: 1, sad: 8 });
-ok.push(["难过维度高 → 低落", mood.moodToneOf(mood.readMood())?.tone === '低落']);
+ok.push(["难过维度高 → 低落", mood.moodToneOf(mood.readMood({ integration: { moodSource: 'auto' } }))?.tone === '低落']);
 writeMood(50, { jealous: 7 });
-ok.push(["吃醋维度高 → 别扭", mood.moodToneOf(mood.readMood())?.tone === '别扭']);
-const hi = (() => { writeMood(90, { happy: 9 }); return mood.proactiveFactor(mood.readMood()) })();
-const lo = (() => { writeMood(10, { sad: 9 }); return mood.proactiveFactor(mood.readMood()) })();
+ok.push(["吃醋维度高 → 别扭", mood.moodToneOf(mood.readMood({ integration: { moodSource: 'auto' } }))?.tone === '别扭']);
+const hi = (() => { writeMood(90, { happy: 9 }); return mood.proactiveFactor(mood.readMood({ integration: { moodSource: 'auto' } })) })();
+const lo = (() => { writeMood(10, { sad: 9 }); return mood.proactiveFactor(mood.readMood({ integration: { moodSource: 'auto' } })) })();
 ok.push(["心情好更爱搭话（倍率更高）", hi > lo, [hi, lo]]);
 ok.push(["倍率在 0.4~1.6 之间", hi <= 1.6 && lo >= 0.4, [hi, lo]]);
 ok.push(["没有状态文件也不炸", mood.moodToneOf(null) === null && mood.proactiveFactor(null) === 1]);
 // ── 人设段：心情 + 标记 ──
 const cfg = clone(DEFAULTS);
+cfg.integration.moodSource = 'auto';   // 这个测试是拿第三方文件模拟心情源
 cfg.scope.groups = ["G1"]; cfg.roles.owners = ["U-OWNER"];
 cfg.persona.enabled = true; cfg.ui.markers = true; cfg.integration.linkMood = true; cfg.integration.moodInPrompt = true;
 saveConfig(cfg);

@@ -17,6 +17,13 @@ ensureDirs();
 const writePlugin = (score, dims, ageHours) => writeFileSync(HOME + "/feiyu-mood/state.json", JSON.stringify({ version: 2, lastActive: "fish", moods: { fish: { mood: score, dims, updatedAt: Date.now() - ageHours * 3600000 } } }));
 const ok = [];
 const cfgOf = (mode) => { const c = clone(DEFAULTS); c.integration.moodSource = mode; return c };
+// 0) 默认必须是本地（零依赖），装了第三方也不自动用
+ok.push(["默认心情来源是本地", DEFAULTS.integration.moodSource === 'local', DEFAULTS.integration.moodSource]);
+const srcField = FIELDS.find((f) => f.k === 'integration.moodSource');
+ok.push(["心情来源是下拉框且含 local", srcField && srcField.t === 'select' && (srcField.options || []).some((o) => o.v === 'local'), srcField]);
+writePlugin(66, { happy: 3 }, 1);
+const defMood = mood.readMood(clone(DEFAULTS));
+ok.push(["默认模式下插件文件新鲜也不用它", defMood === null || defMood.source === 'local', defMood]);
 // 1) auto：插件新鲜就用插件
 writePlugin(88, { happy: 9 }, 1);
 const auto1 = mood.readMood(cfgOf('auto'));

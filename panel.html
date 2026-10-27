@@ -401,8 +401,8 @@ function learnCardHtml(){
 }
 function moodCardHtml(){
   var m = STATE.mood
-  if (!m) return '<div class="pcard"><div class="label">心情</div><div class="hint">还没有心情数据：第三方心情插件没在跑，本地兜底也还没攒到信号。群里说两句（夸她或怼她）就有反应了。</div></div>'
-  var src = m.source === 'local' ? '本地兜底（0 token）' : '第三方心情插件'
+  if (!m) return '<div class="pcard"><div class="label">心情</div><div class="hint">还没有心情数据：本地心情引擎还没攒到信号。群里说两句（夸她或怼她）就有反应了，不需要任何其他插件。</div></div>'
+  var src = m.source === 'local' ? '本地心情（自带，0 token）' : '第三方心情插件（可选）'
   var age = (m.ageHours == null) ? '' : (m.ageHours < 1 ? Math.round(m.ageHours * 60) + ' 分钟前' : m.ageHours.toFixed(1) + ' 小时前')
   var warn = m.stale ? '<div class="hint" style="color:#ff9f9f">心情源已过期（超过 24 小时没更新），现在按「已过期」处理，不影响正常聊天</div>' : ''
   var names = { happy: '开心', calm: '平静', sweet: '甜', heartache: '心疼', worry: '担心', sad: '难过', jealous: '吃醋' }

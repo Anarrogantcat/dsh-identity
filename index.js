@@ -250,7 +250,7 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.11.1',
+    version: '0.11.2',
     install: installInfo(),
     stage: 'v0.9.32 · S1–S7',
     dshHome: STORE_DIR,
@@ -355,13 +355,13 @@ function snapshot() {
           dims: m.dims ?? {},
           summary: moodSummary(m),
           name: m.name,
-          source: m.source ?? 'plugin',
+          source: m.source ?? 'local',
           updatedAt: m.updatedAt ?? null,
           ageHours: m.ageHours ?? null,
           stale: !!m.stale,
           lastReason: m.lastReason ?? '',
           lastSource: m.lastSource ?? '',
-          mode: String(cfg.integration?.moodSource ?? 'auto'),
+          mode: String(cfg.integration?.moodSource ?? 'local'),
         }
       } catch { return null }
     })(),

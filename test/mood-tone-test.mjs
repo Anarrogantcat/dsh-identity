@@ -13,7 +13,7 @@ const ok = [];
 const tones = [];
 for (const [name, s, dims] of cases) {
   write(s, dims);
-  const t = mood.moodToneOf(mood.readMood());
+  const t = mood.moodToneOf(mood.readMood({ integration: { moodSource: 'auto' } }));
   tones.push(t);
   ok.push([name + " 档位对", t.tone === name, t.tone]);
   ok.push([name + " 有 3 条具体行为", Array.isArray(t.rules) && t.rules.length === 3, t.rules]);

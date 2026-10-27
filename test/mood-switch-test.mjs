@@ -21,6 +21,7 @@ const sections = new Map();
 const scope = { logger: console, effect: (fn) => { const d = fn(); return typeof d === "function" ? d : () => {} }, webServer: { register: () => () => {} }, systemPrompt: { section: (s) => { sections.set(s.name, s); return () => sections.delete(s.name) } } };
 const ctx = { logger: console, inject: (n, cb) => cb(scope), effect: (fn) => fn() };
 const c = clone(DEFAULTS);
+c.integration.moodSource = 'auto';
 c.scope.groups = ["G1"]; c.roles.owners = ["U-OWNER"]; c.persona.enabled = true; c.ui.markers = true;
 saveConfig(c);
 await apply(ctx, {});
@@ -37,7 +38,7 @@ ok.push(["总开关关 → 心情段消失", !/这会儿的心情/.test(t1)]);
 ok.push(["总开关关 → 仍保留可用标记", /\[\[sticker:auto\]\]/.test(t1)]);
 const off2 = loadConfig(); off2.integration.linkMood = true; off2.integration.moodInPrompt = false; saveConfig(off2);
 const t2 = await sec.text(ctxObj);
-ok.push(["关 moodInPrompt → 只关语气，不影响别的心情联动", !/这会儿的心情/.test(t2) && mood.probabilityFactor(mood.readMood()) > 1, mood.probabilityFactor(mood.readMood())]);
+ok.push(["关 moodInPrompt → 只关语气，不影响别的心情联动", !/这会儿的心情/.test(t2) && mood.probabilityFactor(mood.readMood({ integration: { moodSource: 'auto' } })) > 1, mood.probabilityFactor(mood.readMood({ integration: { moodSource: 'auto' } }))]);
 // 过期保护
 writeMood(95, { happy: 9 }, 30);
 const stale = mood.readPluginMood();
@@ -55,7 +56,7 @@ const off4 = loadConfig(); off4.integration.moodSource = 'auto'; saveConfig(off4
 const t4 = await sec.text(ctxObj);
 ok.push(["插件过期但本地有信号 → 本地顶上", /这会儿的心情/.test(t4)]);
 writeMood(88, { happy: 9 });
-const fresh = mood.readMood();
+const fresh = mood.readMood({ integration: { moodSource: 'auto' } });
 ok.push(["刚更新的心情有效", fresh.stale === false && mood.moodToneOf(fresh).tone === '松快']);
 // 面板与字段
 const cfgFields = FIELDS.map(f => f.k);
