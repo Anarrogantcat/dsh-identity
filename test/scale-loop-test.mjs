@@ -1,0 +1,33 @@
+process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-scale';
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+const HOME = process.env.DSH_HOME;
+try { rmSync(HOME, { recursive: true, force: true }) } catch {}
+mkdirSync(HOME + "/profiles/desktop", { recursive: true });
+writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy\n", "utf8");
+const { pathToFileURL } = await import("node:url");
+const { homedir } = await import("node:os");
+const { join } = await import("node:path");
+const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
+const { ensureDirs } = await import(base + "lib/store.js");
+ensureDirs();
+const P = await import(base + "lib/persona.js");
+const B = await import(base + "lib/bond.js");
+const ok = []; const A = (n, c, e) => ok.push([n, !!c, e]);
+A("心情好/无关时保持原值", P.effectiveScale(60, { tone: "平和", bondAverage: 0 }).scale === 60);
+A("生气比设定更收敛", P.effectiveScale(60, { tone: "生气" }).offset === -15);
+A("低落也收敛", P.effectiveScale(60, { tone: "低落" }).offset === -15);
+A("松快更放得开", P.effectiveScale(60, { tone: "松快" }).offset === 8);
+A("跟群里熟 → 更放得开", P.effectiveScale(60, { tone: "", bondAverage: 5 }).offset >= 6);
+A("跟群里别扭 → 更收敛", P.effectiveScale(60, { tone: "", bondAverage: -4 }).offset <= -6);
+A("叠加不会越界（上限100）", P.effectiveScale(98, { tone: "松快", bondAverage: 6 }).scale === 100);
+A("叠加不会越界（下限0）", P.effectiveScale(5, { tone: "生气", bondAverage: -5 }).scale === 0);
+B.touchBond('G', 'A', { bond: 5 });
+B.touchBond('G', 'B', { bond: -1 });
+A("bondAvg 能算平均", Math.abs(B.bondAvg("G") - 2) < 1e-9, B.bondAvg("G"));
+A("没记录时平均 0", B.bondAvg("NOBODY") === 0);
+console.log("=== 尺度叠加回环 测试 ===");
+let fail = 0;
+for (const [n, pass, e] of ok) { console.log((pass ? "OK  " : "FAIL ") + n + (pass ? "" : "   " + JSON.stringify(e || {}).slice(0, 140))); if (!pass) fail++; }
+console.log(fail ? ("失败 " + fail) : ("全部通过 " + ok.length + "/" + ok.length));
+await new Promise((r) => setTimeout(r, 150));
+process.exitCode = fail ? 1 : 0;

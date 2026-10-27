@@ -882,7 +882,7 @@ function renderPersonaPanel() {
   const scaleWord = scaleNow <= 25 ? '保守' : scaleNow <= 50 ? '日常' : scaleNow <= 75 ? '放松' : '放飞'
   const scaleCard = `<div class="pcard" id="scaleCard">
     <div class="label">聊天尺度 <span class="badge cur" id="scaleWord">${scaleWord} · ${scaleNow}</span></div>
-    <div class="hint">往左＝克制礼貌，往右＝会接梗、会损人、允许脏话荤段子。只改语气，事实与安全底线不变。改完点右下角「保存」。</div>
+    <div class="hint">往左＝克制礼貌，往右＝会接梗、会损人、允许脏话荤段子。只改语气；心情和关系会在此基础上微调，事实与安全底线不变。改完点右下角「保存」。</div>
     <div style="display:flex;align-items:center;gap:12px;margin-top:10px">
       <span class="hint">保守</span>
       <input type="range" id="pscale" min="0" max="100" step="5" value="${scaleNow}" style="flex:1;min-width:160px">
