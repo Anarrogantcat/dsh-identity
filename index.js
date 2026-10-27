@@ -29,6 +29,7 @@ import { memoryCard, listMemory, forgetMemory, pinMemory, prunePeer, takePending
 import { personaFor, sessionIdOfContext, peerOfSession, scaleBlock } from './lib/persona.js'
 import { readMood, moodToneOf, moodSummary, moodBlock } from './lib/mood.js'
 import { readLocalMood } from './lib/moodlocal.js'
+import { sessionTotals, sidForOneBot, sessionFile, pressureRatioOf } from './lib/usage.js'
 import { llmStats } from './lib/moodllm.js'
 import { knowledgeBlock, lastQueryOf, kbStats, listKbFiles, readKbFile, saveKbFile, deleteKbFile, kbNameForPeer, importKbFromPath } from './lib/knowledge.js'
 import { topicBlock, topicStats } from './lib/topic.js'
@@ -100,7 +101,15 @@ function memorySectionText(context) {
     const sid = sessionIdOfContext(context)
     const peer = sid ? peerOfSession(sid) : null
     if (!peer) return ''
-    let card = memoryCard(peer.peerKey, cfg)
+    // 上下文压力大（快要压缩/截断）时，临时扩大召回，别让「记得的事」被挤掉
+    let pressureBoost = false
+    try {
+      const sid = sidForOneBot(peer.scope, peer.peer)
+      const raw = JSON.parse(readFileSync(sessionFile(sid), 'utf8'))
+      if (pressureRatioOf(raw) > 0.45) pressureBoost = true
+    } catch { /* 读不到就算了，按默认召回 */ }
+    const baseCfg = pressureBoost ? { ...cfg, memory: { ...(cfg.memory ?? {}), recallTop: Math.max(6, Number(cfg?.memory?.recallTop ?? 3) * 2) } } : cfg
+    let card = memoryCard(peer.peerKey, baseCfg)
     const q = takePendingRecall(peer.peerKey)
     if (q) {
       const hits = recall(peer.peerKey, q, cfg, cfg.memory.recallTop ?? 5)
@@ -230,9 +239,9 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.9.25',
+    version: '0.9.26',
     install: installInfo(),
-    stage: 'v0.9.25 · S1–S7',
+    stage: 'v0.9.26 · S1–S7',
     dshHome: STORE_DIR,
     configPath: CFG_PATH,
     configPathExists: existsSync(CFG_PATH),
