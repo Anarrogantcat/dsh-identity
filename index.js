@@ -201,9 +201,9 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.9.3',
+    version: '0.9.4',
     install: installInfo(),
-    stage: 'v0.9.3 · S1–S7',
+    stage: 'v0.9.4 · S1–S7',
     dshHome: STORE_DIR,
     configPath: CFG_PATH,
     configPathExists: existsSync(CFG_PATH),
@@ -657,11 +657,12 @@ export async function apply(ctx, config = {}) {
   // 4) 定时任务
   stopJobs = startJobs({ getConfig: loadConfig, getBot: () => botRef, diagRef: diag, logger, llmRef })
   ctx.effect?.(() => () => { try { stopJobs?.() } catch { /* ignore */ } }, 'qqbot-refine: jobs')
-  // 每日画像归纳（本地统计，0 token）：到点跑一次，同一天只跑一次
+  // 每日画像归纳：本地统计每次都跑；开了 profile.llmInduce 再顺带跑一次语义归纳
   {
-    const daily = () => {
+    const daily = async () => {
       try {
         const cfg = loadConfig()
+        if (cfg?.profile?.enabled === false) return
         const at = String(cfg?.profile?.dailyAt ?? '').trim()
         const want = /^\d{1,2}:\d{2}$/.test(at) ? at : ''
         if (!want) return
@@ -672,15 +673,24 @@ export async function apply(ctx, config = {}) {
         if ((state['profile-daily'] ?? '') === day) return
         state['profile-daily'] = day
         let total = 0
-        for (const g2 of (cfg?.scope?.groups ?? [])) {
+        let llmTotal = 0
+        const groups = cfg?.scope?.groups ?? []
+        for (const g2 of groups) {
           try { const r = profile.induce(String(g2), cfg); total += r.updated } catch { /* ignore */ }
         }
-        audit('profile.daily', { updated: total })
+        if (cfg?.profile?.llmInduce === true && llmRef?.stream) {
+          const routed = withLlmRoute(cfg, 'profile')
+          for (const g2 of groups) {
+            try { const r = await profile.induceLlm(String(g2), routed, llmRef, 5); if (r.ok) llmTotal += r.updated } catch { /* ignore */ }
+          }
+        }
+        audit('profile.daily', { updated: total, llmUpdated: llmTotal, llm: cfg?.profile?.llmInduce === true })
       } catch { /* ignore */ }
     }
-    const t3 = setInterval(daily, 60 * 1000)
+    const t3 = setInterval(() => { void daily() }, 60 * 1000)
     t3.unref?.()
-    ctx.effect?.(() => () => { clearInterval(t3) }, 'qqbot-refine: profile-daily')
+    setTimeout(() => { void daily() }, 30 * 1000).unref?.()
+  ctx.effect?.(() => () => { clearInterval(t3) }, 'qqbot-refine: profile-daily')
   // 赛事赛程自动同步：每小时检查一次，按 esports.refreshHours 决定要不要真拉
   {
     const tick4 = () => {
