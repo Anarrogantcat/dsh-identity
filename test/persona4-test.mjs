@@ -14,9 +14,10 @@ ok.push(["群聊短句在", db.presets.some(p=>p.id==="feiyu-group")]);
 ok.push(["群聊克制在", db.presets.some(p=>p.id==="feiyu-group-quiet")]);
 const a=P.getPresetText("feiyu-group").text, b=P.getPresetText("feiyu-group-quiet").text;
 ok.push(["两版内容不同", a!==b]);
-ok.push(["克制版两句话", b.includes("两句话以内")]);
+ok.push(["克制版两句话", /最多两句|两句话以内/.test(b)]);
 ok.push(["总数 4 套", db.presets.filter(p=>p.builtin).length===4]);
 console.log("=== 群聊版测试 ==="); let fail=0;
 for(const [n,v] of ok){ console.log(`${v?"✅":"❌"} ${n}`); if(!v) fail++ }
 console.log("字数：", a.length, "/", b.length);
 console.log(fail?`失败 ${fail}`:"全部通过");
+process.exitCode = fail ? 1 : 0;

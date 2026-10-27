@@ -34,3 +34,7 @@ console.log("=== 隐私规则测试 ==="); let fail = 0;
 for (const [n, p] of ok) { console.log(`${p ? "✅" : "❌"} ${n}`); if (!p) fail++ }
 console.log(fail ? `失败 ${fail}` : "全部通过");
 
+
+// 断言失败要真的算失败（run-all 只看 exit code）
+process.exitCode = fail ? 1 : 0;
+

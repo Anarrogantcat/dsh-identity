@@ -24,3 +24,7 @@ for(const [n,v] of ok){ console.log(`${v?"✅":"❌"} ${n}`); if(!v) fail++ }
 console.log("示例模板:", t.text);
 console.log(fail?`失败 ${fail}`:"全部通过");
 
+
+// 断言失败要真的算失败（run-all 只看 exit code）
+process.exitCode = fail ? 1 : 0;
+

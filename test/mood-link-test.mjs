@@ -32,3 +32,7 @@ ok.push(["摘要可读", M.moodSummary(M.readMood()).includes("心情")]);
 console.log("=== 心情联动测试 ==="); let fail=0;
 for(const [n,v] of ok){ console.log(`${v?"✅":"❌"} ${n}`); if(!v) fail++ }
 console.log(fail?`失败 ${fail}`:"全部通过");
+
+// 断言失败要真的算失败（run-all 只看 exit code）
+process.exitCode = fail ? 1 : 0;
+

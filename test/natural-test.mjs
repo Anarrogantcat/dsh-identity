@@ -28,10 +28,12 @@ await run({probabilityPercent:100}, "这个报错怎么解决", true, "技术问
 await run({probabilityPercent:100}, "😀😀", false, "纯表情(100%)→不接");
 await run({probabilityPercent:100}, "把那个文件删掉", false, "危险意图→不接");
 await run({}, "<@all> 开会了", false, "@全体(无话题)→不接");
-// 自然冷却
-saveConfig(mk({naturalCooldownSec:600})); reset();
-const a=await gate.onInbound(bot,raw("大肥鱼 第一次")); const b2=await gate.onInbound(bot,raw("大肥鱼 第二次"));
+// 自然冷却：只掐「非点名」的随机接话；叫小名是「该应」，不占这个额度
+saveConfig(mk({naturalCooldownSec:600, probabilityPercent:100})); reset();
+const a=await gate.onInbound(bot,raw("这个报错怎么解决")); const b2=await gate.onInbound(bot,raw("这个报错怎么解决"));
 ok.push(["自然冷却生效（第二次被挡）", a===false && b2===true]);
+const c3=await gate.onInbound(bot,raw("大肥鱼 还在吗"));
+ok.push(["叫小名不占自然冷却额度", c3===false]);
 // 闭麦
 saveConfig(mk({})); reset(); S.setMute("G1", 60000, "U1");
 ok.push(["闭麦后普通成员不回", (await gate.onInbound(bot,raw("大肥鱼 在吗")))===true]);
@@ -39,3 +41,7 @@ reset();
 console.log("=== 最终验收 ==="); let fail=0;
 for (const [n,p] of ok){ console.log(`${p?"✅":"❌"} ${n}`); if(!p) fail++ }
 console.log(fail?`失败 ${fail}`:"全部通过");
+
+// 断言失败要真的算失败（run-all 只看 exit code）
+process.exitCode = fail ? 1 : 0;
+

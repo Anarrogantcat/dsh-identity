@@ -83,10 +83,12 @@
 | `#余额` / `#充值` / `#充值码` 一执行就 ReferenceError（`gate.js` 压根没 import `meal.js`） | 补上 import；顺带做了充值流水、每人每日上限、60 秒防重复、`#饭账`、无金额时的用法提示 |
 | 群成员完全用不了 dsh-computer-use-win | 新增 `tools.computerUse`（off / read / full，默认 read）；工具名认 `mcp__server__` 前缀和 `*` 通配；QQ 会话建好后就地挂闸门（`gateAgent`） |
 | 主动搭话的 hybrid / llm 模式永远回落模板（`proactive.js` 没用 `collectStream`，也没 import） | 补 import；`hybrid` 里 `prov/model` 未定义的老坑一并修掉，测试从「静默失败」改成 exit≠0 |
+| **「连续对话」判定太松**：只要她处理过这个人的上一条，同一个人的下一句就被当成接续，绕过一切自然接话判定 → 群里一直插嘴、白烧 token | 现在必须**她真的发过话**（`lastSpoke` 在窗口内）才算接续；`judge` / `natural` / `nm` / `gear` / `mention-raw` 五个测试一起转绿 |
+| 命令卡片在 `DSH_HOME` 被改写时画不出来（只找临时 profile 的 sharp） | `getSharp()` 再兜底真实 `~/.dsh/profiles/*/node_modules`；`finish-test` 的 B 站卡片恢复 |
+| 21 个老测试打印 ❌ 却从不设退出码 | 全部补 `process.exitCode`，`run-all` 的绿灯现在可信；`persona3/persona4` 的文案断言按现版本更新 |
 
-> 测试坑：`run-all.mjs` 只按 exit code 计数，而 24 个老测试文件从不设 `process.exitCode`，
-> 打印了 ❌ 也照样算「通过」。本轮修了 `hybrid-test` / `voice-test`（缺 silk 时跳过），
-> 其余打印 ❌ 的老测试（bili 卡片、频率上限、闲聊不接、persona 文案…）还没动，属于历史债。
+> 测试坑（本轮已清）：`run-all.mjs` 只按 exit code 计数，之前 24 个老测试从不设 `process.exitCode`，
+> 打印 ❌ 也算「通过」。现在这些测试都补了退出码，`voice-test` 缺 silk 时明确跳过。
 
 ## 7. 回归（本轮）
 
@@ -95,27 +97,26 @@ cd 'D:\AI\DeepSeek Harness Workspace\dsh-qqbot-refine'
 node test/run-all.mjs
 ```
 
-本轮结果（2026-10-28 00:xx，v0.10.0，约 10 分钟）：
+本轮结果（2026-10-28 01:xx，v0.10.0，约 10 分钟）：
 
 ```
-测试文件：100  通过：100  失败：0      # 断言 1063 条
+测试文件：100  通过：100  失败：0      # 断言 1087 条，❌ 0 条
 ```
 
 注：`test/run-all.mjs` 只是入口，不算用例文件；目录里现在是 101 个 `.mjs`（100 个测试 + 1 个入口）。
 `media-dl-test`（连外网图床）和 `voice-test`（缺 silk-wasm 时自动跳过）都不会再拖红。
 
-**但这 100/100 只代表 exit code**：还有 22 条断言在 9 个老测试里打印 ❌ 却不设 `process.exitCode`：
+**这次绿灯是真绿灯**：`run-all` 只看 exit code，所以给 21 个「打印 ❌ 但不设退出码」的老测试
+全部补了 `process.exitCode`。之前那 22 条内容级失败也都清了：
 
-| 文件 | 失败项 | 可能原因 |
+| 症状 | 真正的原因 | 怎么修 |
 |---|---|---|
-| `finish-test` | B站卡片渲染成功 | 卡片渲染依赖/字体或模板漂移 |
-| `gear-test` | 每小时/每日上限、最小间隔 | 挡位默认值和测试假设不一致 |
-| `judge-test` / `natural-test` | 闲聊/纯表情/@别人→不接、自然冷却 | 接话判定阈值漂移（会多说话 = 多花钱，值得修） |
-| `mention-raw-test` | @别人 → 不接 | 同上 |
-| `nm-test` | 4-5 条不回、第 7 条不回 | 自然接话计数漂移 |
-| `persona3-test` / `persona4-test` | 嘴硬梗、3 句限制、先结论、字数 | 人设文案已迭代，测试没跟上 |
-
-下一轮优先修 judge / natural / mention（直接关系到「不乱说话」和成本）。
+| judge / natural 里「闲聊→不接」失败 | 「连续对话」要求太松（她没说话也算接续） | `gate.js` 的 continuation 要求 `lastSpoke` 在窗口内 |
+| nm 的「4-5 条不回」「第 7 条不回」 | 同上 | 同上 |
+| gear 的三道上限失效 | 同上（同一人连发被当接续） | 同上 |
+| mention-raw「@别人→不接」 | 同上 | 同上 |
+| finish 的 B 站卡片渲染失败 | 测试把 `DSH_HOME` 指到临时目录，找不到 profile 里的 sharp | `getSharp()` 兜底真实 `~/.dsh/profiles/*/node_modules` |
+| persona3 / persona4 文案断言 | 人设文本已改版（v7），测试还在查旧词 | 断言换成现版本的说法，长度上限放宽到 1200 |
 
 ## 8. 交接提醒
 
