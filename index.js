@@ -28,6 +28,7 @@ import { dataPointer, STORE_DIR as DATA_DIR } from './lib/config.js'
 import { memoryCard, listMemory, forgetMemory, pinMemory, prunePeer, takePendingRecall, recall } from './lib/memory.js'
 import { personaFor, sessionIdOfContext, peerOfSession, scaleBlock } from './lib/persona.js'
 import { readMood, moodToneOf, moodSummary, moodBlock } from './lib/mood.js'
+import { readLocalMood } from './lib/moodlocal.js'
 import { llmStats } from './lib/moodllm.js'
 import { knowledgeBlock, lastQueryOf, kbStats, listKbFiles, readKbFile, saveKbFile, deleteKbFile, kbNameForPeer, importKbFromPath } from './lib/knowledge.js'
 import { topicBlock, topicStats } from './lib/topic.js'
@@ -161,6 +162,13 @@ function personaSectionText(context) {
     if (body && cfg.integration?.linkMood !== false && cfg.integration?.moodInPrompt !== false) {
       const tone = moodToneOf(readMood(cfg))
       if (tone) body += moodBlock(tone)
+      try {
+        const ml = readLocalMood()
+        const recent = Date.now() - Number(ml?.at ?? 0) < 15 * 60 * 1000
+        if (ml?.lastBy && recent && /情绪|生气|难过|心情/.test(String(ml.lastKind ?? 'text'))) {
+          body += '\n（刚才那句是「' + String(ml.lastBy).slice(0, 12) + '」说的——只影响你这一下的情绪，别把原话学出去。）'
+        }
+      } catch { /* ignore */ }
     }
     // 学到的规矩（Owner/管理员教的，最多 5 条）
     if (body && cfg.learn?.enabled !== false && cfg.learn?.injectRules !== false) {
@@ -222,9 +230,9 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.9.21',
+    version: '0.9.22',
     install: installInfo(),
-    stage: 'v0.9.21 · S1–S7',
+    stage: 'v0.9.22 · S1–S7',
     dshHome: STORE_DIR,
     configPath: CFG_PATH,
     configPathExists: existsSync(CFG_PATH),
