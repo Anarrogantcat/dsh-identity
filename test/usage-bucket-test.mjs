@@ -24,7 +24,9 @@ T("周二 16:00 是高峰", U.bucketNow(cfg, bj(16, 0, 27)) === "peak", U.bucket
 T("12:30 午休按空闲", U.bucketNow(cfg, bj(12, 30, 27)) === "offpeak", U.bucketNow(cfg, bj(12, 30, 27)));
 // 计价：峰 100% / 谷 50% / 搜索按次
 cfg.usage.calibFactor = 1; cfg.usage.priceOffPeakFactor = 0.5; cfg.usage.priceSearch = 0.01;
-const db = { date: '2026-10-27', buckets: { peak: { input: 1e6, output: 0, hit: 0 }, offpeak: { input: 1e6, output: 0, hit: 0 } }, last: {}, search: 3 };
+const _d = new Date(); const _p = (n) => String(n).padStart(2, '0');
+const todayLocal = `${_d.getFullYear()}-${_p(_d.getMonth() + 1)}-${_p(_d.getDate())}`;
+const db = { date: todayLocal, buckets: { peak: { input: 1e6, output: 0, hit: 0 }, offpeak: { input: 1e6, output: 0, hit: 0 } }, last: {}, search: 3 };
 writeFileSync(HOME + '/storages/dsh-qqbot-refine/usage-buckets.json', JSON.stringify(db));
 const r = U.bucketsReport(cfg);
 T("高峰 100 万未命中 = ¥2", r.peakCost === 2, r);

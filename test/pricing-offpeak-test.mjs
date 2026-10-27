@@ -41,7 +41,7 @@ const c3 = clone(DEFAULTS);
 c3.usage.calibFactor = 1;
 c3.usage.searchFreeUntil = '2099-01-01T00:00:00+08:00';
 writeFileSync(join(dirs.root, 'usage-buckets.json'), JSON.stringify({
-  date: new Date().toISOString().slice(0, 10),
+  date: (() => { const d = new Date(); const p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}` })(),
   buckets: { peak: { input: 1e6, hit: 1e6, output: 1e6 }, offpeak: { input: 1e6, hit: 1e6, output: 1e6 } },
   search: 0,
 }), 'utf8');

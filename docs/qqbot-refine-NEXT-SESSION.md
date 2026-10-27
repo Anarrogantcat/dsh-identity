@@ -87,7 +87,7 @@
 | **「连续对话」判定太松**：只要她处理过这个人的上一条，同一个人的下一句就被当成接续，绕过一切自然接话判定 → 群里一直插嘴、白烧 token | 现在必须**她真的发过话**（`lastSpoke` 在窗口内）才算接续；`judge` / `natural` / `nm` / `gear` / `mention-raw` 五个测试一起转绿 |
 | 命令卡片在 `DSH_HOME` 被改写时画不出来（只找临时 profile 的 sharp） | `getSharp()` 再兜底真实 `~/.dsh/profiles/*/node_modules`；`finish-test` 的 B 站卡片恢复 |
 | 21 个老测试打印 ❌ 却从不设退出码 | 全部补 `process.exitCode`，`run-all` 的绿灯现在可信；`persona3/persona4` 的文案断言按现版本更新 |
-| 想让 `#充值码` 发**真实当次**的充值二维码 | 新增 `lib/payqr.js`：CDP 驱动专用 Edge（`scripts/pay-browser.ps1`，登录态在 `storages/…/pay-browser`）→ 选金额/方式 → 点「去支付」→ 截 `.ds-qr-code`；配置 `usage.payLive*`；失败回落静态码 |
+| 想让 `#充值码` 发**真实当次**的充值二维码 | 新增 `lib/payqr.js`：CDP 驱动专用 Edge（`scripts/pay-browser.ps1`，登录态在 `storages/…/pay-browser`）→ 选金额/方式 → 点「去支付」→ 截 `.ds-qr-code`；配置 `usage.payLive*`（金额/方式/端口/自启）；失败回落静态码 |
 
 > 测试坑（本轮已清）：`run-all.mjs` 只按 exit code 计数，之前 24 个老测试从不设 `process.exitCode`，
 > 打印 ❌ 也算「通过」。现在这些测试都补了退出码，`voice-test` 缺 silk 时明确跳过。
@@ -102,7 +102,7 @@ node test/run-all.mjs
 本轮结果（2026-10-28 02:xx，v0.10.0，约 10 分钟）：
 
 ```
-测试文件：101  通过：101  失败：0      # 断言 1102 条，❌ 0 条
+测试文件：101  通过：101  失败：0      # 断言 1104 条，❌ 0 条
 ```
 
 注：`test/run-all.mjs` 只是入口，不算用例文件；目录里现在是 102 个 `.mjs`（101 个测试 + 1 个入口）。

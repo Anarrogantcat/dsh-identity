@@ -21,10 +21,13 @@ A('默认关闭实时码', DEFAULTS.usage.payLiveEnabled === false);
 A('面板有实时码开关', FIELDS.some((f) => f.k === 'usage.payLiveEnabled' && f.t === 'bool'));
 A('面板有端口/地址/金额/等待', ['usage.payLivePort', 'usage.payLiveUrl', 'usage.payLiveAmount', 'usage.payLiveWaitSec'].every((k) => FIELDS.some((f) => f.k === k)));
 A('默认金额 10 元', Number(DEFAULTS.usage.payLiveAmount) === 10);
+A('默认允许自动拉起浏览器', DEFAULTS.usage.payLiveAutoStart === true);
+A('面板有自启开关', FIELDS.some((f) => f.k === 'usage.payLiveAutoStart' && f.t === 'bool'));
 
 // ── 2. 浏览器没开：给人话，不崩 ──
 const cfg = clone(DEFAULTS);
 cfg.usage.payLivePort = 9;
+cfg.usage.payLiveAutoStart = false;   // 测试里禁止自启，免得真的弹出浏览器
 cfg.usage.payLiveUrl = 'http://127.0.0.1:9/never';
 const r1 = await Q.capturePayQr(cfg, { logger: { warn() {} } });
 A('没浏览器 → ok=false', r1.ok === false, r1);
