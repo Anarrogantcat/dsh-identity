@@ -1,0 +1,31 @@
+process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-draw3';
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+const HOME = process.env.DSH_HOME;
+try { rmSync(HOME, { recursive: true, force: true }) } catch {}
+mkdirSync(HOME + "/profiles/desktop", { recursive: true });
+writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy\n", "utf8");
+const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const { ensureDirs } = await import(base + "lib/store.js");
+ensureDirs();
+const D = await import(base + "lib/draw.js");
+const { DEFAULTS } = await import(base + "lib/config.js");
+const ok = []; const T = (n, c, e) => ok.push([n, !!c, e]);
+T("草稿能存能取", !!D.putPending("g1", "u1", { userText: "大肥鱼在吃白饭", ttl: 60 }) && D.getPending("g1", "u1").userText === "大肥鱼在吃白饭");
+T("别人取不到", D.getPending("g1", "u2") === null);
+D.dropPending("g1", "u1");
+T("删掉就没了", D.getPending("g1", "u1") === null);
+T("过期的自动失效", !!D.putPending("g1", "u1", { userText: "x", ttl: 20 }) && (D.getPending("g1", "u1").at = Date.now() - 99000, D.getPending("g1", "u1") === null));
+D.dropPending("g1", "u1");
+T("「画吧」= 确认", D.parseConfirm("画吧").kind === "yes" && D.parseConfirm("好").kind === "yes" && D.parseConfirm("OK").kind === "yes");
+T("「改：白色连衣裙」= 修改", D.parseConfirm("改：白色连衣裙").kind === "modify" && D.parseConfirm("改：白色连衣裙").text === "白色连衣裙");
+T("普通聊天不算确认", D.parseConfirm("今天吃什么").kind === "none");
+const msg = D.draftMessage({ userText: '大肥鱼吃白饭', width: 512, height: 768, steps: 22, ttl: 90 }, ['大肥鱼是 DeepSeek 的二创形象…']);
+T("确认文案含请求和参考", msg.includes("我准备这样画") && msg.includes("大肥鱼吃白饭") && msg.includes("参考") && msg.includes("画吧"), msg);
+T("默认先搜再问", DEFAULTS.draw.search === true && DEFAULTS.draw.confirm === true, DEFAULTS.draw);
+T("联网搜索能取到摘要", (await D.searchSnippets("大肥鱼 角色设定", 1)).length >= 1);
+console.log("=== 生图确认流程 测试 ===");
+let fail = 0;
+for (const [n, pass, e] of ok) { console.log((pass ? "OK  " : "FAIL ") + n + (pass ? "" : "   " + JSON.stringify(e || {}).slice(0, 160))); if (!pass) fail++; }
+console.log(fail ? ("失败 " + fail) : ("全部通过 " + ok.length + "/" + ok.length));
+await new Promise((r) => setTimeout(r, 200));
+process.exitCode = fail ? 1 : 0;
