@@ -1,0 +1,32 @@
+process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-kbw';
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+const HOME = process.env.DSH_HOME;
+try { rmSync(HOME, { recursive: true, force: true }) } catch {}
+mkdirSync(HOME + "/profiles/desktop", { recursive: true });
+writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy\n", "utf8");
+const base = "file:///C:/Users/Ranmi/.dsh/profiles/desktop/node_modules/dsh-qqbot-refine/";
+const { ensureDirs } = await import(base + "lib/store.js");
+ensureDirs();
+const K = await import(base + "lib/knowledge.js");
+const ok = []; const T = (n, c, e) => ok.push([n, !!c, e]);
+const s1 = K.saveKbFile('common.md', '# 群规\n1. 别刷屏');
+T("保存 common.md", s1.ok === true, s1);
+const r1 = K.readKbFile('common.md');
+T("读回来内容正确", r1.ok && r1.text.includes("别刷屏"), r1);
+K.saveKbFile('common.md', '2. 有事说事', { append: true });
+const r2 = K.readKbFile('common.md');
+T("追加保留旧内容", r2.text.includes("别刷屏") && r2.text.includes("有事说事"), r2);
+const s3 = K.saveKbFile('g_2d25d7f1c413.md', '本群专属资料');
+T("能写群专属文件", s3.ok === true, s3);
+const list = K.listKbFiles().map((x) => x.file);
+T("列表里有这两个文件", list.includes("common.md") && list.includes("g_2d25d7f1c413.md"), list);
+T("拒绝路径穿越", K.saveKbFile("../evil.md", "x").ok === false && K.saveKbFile("a/b.md", "x").ok === false);
+T("拒绝超大内容", K.saveKbFile("big.md", "x".repeat(300 * 1024)).ok === false);
+T("common.md 不许删", K.deleteKbFile("common.md").ok === false);
+T("普通文件能删", K.deleteKbFile("g_2d25d7f1c413.md").ok === true && !K.listKbFiles().some((x) => x.file === "g_2d25d7f1c413.md"));
+T("peerKey → 文件名", K.kbNameForPeer("g_2d25d7f1c413") === "g_2d25d7f1c413.md", K.kbNameForPeer("g_2d25d7f1c413"));
+console.log("=== 知识库写入 测试 ===");
+let fail = 0;
+for (const [n, pass, e] of ok) { console.log((pass ? "OK  " : "FAIL ") + n + (pass ? "" : "   " + JSON.stringify(e || {}).slice(0, 120))); if (!pass) fail++; }
+console.log(fail ? ("失败 " + fail) : ("全部通过 " + ok.length + "/" + ok.length));
+process.exit(fail ? 1 : 0);

@@ -29,7 +29,7 @@ import { memoryCard, listMemory, forgetMemory, pinMemory, prunePeer, takePending
 import { personaFor, sessionIdOfContext, peerOfSession, scaleBlock } from './lib/persona.js'
 import { readMood, moodToneOf, moodSummary, moodBlock } from './lib/mood.js'
 import { llmStats } from './lib/moodllm.js'
-import { knowledgeBlock, lastQueryOf, kbStats } from './lib/knowledge.js'
+import { knowledgeBlock, lastQueryOf, kbStats, listKbFiles, readKbFile, saveKbFile, deleteKbFile, kbNameForPeer } from './lib/knowledge.js'
 import { topicBlock, topicStats } from './lib/topic.js'
 import { matchStats } from './lib/esports.js'
 import { rulesFor as learnRulesFor, learnStats, learnView } from './lib/learn.js'
@@ -201,9 +201,9 @@ function snapshot() {
   const cfg = loadConfig()
   return {
     ok: true,
-    version: '0.8.7',
+    version: '0.8.8',
     install: installInfo(),
-    stage: 'v0.8.7 · S1–S7',
+    stage: 'v0.8.8 · S1–S7',
     dshHome: STORE_DIR,
     configPath: CFG_PATH,
     configPathExists: existsSync(CFG_PATH),
@@ -537,6 +537,21 @@ export async function apply(ctx, config = {}) {
           }
           if (action === "profileList") {
             return sendJson(res, 200, { ok: true, group: body.group, stats: profile.stats(body.group), members: profile.listMembers(body.group) })
+          }
+          if (action === "knowledgeList") {
+            return sendJson(res, 200, { ok: true, files: listKbFiles(), dir: kbStats().dir })
+          }
+          if (action === "knowledgeRead") {
+            return sendJson(res, 200, readKbFile(body.file))
+          }
+          if (action === "knowledgeSave") {
+            return sendJson(res, 200, saveKbFile(String(body.file ?? ""), String(body.text ?? ""), { append: body.append === true }))
+          }
+          if (action === "knowledgeDelete") {
+            return sendJson(res, 200, deleteKbFile(String(body.file ?? "")))
+          }
+          if (action === "knowledgeName") {
+            return sendJson(res, 200, { ok: true, file: kbNameForPeer(String(body.peerKey ?? "")) })
           }
           if (action === "esportsSync") {
             const r = await syncEsports(cfg, logger)

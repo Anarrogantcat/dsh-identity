@@ -2016,6 +2016,75 @@ function groupListCard(groups) {
 }
 
 // ── 知识库页 ──
+function kbEditorCard() {
+  return '<div class="pcard" id="kbEditorCard">' +
+    '<div class="label" style="margin-bottom:6px">编辑知识库（这些 .md 会被检索并注入提示词）</div>' +
+    '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta">' +
+      '<div class="hint">common.md = 所有群共享；g_xxxxxxxxxxxx.md = 某个群专属（下面选群可自动生成文件名）。保存后立即生效，不用重启。</div>' +
+    '</div><div class="ctl pbtns"><button id="kbRefreshList">刷新列表</button><button id="kbNew">新建</button></div></div>' +
+    '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta"><div class="label">文件</div></div>' +
+      '<div class="ctl"><select id="kbPick" style="min-width:220px"><option value="">（选择文件）</option></select></div></div>' +
+    '<textarea id="kbText" spellcheck="false" placeholder="markdown 内容…" style="width:100%;min-height:180px;margin-top:6px"></textarea>' +
+    '<div class="pbtns" style="margin-top:8px">' +
+      '<button id="kbSave" class="primary">保存</button>' +
+      '<button id="kbAppend">追加</button>' +
+      '<button id="kbDel">删除</button>' +
+      '<span class="hint" id="kbMsg2" style="min-height:16px"></span>' +
+    '</div></div>'
+}
+
+async function bindKbEditor() {
+  const say = function (s) { const m = $('kbMsg2'); if (m) m.textContent = s }
+  const fill = function (files) {
+    const sel = $('kbPick'); if (!sel) return
+    sel.innerHTML = '<option value="">（选择文件）</option>' + (files || []).map(function (f) {
+      return '<option value="' + f.file + '">' + f.file + ' · ' + Math.round(f.bytes / 1024) + 'KB</option>'
+    }).join('')
+  }
+  const refresh = async function () {
+    try { const j = await pfetch({ action: 'knowledgeList' }); if (j && j.ok) fill(j.files) } catch (e) {}
+  }
+  await refresh()
+  const pick = $('kbPick')
+  if (pick) pick.onchange = async function () {
+    const file = pick.value
+    if (!file) { const t = $('kbText'); if (t) t.value = ''; return }
+    try {
+      const j = await pfetch({ action: 'knowledgeRead', file: file })
+      if (j && j.ok) { const t = $('kbText'); if (t) t.value = j.text || ''; say('已载入 ' + file) }
+      else say('读取失败：' + ((j && j.error) || ''))
+    } catch (e) { say('读取失败：' + e.message) }
+  }
+  const rl = $('kbRefreshList'); if (rl) rl.onclick = function () { refresh() }
+  const nb = $('kbNew')
+  if (nb) nb.onclick = function () { const t = $('kbText'); if (t) t.value = ''; const s = $('kbPick'); if (s) s.value = ''; say('输入内容后点保存，文件名填在下面提示里：g_ + 群哈希 或 common.md（保存时会问你）') }
+  const save = async function (append) {
+    const pickEl = $('kbPick'); const t = $('kbText')
+    let file = pickEl ? pickEl.value : ''
+    if (!file) { file = prompt('文件名（common.md 或 g_xxxxxxxxxxxx.md）', 'common.md') || '' }
+    const text = t ? t.value : ''
+    if (!file) { say('没填文件名'); return }
+    if (!text.trim()) { say('内容为空'); return }
+    try {
+      const j = await pfetch({ action: 'knowledgeSave', file: file, text: text, append: append === true })
+      say(j && j.ok ? ('已' + (append ? '追加' : '保存') + ' ' + file + '（' + j.bytes + ' 字节）') : ('失败：' + ((j && j.error) || '')))
+      await refresh()
+    } catch (e) { say('失败：' + e.message) }
+  }
+  const sa = $('kbSave'); if (sa) sa.onclick = function () { save(false) }
+  const ap = $('kbAppend'); if (ap) ap.onclick = function () { save(true) }
+  const dl = $('kbDel')
+  if (dl) dl.onclick = async function () {
+    const pickEl = $('kbPick'); const file = pickEl ? pickEl.value : ''
+    if (!file) { say('先选一个文件'); return }
+    if (!confirm('删除 ' + file + ' ？')) return
+    try {
+      const j = await pfetch({ action: 'knowledgeDelete', file: file })
+      say(j && j.ok ? ('已删除 ' + file) : ('失败：' + ((j && j.error) || '')))
+      await refresh()
+    } catch (e) { say('失败：' + e.message) }
+  }
+}
 async function renderKbPanel() {
   const el = $("panel")
   try {
@@ -2029,6 +2098,7 @@ async function renderKbPanel() {
     }).join("")
     const kbOn = kcfg.enabled !== false
     el.innerHTML =
+      kbEditorCard() +
       '<div class="pcard">' +
         '<div class="label" style="margin-bottom:6px">知识库</div>' +
         '<div class="hint">目录：<span class="kv">' + escapeHtml(kb.dir || "（未配置）") + '</span></div>' +
@@ -2058,6 +2128,7 @@ async function renderKbPanel() {
         '<div id="kbHits"><div class="hint">还没有试跑</div></div>' +
       '</div>'
 
+    try { await bindKbEditor() } catch (e) {}
     const gsel = $("kbGroup")
     if (gsel) gsel.onchange = function () {
       const gid = gsel.value
