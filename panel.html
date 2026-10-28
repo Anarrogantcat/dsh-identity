@@ -236,7 +236,8 @@ footer .pbtns{gap:8px}
   .side .tabs{display:flex;flex-direction:column;gap:4px;margin:0;overflow:auto;flex:1;padding:2px}
   .side .tab{display:flex;align-items:center;gap:9px;text-align:left;width:100%;padding:9px 11px;border-radius:10px;
     border:1px solid transparent;background:transparent;color:#a7b6d3;font-size:13.5px;transition:.16s}
-  .side .tab .ti{width:18px;text-align:center;opacity:.9}
+  .side .tab .ti{width:18px;display:inline-flex;align-items:center;justify-content:center;opacity:.85}
+  .side .tab .ti svg{display:block}
   .side .tab:hover{background:rgba(53,214,201,.07);color:var(--fg)}
   .side .tab.active{background:linear-gradient(90deg,rgba(53,214,201,.16),rgba(139,123,255,.10));
     border-color:rgba(53,214,201,.35);color:#eafffb;box-shadow:0 0 0 1px rgba(53,214,201,.06) inset}
@@ -476,6 +477,33 @@ function renderTopbar() {
   bindModeButtons(box)
 }
 
+// 统一线性图标（inline svg，跟随文字颜色）
+const ICON_PATHS = {
+  overview: '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  identity: '<path d="M4 7h16v10H4z"/><circle cx="9" cy="12" r="2"/><path d="M14 11h4M14 14h3"/>',
+  cognition: '<path d="M9 4a4 4 0 0 0-4 4c0 1 .4 2 1 2.6A3.5 3.5 0 0 0 8 17h1V4z"/><path d="M15 4a4 4 0 0 1 4 4c0 1-.4 2-1 2.6A3.5 3.5 0 0 1 16 17h-1V4z"/>',
+  memory: '<path d="M4 5h16v14H4z"/><path d="M4 9h16M9 9v10"/>',
+  mood: '<circle cx="12" cy="12" r="9"/><path d="M8 14c1 1.5 2.3 2 4 2s3-.5 4-2M9 9h.01M15 9h.01"/>',
+  profile: '<circle cx="12" cy="8" r="3"/><path d="M5 20c1-3.5 3.5-5 7-5s6 1.5 7 5"/>',
+  relations: '<circle cx="7" cy="8" r="2.5"/><circle cx="17" cy="8" r="2.5"/><path d="M3 19c.8-3 2.2-4.5 4-4.5s3.2 1.5 4 4.5M13 19c.8-3 2.2-4.5 4-4.5s3.2 1.5 4 4.5"/>',
+  proactive: '<path d="M12 3v3M12 18v3M4.2 7.5l2.6 1.5M17.2 15l2.6 1.5M4.2 16.5l2.6-1.5M17.2 9l2.6-1.5"/><circle cx="12" cy="12" r="4"/>',
+  system: '<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2 2M17.1 17.1l2 2M19.1 4.9l-2 2M6.9 17.1l-2 2"/>',
+  qq: '<path d="M4 6h16v9H9l-4 4V6z"/><path d="M8 10h8M8 13h5"/>',
+  scope: '<path d="M4 6h16M4 12h10M4 18h7"/>',
+  channel: '<path d="M7 7l10 10M17 7L7 17"/><circle cx="12" cy="12" r="2"/>',
+  order: '<path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/>',
+  freq: '<path d="M4 18V6M9 18v-6M14 18V9M19 18V4"/>',
+  privacy: '<rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>',
+  usage: '<path d="M4 19V9M10 19V5M16 19v-7M22 19H2"/>',
+  sticker: '<path d="M4 4h16v11l-5 5H4z"/><path d="M15 20v-5h5"/>',
+  draw: '<path d="M4 20l4-1 10-10-3-3L5 16z"/><path d="M14 6l4 4"/>',
+  voice: '<path d="M5 10v4h3l4 4V6L8 10z"/><path d="M16 9a4 4 0 0 1 0 6M19 7a7 7 0 0 1 0 10"/>',
+}
+function iconSvg(k) {
+  const d = ICON_PATHS[k]
+  if (!d) return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="2"/></svg>'
+  return '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>'
+}
 const TAB_ICON = { scope:'🗂', freq:'🎚', privacy:'🔒', identity:'🪪', cognition:'🧠', channel:'🔌', sticker:'🖼', order:'🛡', bili:'📺', voice:'🔊', proactive:'🌙', usage:'📊', matches:'🏆' }
 // v2：按身份系统的五层分组（不是旧功能清单）
 const TAB_GROUPS = [
@@ -490,7 +518,7 @@ const TAB_GROUPS = [
 ]
 const TAB_ORDER = TAB_GROUPS.flatMap(([, ks]) => ks)
 function tabLabel(k) { if (k === 'overview') return '总览'; if (k === 'system') return '系统'; if (k === 'qq') return 'QQ 通道'; if (k === 'order') return 'QQ 群管'; return ((STATE.tabs.find((t) => t[0] === k) || [k, k])[1]) }
-function tabIcon(k) { return k === 'overview' ? '🧭' : k === 'qq' ? '💬' : k === 'system' ? '⚙️' : (TAB_ICON[k] || '·') }
+function tabIcon(k) { return iconSvg(k) }
 function goTab(k) {
   if (k === 'qq') k = 'scope'
   ACTIVE = k
