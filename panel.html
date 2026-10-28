@@ -656,6 +656,14 @@ function renderPanel(){
   // §clear§ 每次渲染前先清空，避免自定义页用 append 时越切越长
   try { const _el = $("panel"); if (_el) _el.innerHTML = "" } catch {}
   const VIEW = ACTIVE === "cognition" ? COGSUB : ACTIVE
+  if (VIEW === "identity") {
+    const el = $("panel")
+    const flds = (STATE.fields || []).filter((f) => f.tab === "identity")
+    el.innerHTML = identityCardHtml() + (flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项：注入开关/预算/尺度）</summary><div class="pcard">' + flds.map((f) => fieldRow(f)).join("") + '</div></details>' : '')
+    bindFields(el)
+    bindIdentityCards(el)
+    return
+  }
   if (VIEW === "profile") { renderProfilePanel(); attachCogNav(); return }
   if (VIEW === "knowledge") { renderKbPanel(); attachCogNav(); return }
   if (VIEW === "relations") { $("panel").innerHTML = cogRelationsHtml(); attachCogNav(); return }
