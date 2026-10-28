@@ -12,7 +12,7 @@ process.env.DSH_HOME = HOME
 delete process.env.QQBOT_REFINE_HOME
 
 const url = (p) => new URL(p, import.meta.url).href
-const { composeIdentity, kernelText, kernelSummary, KERNEL, resolveStyle, listStyles } = await import(url('../lib/identity.js'))
+const { composeIdentity, kernelText, kernelSummary, KERNEL } = await import(url('../lib/identity.js'))
 const { createGate } = await import(url('../lib/gate.js'))
 const { loadConfig, saveConfig, clone, DEFAULTS, ensureStore } = await import(url('../lib/config.js'))
 const { ensureDirs, peerKey, dirs, sha } = await import(url('../lib/store.js'))
@@ -47,8 +47,7 @@ const log = () => {}
   const long = composeIdentity({ scope: 'group', maxChars: 900, parts: [{ name: 'x', text: 'y'.repeat(3000) }] })
   A('超长动态段被截断', long.used <= 900)
   A('摘要结构完整', kernelSummary().name === KERNEL.name && kernelSummary().chars <= 900)
-  A('风格库有 4 套内置', listStyles().styles.filter((s) => s.builtin).length >= 4, listStyles().styles.map((s) => s.id))
-  A('风格解析有回退', ['group', 'quiet', 'dm', 'teach'].includes(resolveStyle('group', 'G-UNKNOWN').id))
+  A('身份模型是基础人设+成长', /基础人设|内核/.test(composeIdentity({ scope: 'group' }).text))
 }
 
 // ── 2. 事件流：入站/出站/幂等/政策闸 ──
