@@ -1,3 +1,8 @@
+// 重测试：真的会调 ComfyUI 生成图片（内存尖峰 ~10GB），全量回归默认跳过，手动跑请设 QQBOT_DRAW_E2E=1
+if (process.env.QQBOT_DRAW_E2E !== "1") {
+  console.log("跳过：draw-e2e 会真的调 ComfyUI 生成图片（设 QQBOT_DRAW_E2E=1 可手动跑）");
+  process.exit(0);
+}
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { pathToFileURL } from 'node:url';
