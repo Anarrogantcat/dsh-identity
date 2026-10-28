@@ -531,6 +531,7 @@ function renderOverview() {
       ${card('自主目标', String((au.by && au.by.proposed) || 0) + ' 待批 / ' + String((au.by && au.by.approved) || 0) + ' 已批', '只提议，你批了才动', 'identity')}
       ${card('今日花费', '¥' + Number(todayYuan).toFixed(2), '软预算提醒，不拦聊天', 'usage')}
       ${card('最近复盘', (rf.week ? ('群 ' + rf.week.inbound + ' / 我 ' + rf.week.mine + ' 句') : '暂无'), '只吃事件、不读日记', 'identity')}
+      ${card('成长指标', (STATE.growth ? ('兑现率 ' + Math.round((STATE.growth.promises.fulfillRate || 0) * 100) + '% · 矛盾率 ' + Math.round((STATE.growth.traits.conflictRate || 0) * 100) + '%') : '暂无'), '稳定认知 / 兑现 / 矛盾，只读', 'identity')}
     </div>`
   ;[...el.querySelectorAll('[data-goto]')].forEach((b) => { b.onclick = () => goTab(b.dataset.goto) })
 }

@@ -55,6 +55,7 @@ import * as moodv2 from './lib/moodv2.js'
 import * as autonomy from './lib/autonomy.js'
 import * as anti8gu from './lib/anti8gu.js'
 import * as lifeparams from './lib/lifeparams.js'
+import * as growth from './lib/growth.js'
 import { listPromises, closePromise } from './lib/promises.js'
 import * as reflection from './lib/reflection.js'
 import { PERM_LEVELS, levelOf } from './lib/permgear.js'
@@ -333,7 +334,7 @@ function snapshot() {
         const g = (loadConfig()?.scope?.groups ?? [])[0]
         if (!g) return null
         const pk = peerKey('group', String(g))
-        return { week: reflection.weekSummary(pk), days: reflection.listReflections(pk, 7) }
+        return { week: reflection.weekSummary(pk), month: reflection.monthSummary(pk), days: reflection.listReflections(pk, 7) }
       } catch { return null }
     })(),
     profileNotices: (() => { try { const g = (loadConfig()?.scope?.groups ?? [])[0]; const list = g ? profile.noticesOf(String(g)) : []; return { count: list.length, latest: list.length ? String(list[list.length - 1].text || '') : '' } } catch (e) { return { count: 0, latest: '' } } })(),
@@ -411,6 +412,7 @@ function snapshot() {
     })(),
     moodV2: (() => { try { return moodv2.summary() } catch { return null } })(),
     lifeparams: (() => { try { return lifeparams.summary() } catch { return null } })(),
+    growth: (() => { try { const g = (loadConfig()?.scope?.groups ?? [])[0]; return growth.growthMetrics(g ? peerKey('group', String(g)) : '') } catch { return null } })(),
     anti8gu: (() => { try { return anti8gu.styleAudit(7) } catch { return null } })(),
     autonomy: (() => { try { return { ...autonomy.autonomyStats(), goals: autonomy.listGoals({}).slice(0, 10) } } catch { return null } })(),
     toolGate,
