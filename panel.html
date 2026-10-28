@@ -942,24 +942,19 @@ function identityCardHtml() {
   const cfg = STATE.config || {}
   const tr = STATE.traits || {}
   const id = STATE.identity || {}
-  const styles = st.styles || []
   const items = tr.items || []
   const stats = tr.stats || {}
-  const curStyle = (id.style && (id.style.name || id.style.id)) || st.currentStyle || ""
-  const byGroup = st.byGroup || {}
-  const byUser = st.byUser || {}
-  const groups = (cfg.scope && cfg.scope.groups) || []
-  const dms = (cfg.scope && cfg.scope.dmUsers) || []
-  const opt = (selected) => styles.filter((s) => s.enabled !== false || s.id === selected).map((s) => `<option value="${s.id}"${s.id === selected ? " selected" : ""}>${escapeHtml(s.name)}${s.enabled === false ? "（停用）" : ""}</option>`).join("")
-  const promiseRows = (Array.isArray(STATE.promises) ? STATE.promises : []).length
-    ? STATE.promises.map(function (p) {
+  const baseText = (cfg.identity && cfg.identity.baseText) || ''
+  const promises = Array.isArray(STATE.promises) ? STATE.promises : []
+  const refl = STATE.reflection || null
+  const promiseRows = promises.length
+    ? promises.map(function (p) {
         const t = escapeHtml(String(p.text || '')).slice(0, 80)
         const peer = escapeHtml(String(p.peerKey || '')).slice(0, 18)
         const overdue = p.overdue ? ' <span class="badge" style="border-color:#f0b34a;color:#f0b34a">逾期</span>' : ''
         return '<div class="row"><div class="meta"><div class="label">' + t + overdue + '</div><div class="hint">' + peer + ' · ' + p.ageDays + ' 天前</div></div><div class="ctl pbtns"><button data-pclose="' + p.id + '">兑现</button><button data-pdrop="' + p.id + '">不做了</button></div></div>'
       }).join("")
     : '<div class="hint">眼下没有没做完的承诺。</div>'
-  const refl = STATE.reflection || null
   const reflRows = (refl && Array.isArray(refl.days) && refl.days.length)
     ? refl.days.slice(0, 5).map(function (d) {
         const lines = escapeHtml(String((d.lines || []).slice(0, 2).join(' ')).slice(0, 120))
@@ -969,17 +964,11 @@ function identityCardHtml() {
     : '<div class="hint">还没有复盘（每天 22 点后自动写）。</div>'
   const kernel = escapeHtml(String(STATE.identityKernel || id.name || "")).replace(/\n/g, "<br>")
   const badge = (t) => t.status === "durable" ? '<span class="badge cur">durable</span>' : '<span class="badge">tentative</span>'
-  const traitRow = (t) => `<div class="row">
-      <div class="meta"><div class="label">${escapeHtml(t.text)} ${badge(t)}</div>
-      <div class="hint">证据 ${t.hits || 0} 次 · 置信 ${Math.round(Number(t.confidence || 0) * 100)}% · 最近确认 ${String(t.lastConfirmed || "").slice(0, 10)}</div></div>
-      <div class="ctl pbtns">${t.status !== "durable" ? `<button data-tpromote="${t.id}">晋升</button>` : ""}<button data-tretire="${t.id}">否决</button></div>
-    </div>`
-  const scopeRow = (scope, key, label) => {
-    const table = scope === "group" ? byGroup : byUser
-    const sel = table[key] || ""
-    return `<div class="row"><div class="meta"><div class="label">${label}</div><div class="hint">未指定时回落到全局当前</div></div>
-      <div class="ctl"><select data-sscope="${scope}" data-key="${escapeHtml(String(key))}"><option value="">（回落全局）</option>${opt(sel)}</select></div></div>`
-  }
+  const traitRow = (t) => '<div class="row">' +
+      '<div class="meta"><div class="label">' + escapeHtml(t.text) + ' ' + badge(t) + '</div>' +
+      '<div class="hint">证据 ' + (t.hits || 0) + ' 次 · 置信 ' + Math.round(Number(t.confidence || 0) * 100) + '% · 最近确认 ' + String(t.lastConfirmed || "").slice(0, 10) + '</div></div>' +
+      '<div class="ctl pbtns">' + (t.status !== "durable" ? '<button data-tpromote="' + t.id + '">晋升</button>' : '') + '<button data-tretire="' + t.id + '">否决</button></div>' +
+    '</div>'
   return `
     <div class="pcard">
       <div class="label">内核（不可谈判） <span class="badge">锁定</span></div>
@@ -987,15 +976,15 @@ function identityCardHtml() {
     </div>
     <div class="pcard">
       <div class="label">基础人设（你给她的那一套） <span class="badge">只学不改</span></div>
-      <div class="hint" style="white-space:pre-wrap">${(STATE.config.identity && STATE.config.identity.baseText) ? escapeHtml(String(STATE.config.identity.baseText)) : '没单独填：用内置内核（名字/价值观/底线），traits 和情绪在她之上生长。'}</div>
+      <div class="hint" style="white-space:pre-wrap">${baseText ? escapeHtml(baseText) : '没单独填：用内置内核（名字/价值观/底线），traits 和情绪在她之上生长。'}</div>
     </div>
     <div class="pcard">
       <div class="label">自我 traits <span class="badge">${stats.durable || 0} durable / ${stats.tentative || 0} tentative</span></div>
-      <div class="hint">只有「≥3 次证据 + 跨 ≥2 天 + 不是纯情绪」才会进 durable 并注入语气；tentative 只是观察，不许装成人格。模型能提议，规则说了算，Owner 能否决。</div>
+      <div class="hint">只有「≥3 次证据 + 跨 ≥2 天 + 不是纯情绪」才会进 durable 并注入语气；tentative 只是观察，不许装成人格。</div>
       ${items.length ? items.map(traitRow).join("") : '<div class="hint">还没有 traits。她在群里说过的话、答应过的事，会先以 tentative 记着。</div>'}
     </div>
     <div class="pcard">
-      <div class="label">没做完的承诺 <span class="badge">${(Array.isArray(STATE.promises) ? STATE.promises : []).length}</span></div>
+      <div class="label">没做完的承诺 <span class="badge">${promises.length}</span></div>
       <div class="hint">只从她自己说出口的话里抓；逾期标「逾期」；这里点「兑现 / 不做了」，或群里发 #兑现 编号。</div>
       ${promiseRows}
     </div>
@@ -1003,7 +992,8 @@ function identityCardHtml() {
       <div class="label">最近复盘 <span class="badge">${refl && refl.week ? ('7天 群 ' + refl.week.inbound + ' 句 / 我 ' + refl.week.mine + ' 句') : '暂无'}</span></div>
       <div class="hint">只吃事件与承诺、不读日记；这里只读，不改任何状态。</div>
       ${reflRows}
-    </div>`
+    </div>
+  `
 }
 
 function bindIdentityCards(el) {
