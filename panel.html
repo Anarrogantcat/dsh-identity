@@ -301,6 +301,10 @@ footer .pbtns{gap:8px}
   .phead-title{font-size:18px;font-weight:700;color:#eaf2ff;letter-spacing:.3px}
   .phead-desc{font-size:12.5px;color:#8398ba;margin-top:5px;line-height:1.6}
   .phead-side{flex:none;padding-top:4px}
+  .hbtns{position:absolute;right:18px;top:14px;display:flex;gap:8px}
+  .hbtns button{border-radius:10px;border:1px solid var(--line);background:rgba(12,20,34,.85);color:#a9bad6;padding:7px 12px;font-size:12px;cursor:pointer}
+  .hbtns button:hover{border-color:var(--accent);color:var(--accent)}
+  .auditrow{padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(10,16,27,.55);margin-bottom:8px}
   /* settings v2：字段行改为双栏，标签/提示分层，控件右对齐 */
   .row, .prow{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,320px);gap:18px;align-items:start;padding:14px 6px;border-bottom:1px solid rgba(30,43,68,.7)}
   .row:last-child,.prow:last-child{border-bottom:0}
@@ -1012,6 +1016,17 @@ function renderPanel(){
 
   const tabName = (id) => (STATE.tabs.find((t) => t[0] === id) || [id, id])[1]
   const common = fields.filter((f) => isCommon(f.k))
+  const GROUP_LABEL = { frequency: '节奏', identity: '身份', privacy: '隐私', usage: '预算', sticker: '表情', draw: '生图', voice: '语音', memory: '记忆', tools: '工具', scope: '范围', roles: '权限', learn: '学习', proactive: '主动', autonomy: '自主', mood: '心情', bili: 'B站', mcp: 'MCP' }
+  const groupMap = new Map()
+  for (const f of common) {
+    const k = String(f.k).split('.')[0]
+    const label = GROUP_LABEL[k] || '其他'
+    if (!groupMap.has(label)) groupMap.set(label, [])
+    groupMap.get(label).push(f)
+  }
+  const commonHtml = common.length
+    ? [...groupMap.entries()].map(([label, rows]) => '<div class="msection">' + label + '</div>' + rows.map((f) => fieldRow(f, q ? tabName(f.tab) : '')).join('')).join('')
+    : ''
   const advanced = fields.filter((f) => !isCommon(f.k))
   const PAGE_DESC = {"privacy":"谁能看到、记住什么、怎么脱敏；先看规则再看字段。","usage":"花了多少 token / 钱、限额怎么降级、哪些调用被记了账。","sticker":"表情包从哪来、什么时候发、发多快。","draw":"生图开不开、底子怎么套、要不要先确认。","voice":"语音怎么合成、用哪个声线、发不发得出去。","knowledge":"本地资料命中才注入，按群共享或单群。"}
   const headTitle = tabName(VIEW)
@@ -1025,7 +1040,7 @@ function renderPanel(){
     ${q ? '<div class="pcard"><div class="hint">搜索「' + q + '」：共 ' + fields.length + ' 项（跨页签）</div></div>' : ''}
     <div class="pcard">
       <div class="label">常用 <span class="badge">${common.length}</span></div>
-      ${common.length ? common.map((f) => fieldRow(f, q ? tabName(f.tab) : "")).join("") : ''}
+      ${commonHtml}
       ${advanced.length ? `<details class="adv" ${advancedOpen(ACTIVE) ? "open" : ""} data-advtab="${ACTIVE}">
         <summary>更多设置（${advanced.length} 项）</summary>
         ${advanced.map((f) => fieldRow(f, q ? tabName(f.tab) : "")).join("")}
