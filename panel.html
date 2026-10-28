@@ -213,11 +213,96 @@ details.adv>summary:hover{color:#cfe0ff}
 footer .pbtns{gap:8px}
 @media(max-width:760px){.tabs{top:0}.row .ctl{flex:1 1 100%}}
 </style>
+<style id="v2-ui">
+  /* ── v2 全新界面：深海配色 + 侧栏导航 + 卡片式布局 ── */
+  :root{
+    --bg:#070b12; --bg2:#0c1220; --card:#101827; --line:#1e2b44;
+    --fg:#e9eef8; --dim:#8ea0bf; --accent:#35d6c9; --accent2:#8b7bff;
+    --ok:#3ddc97; --warn:#ffc266; --bad:#ff7b85;
+    --glass:1;
+  }
+  body{background:
+    radial-gradient(1200px 600px at 80% -10%,rgba(139,123,255,.10),transparent 60%),
+    radial-gradient(900px 500px at 10% 0%,rgba(53,214,201,.08),transparent 55%),
+    linear-gradient(180deg,#070b12,#050810 70%);
+  }
+  .app{display:grid;grid-template-columns:224px minmax(0,1fr);min-height:100vh}
+  .side{position:sticky;top:0;align-self:start;height:100vh;padding:18px 14px;border-right:1px solid var(--line);
+    background:rgba(9,14,24,.72);backdrop-filter:blur(14px);display:flex;flex-direction:column;gap:10px;z-index:6}
+  .side .brand{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:.3px;font-size:15px;padding:2px 6px 10px}
+  .side .brand b{color:var(--fg)}
+  .side .brand span{font-size:10.5px;color:#071018;background:linear-gradient(90deg,var(--accent),var(--accent2));padding:1px 8px;border-radius:999px}
+  .side-label{font-size:10.5px;letter-spacing:.16em;color:#5d6f90;padding:0 8px}
+  .side .tabs{display:flex;flex-direction:column;gap:4px;margin:0;overflow:auto;flex:1;padding:2px}
+  .side .tab{display:flex;align-items:center;gap:9px;text-align:left;width:100%;padding:9px 11px;border-radius:10px;
+    border:1px solid transparent;background:transparent;color:#a7b6d3;font-size:13.5px;transition:.16s}
+  .side .tab .ti{width:18px;text-align:center;opacity:.9}
+  .side .tab:hover{background:rgba(53,214,201,.07);color:var(--fg)}
+  .side .tab.active{background:linear-gradient(90deg,rgba(53,214,201,.16),rgba(139,123,255,.10));
+    border-color:rgba(53,214,201,.35);color:#eafffb;box-shadow:0 0 0 1px rgba(53,214,201,.06) inset}
+  .side-foot{padding:10px 6px 2px;color:#5d6f90;font-size:11px;border-top:1px dashed rgba(30,43,68,.9);
+    overflow:hidden;white-space:nowrap;text-overflow:ellipsis;max-width:100%}
+  .side-foot .kv{font-size:10.5px;opacity:.85}
+  .content{min-width:0;display:flex;flex-direction:column}
+  header{padding:16px 26px 14px;border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(10,16,28,.92),rgba(10,16,28,.55));backdrop-filter:blur(12px)}
+  h1{font-size:17px;gap:10px}
+  h1 .tag{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#061018;font-weight:700}
+  main{max-width:1120px;width:100%;margin:0 auto;padding:20px 26px 130px}
+  .panel,.pcard{background:linear-gradient(180deg,rgba(16,24,39,.92),rgba(13,20,33,.92));
+    border:1px solid var(--line);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+  .panel{padding:18px 20px}
+  .pcard{padding:14px 16px;margin-bottom:14px}
+  .pcard:hover{border-color:#2a3d5e}
+  .row,.prow{border-bottom:1px dashed rgba(30,43,68,.85);padding:12px 0}
+  .row .label,.prow .label{font-weight:600;color:#dfe8f8}
+  .row .hint,.prow .hint{color:#8ea0bf}
+  input,select,textarea{background:#0a1220;border:1px solid #22314c;border-radius:10px}
+  input:focus,select:focus,textarea:focus{border-color:rgba(53,214,201,.6);box-shadow:0 0 0 3px rgba(53,214,201,.12)}
+  button{border-radius:10px;border:1px solid #24344f;background:#101a2b;color:#dbe6f7;transition:.15s}
+  button:hover{border-color:#33507a;background:#132239}
+  button.primary{background:linear-gradient(90deg,var(--accent),#6fe6d8);border:0;color:#051014;font-weight:700}
+  .tab-badge,.badge{border-radius:999px}
+  .badge.cur{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#061018;border:0}
+  .switch i{background:#1c2b44}
+  .switch input:checked + i{background:rgba(53,214,201,.45)}
+  .switch input:checked + i::after{background:#d9fffb}
+  .chips{gap:7px}
+  .chip{border-color:#22314c;background:rgba(16,24,39,.6)}
+  .chip.ok{color:var(--ok);border-color:rgba(61,220,151,.35);background:rgba(61,220,151,.07)}
+  .chip.warn{color:var(--warn);border-color:rgba(255,194,102,.35);background:rgba(255,194,102,.07)}
+  .chip.bad{color:var(--bad);border-color:rgba(255,123,133,.35);background:rgba(255,123,133,.07)}
+  .searchbar input{background:#0a1220}
+  .toolbar{gap:8px}
+  footer{left:0;right:0;margin:0 auto;max-width:1120px;padding:12px 20px;border:1px solid var(--line);
+    border-bottom:0;border-radius:16px 16px 0 0;background:rgba(8,13,22,.92);backdrop-filter:blur(14px)}
+  #msg{margin-left:auto;margin-right:14px}
+  .code,.copy,.kv{border-color:#22314c}
+  .sec-title{color:#5d6f90}
+  @media(max-width:860px){
+    .app{grid-template-columns:1fr}
+    .side{position:sticky;top:0;height:auto;padding:10px 12px;border-right:0;border-bottom:1px solid var(--line);flex-direction:row;align-items:center;gap:12px;overflow:auto}
+    .side .brand{padding:0 6px 0 0;white-space:nowrap}
+    .side .side-label,.side .side-foot{display:none}
+    .side .tabs{flex-direction:row;overflow:auto;padding-bottom:2px}
+    .side .tab{white-space:nowrap;border:1px solid var(--line);padding:7px 12px}
+    main{padding:16px 14px 130px}
+    header{padding:12px 16px}
+    footer{max-width:none;border-radius:0}
+  }
+</style>
 </head>
 <body>
+<div class="app">
+<aside class="side">
+  <div class="brand">🐟 <b>大肥鱼</b> <span>身份系统</span></div>
+  <div class="side-label">导航</div>
+  <div class="tabs" id="tabs"></div>
+  <div class="side-foot" id="paths"></div>
+</aside>
+<div class="content">
 <header>
   <h1>🐟 大肥鱼 <span class="tag">身份系统</span> <span class="tag" id="stage">v0.5.0</span></h1>
-  <div class="sub" id="paths"></div>
   <div class="chips" id="chips"></div>
   <button id="updateBtn" title="检查更新" style="position:absolute;right:128px;top:18px;font-size:12px;padding:4px 10px">⟳ 检查更新</button>
   <button id="glassBtn" style="position:absolute;right:22px;top:18px;font-size:12px;padding:4px 10px">🫧 毛玻璃</button>
@@ -225,7 +310,6 @@ footer .pbtns{gap:8px}
 <main>
   <div id="topbar"></div>
   <div id="quick" class="panel" style="margin-bottom:12px"></div>
-  <div class="tabs" id="tabs"></div>
   <div class="searchbar"><input type="text" id="q" placeholder="搜索设置项（跨页签）…"><span class="hint" id="qhint"></span></div>
   <div class="toolbar">
     <button data-act="syncSticker">同步图库</button>
@@ -238,6 +322,8 @@ footer .pbtns{gap:8px}
   <div class="panel" id="panel"></div>
   <pre id="actout" class="kv" style="white-space:pre-wrap"></pre>
 </main>
+</div>
+</div>
 <footer>
   <span id="msg"></span>
   <button id="reset">恢复默认</button>
