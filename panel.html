@@ -279,6 +279,18 @@ footer .pbtns{gap:8px}
   #msg{margin-left:auto;margin-right:14px}
   .code,.copy,.kv{border-color:#22314c}
   .sec-title{color:#5d6f90}
+  .tabgroup{display:flex;flex-direction:column;gap:2px;margin-bottom:6px}
+  .tglabel{font-size:10px;letter-spacing:.18em;color:#4f6285;padding:8px 10px 2px}
+  .ovhero{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;flex-wrap:wrap}
+  .ovname{font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px}
+  .ovchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+  .ovgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .ovcard{cursor:pointer;border:1px solid var(--line);border-radius:16px;padding:14px 16px;
+    background:linear-gradient(180deg,rgba(16,24,39,.9),rgba(13,20,33,.9));transition:.16s}
+  .ovcard:hover{transform:translateY(-1px);border-color:rgba(53,214,201,.45);box-shadow:0 10px 26px rgba(0,0,0,.3)}
+  .ovt{font-size:12px;color:#8ea0bf;letter-spacing:.08em}
+  .ovm{font-size:19px;font-weight:700;margin:6px 0 2px;color:#eafffb}
+  .ovs{font-size:11.5px;color:#66779a}
   @media(max-width:860px){
     .app{grid-template-columns:1fr}
     .side{position:sticky;top:0;height:auto;padding:10px 12px;border-right:0;border-bottom:1px solid var(--line);flex-direction:row;align-items:center;gap:12px;overflow:auto}
@@ -332,7 +344,7 @@ footer .pbtns{gap:8px}
 <script>
 const $ = (id) => document.getElementById(id)
 let STATE = null
-let ACTIVE = 'scope'
+let ACTIVE = 'overview'
 let SEARCH = ""
 const draft = {}
 
@@ -447,20 +459,79 @@ function renderTopbar() {
 }
 
 const TAB_ICON = { scope:'🗂', freq:'🎚', privacy:'🔒', identity:'🪪', cognition:'🧠', channel:'🔌', sticker:'🖼', order:'🛡', bili:'📺', voice:'🔊', proactive:'🌙', usage:'📊', matches:'🏆' }
+// v2：按身份系统的五层分组（不是旧功能清单）
+const TAB_GROUPS = [
+  ['总览', ['overview']],
+  ['身份', ['identity']],
+  ['认知', ['cognition']],
+  ['治理', ['freq', 'privacy', 'usage', 'order']],
+  ['能力', ['sticker', 'bili', 'voice', 'matches']],
+  ['通道', ['scope', 'channel', 'proactive']],
+]
+const TAB_ORDER = TAB_GROUPS.flatMap(([, ks]) => ks)
+function tabLabel(k) { return k === 'overview' ? '总览' : ((STATE.tabs.find((t) => t[0] === k) || [k, k])[1]) }
+function tabIcon(k) { return k === 'overview' ? '🧭' : (TAB_ICON[k] || '·') }
+function goTab(k) {
+  ACTIVE = k
+  try { localStorage.setItem('qqrefine:tab', k) } catch {}
+  try { history.replaceState(null, '', '#' + k) } catch {}
+  const out = $('actout'); if (out) out.textContent = ''
+  const msg = $('actmsg'); if (msg) msg.textContent = ''
+  renderTabs(); renderPanel()
+  try { updateToolbar() } catch {}
+  try { window.scrollTo(0, 0) } catch {}
+}
 function renderTabs(){
   const HIDDEN_TABS = new Set(COG_SUB_TABS.map((x) => x[0]))
-  $('tabs').innerHTML = STATE.tabs.filter(([k]) => !HIDDEN_TABS.has(k)).map(([k,name])=>
-    '<button class="tab ' + (k === ACTIVE ? 'active' : '') + '" data-tab="' + k + '"><span class="ti">' + (TAB_ICON[k] || '') + '</span>' + name + '</button>').join('')
-  ;[...document.querySelectorAll('.tab')].forEach(b=>b.onclick=()=>{
-    ACTIVE=b.dataset.tab
-    try{ localStorage.setItem('qqrefine:tab', ACTIVE) }catch{}
-    try{ history.replaceState(null, '', '#' + ACTIVE) }catch{}
-    const out=$('actout'); if(out) out.textContent=''
-    const msg=$('actmsg'); if(msg) msg.textContent=''
-    renderTabs(); renderPanel()
-    try{ updateToolbar() }catch{}
-    try{ window.scrollTo(0, 0) }catch{}
-  })
+  const known = new Set(TAB_ORDER)
+  const extra = STATE.tabs.map(([k]) => k).filter((k) => !HIDDEN_TABS.has(k) && !known.has(k))
+  const groups = TAB_GROUPS.map(([label, ks]) => [label, ks.slice()])
+  if (extra.length) groups.push(['其他', extra])
+  $('tabs').innerHTML = groups.map(([label, ks]) => {
+    const items = ks.map((k) => '<button class="tab ' + (k === ACTIVE ? 'active' : '') + '" data-tab="' + k + '"><span class="ti">' + tabIcon(k) + '</span>' + tabLabel(k) + '</button>').join('')
+    return '<div class="tabgroup"><div class="tglabel">' + label + '</div>' + items + '</div>'
+  }).join('')
+  ;[...document.querySelectorAll('.tab')].forEach((b) => { b.onclick = () => goTab(b.dataset.tab) })
+}
+function renderOverview() {
+  const el = $('panel')
+  const id = STATE.identity || {}
+  const st = STATE.identityStyles || {}
+  const tr = STATE.traits || {}
+  const mv = STATE.moodV2 || {}
+  const pr = Array.isArray(STATE.promises) ? STATE.promises : []
+  const au = STATE.autonomy || {}
+  const rf = STATE.reflection || {}
+  const us = STATE.usage || {}
+  const sp = STATE.sticker || {}
+  const tp = STATE.transport || {}
+  const todayYuan = (us.totals && us.totals.yuan) || 0
+  const blends = (mv.blends || []).join(' / ') || '平稳'
+  const styleName = (id.style && id.style.name) || st.currentStyle || '—'
+  const overdue = pr.filter((p) => p.overdue).length
+  const card = (title, main, sub, go) => '<div class="ovcard" data-goto="' + go + '"><div class="ovt">' + title + '</div><div class="ovm">' + main + '</div><div class="ovs">' + sub + '</div></div>'
+  el.innerHTML = `
+    <div class="pcard ovhero">
+      <div>
+        <div class="ovname">🐟 大肥鱼 <span class="badge cur">${escapeHtml(String(id.species || '鲸鱼娘'))}</span></div>
+        <div class="hint">身份段 ${id.chars || 0} 字 · 当前风格 <b>${escapeHtml(String(styleName))}</b> · 通道 ${escapeHtml(String(tp.mode || '未就绪'))}</div>
+        <div class="ovchips">
+          <span class="chip ${tp.mode ? 'ok' : 'warn'}">通道：${escapeHtml(String(tp.mode || '未就绪'))}</span>
+          <span class="chip ok">图库：${sp.total || 0} 张</span>
+          <span class="chip ${(tr.stats && tr.stats.durable) ? 'ok' : 'warn'}">durable：${(tr.stats && tr.stats.durable) || 0}</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start"><button class="primary" data-goto="identity">进身份页</button><button data-goto="usage">看用量</button></div>
+    </div>
+    <div class="ovgrid">
+      ${card('心情', escapeHtml(blends), '七情六欲 · 只改语气', 'cognition')}
+      ${card('自我 traits', String((tr.stats && tr.stats.durable) || 0) + ' durable / ' + String((tr.stats && tr.stats.tentative) || 0) + ' tentative', '有证据才进人格', 'identity')}
+      ${card('承诺', String(pr.length) + ' 件没做完' + (overdue ? (' · ' + overdue + ' 件逾期') : ''), '她自己说的才算', 'identity')}
+      ${card('自主目标', String((au.by && au.by.proposed) || 0) + ' 待批 / ' + String((au.by && au.by.approved) || 0) + ' 已批', '只提议，你批了才动', 'identity')}
+      ${card('今日花费', '¥' + Number(todayYuan).toFixed(2), '软预算提醒，不拦聊天', 'usage')}
+      ${card('最近复盘', (rf.week ? ('群 ' + rf.week.inbound + ' / 我 ' + rf.week.mine + ' 句') : '暂无'), '只吃事件、不读日记', 'identity')}
+    </div>`
+  ;[...el.querySelectorAll('[data-goto]')].forEach((b) => { b.onclick = () => goTab(b.dataset.goto) })
 }
 
 function learnCardHtml(){
@@ -560,6 +631,7 @@ function cogNavHtml() {
 }
 
 function renderPanel(){
+  if (ACTIVE === "overview") { renderOverview(); return }
   // §clear§ 每次渲染前先清空，避免自定义页用 append 时越切越长
   try { const _el = $("panel"); if (_el) _el.innerHTML = "" } catch {}
   const VIEW = ACTIVE === "cognition" ? COGSUB : ACTIVE
