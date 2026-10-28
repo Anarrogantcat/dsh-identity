@@ -108,6 +108,15 @@
 
 ---
 
+## 7.6 P3 日记 / P4 反思+承诺（✅ 核心完成）
+
+- 日记：`lib/diary.js`，每天 22 点后由调度器逐群生成（0 token，素材只来自 events）；3–6 句第一人称；同一天幂等；整篇不注入，只经 `diaryHint()` 给一句。
+- 承诺：`lib/promises.js`，只从「她发出去的话」抓（`origin=bot`），同句幂等；逾期 2 天标记；`#承诺` 列、`#兑现 <编号>` 关；未完成承诺进接续包。
+- 反思：`lib/reflection.js`，只吃事件与承诺、不读日记（防自我强化）；3–5 条/天 + 指标；`weekSummary` 给周报/面板。
+- 测试：`test/p3-diary-test.mjs`（11）、`test/p4-promise-test.mjs`（15）。
+
+---
+
 ## 8. 停止条件（遇到就停，不硬推）
 
 - 宿主接口行为与方案假设不一致（压缩事件、systemPrompt、agent 创建）

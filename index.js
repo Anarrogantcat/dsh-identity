@@ -47,6 +47,9 @@ import { ensurePolicy } from './lib/policy.js'
 import { composeIdentity, kernelSummary, kernelText, listStyles, setCurrentStyle, setStyleScope, migrateFromPresets, resolveStyle } from './lib/identity.js'
 import * as traits from './lib/traits.js'
 import { resumeStats } from './lib/resume.js'
+import { diaryHint } from './lib/diary.js'
+import { listPromises } from './lib/promises.js'
+import * as reflection from './lib/reflection.js'
 import { PERM_LEVELS, levelOf } from './lib/permgear.js'
 import { currentVersion, latestCached, checkLatest, applyUpdate, pluginDirOf, isPnpmManaged, compareVersions, readCache } from './lib/update.js'
 
@@ -213,6 +216,9 @@ function contextSectionText(context) {
     const prof = profileSectionText(context)
     if (prof) bits.push(prof)
     const sid = sessionIdOfContext(context)
+    if (sid) {
+      try { const dh = diaryHint(peerOfSession(sid)?.peerKey ?? ''); if (dh) bits.push(dh) } catch { /* ignore */ }
+    }
     const peer = sid ? peerOfSession(sid) : null
     if (peer) {
       if (cfg.knowledge?.enabled !== false) {
@@ -306,6 +312,15 @@ function snapshot() {
     identityStyles: (() => { try { return listStyles() } catch { return null } })(),
     traits: (() => { try { return { items: traits.listTraits({ limit: 50 }), stats: traits.traitsStats() } } catch { return null } })(),
     resume: (() => { try { return resumeStats() } catch { return null } })(),
+    promises: (() => { try { return listPromises({}).slice(0, 20) } catch { return [] } })(),
+    reflection: (() => {
+      try {
+        const g = (loadConfig()?.scope?.groups ?? [])[0]
+        if (!g) return null
+        const pk = peerKey('group', String(g))
+        return { week: reflection.weekSummary(pk), days: reflection.listReflections(pk, 7) }
+      } catch { return null }
+    })(),
     profileNotices: (() => { try { const g = (loadConfig()?.scope?.groups ?? [])[0]; const list = g ? profile.noticesOf(String(g)) : []; return { count: list.length, latest: list.length ? String(list[list.length - 1].text || '') : '' } } catch (e) { return { count: 0, latest: '' } } })(),
     esports: (() => { try { const c = esportsCache(); return { at: c.at || 0, source: c.source || '', count: c.count || 0, today: dayMatches().length, errors: (c.errors || []).slice(0, 3), attempts: (c.attempts || []).slice(0, 4) } } catch (e) { return null } })(),
     mutedGroups: (() => { try { return Object.keys(state.muted ?? {}) } catch (e) { return [] } })(),
