@@ -297,6 +297,10 @@ footer .pbtns{gap:8px}
   .subtab.active{background:rgba(53,214,201,.14);border-color:rgba(53,214,201,.45);color:#eafffb}
   .switch{display:inline-block;vertical-align:middle;margin-right:10px}
   .switch + .hint{vertical-align:middle}
+  .phead{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin:2px 0 14px}
+  .phead-title{font-size:18px;font-weight:700;color:#eaf2ff;letter-spacing:.3px}
+  .phead-desc{font-size:12.5px;color:#8398ba;margin-top:5px;line-height:1.6}
+  .phead-side{flex:none;padding-top:4px}
   /* settings v2：字段行改为双栏，标签/提示分层，控件右对齐 */
   .row, .prow{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,320px);gap:18px;align-items:start;padding:14px 6px;border-bottom:1px solid rgba(30,43,68,.7)}
   .row:last-child,.prow:last-child{border-bottom:0}
@@ -995,10 +999,18 @@ function renderPanel(){
   const tabName = (id) => (STATE.tabs.find((t) => t[0] === id) || [id, id])[1]
   const common = fields.filter((f) => isCommon(f.k))
   const advanced = fields.filter((f) => !isCommon(f.k))
+  const PAGE_DESC = {"privacy":"谁能看到、记住什么、怎么脱敏；先看规则再看字段。","usage":"花了多少 token / 钱、限额怎么降级、哪些调用被记了账。","sticker":"表情包从哪来、什么时候发、发多快。","draw":"生图开不开、底子怎么套、要不要先确认。","voice":"语音怎么合成、用哪个声线、发不发得出去。","knowledge":"本地资料命中才注入，按群共享或单群。"}
+  const headTitle = tabName(VIEW)
+  const headDesc = PAGE_DESC[VIEW] || '这一页的设置项；改完点右下角保存。'
 
   el.innerHTML = `
+    <div class="phead">
+      <div class="phead-main"><div class="phead-title">${escapeHtml(headTitle)}</div><div class="phead-desc">${escapeHtml(headDesc)}</div></div>
+      <div class="phead-side"><span class="chip">${fields.length} 项</span></div>
+    </div>
     ${q ? '<div class="pcard"><div class="hint">搜索「' + q + '」：共 ' + fields.length + ' 项（跨页签）</div></div>' : ''}
     <div class="pcard">
+      <div class="label">常用 <span class="badge">${common.length}</span></div>
       ${common.length ? common.map((f) => fieldRow(f, q ? tabName(f.tab) : "")).join("") : ''}
       ${advanced.length ? `<details class="adv" ${advancedOpen(ACTIVE) ? "open" : ""} data-advtab="${ACTIVE}">
         <summary>更多设置（${advanced.length} 项）</summary>
