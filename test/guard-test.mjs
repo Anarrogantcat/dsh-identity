@@ -2,7 +2,7 @@ import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-home7';
-const base=pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine', 'lib/')).href;
+const base = new URL('../lib/', import.meta.url).href;
 const G = await import(base+"guard.js");
 const cfg = { privacy: { guardPrompts: true, guardMode: "reply", guardReply: "这个不方便说呀。" } };
 const ok=[];

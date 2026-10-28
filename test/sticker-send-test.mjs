@@ -7,7 +7,7 @@ const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
 const h = HOME + "/profiles/desktop"; mkdirSync(h, { recursive: true });
 writeFileSync(h + "/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy-secret-for-test\n", "utf8");
-const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
+const base = new URL('../', import.meta.url).href;
 const { createGate } = await import(base + "lib/gate.js");
 const { loadConfig, saveConfig, clone, DEFAULTS } = await import(base + "lib/config.js");
 const S = await import(base + "lib/state.js");
@@ -25,6 +25,7 @@ writeFileSync(dirs.stickers + "/index.json", JSON.stringify({ items: [
 const c = clone(DEFAULTS);
 c.scope.groups = ["G1"]; c.roles.owners = ["U-OWNER"];
 c.sticker.enabled = true; c.sticker.perTurnMax = 1; c.sticker.perGroupDay = 20; c.sticker.dedupeHours = 24;
+c.sticker.maxPerMsgMB = 0; // 0 = 允许直接发远程直链（新默认 2MB 会先下载再发，单测里没有网络）
 c.privacy.enabled = false; c.integration.linkMood = false;
 saveConfig(c); reset();
 

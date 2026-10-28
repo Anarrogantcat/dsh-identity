@@ -3,7 +3,7 @@ import { homedir } from 'node:os';
 import { pathToFileURL } from 'node:url';
 process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-home13';
 import http from "node:http";
-const base=pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine', 'lib/')).href;
+const base = new URL('../lib/', import.meta.url).href;
 const S = await import(base+"sticker.js");
 const { ensureDirs } = await import(base+"store.js");
 const { loadConfig } = await import(base+"config.js");

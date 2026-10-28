@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { pathToFileURL } from 'node:url';
-const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
+const base = new URL('../', import.meta.url).href;
 const { plainChatText, splitBubbles, typingDelayMs } = await import(base + "lib/humanize.js");
 const ok = [];
 const eq = (n, got, want) => ok.push([n, JSON.stringify(got) === JSON.stringify(want), got, want]);

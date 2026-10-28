@@ -5,7 +5,7 @@ process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-home' // __TE
 import { mkdirSync as _mk, writeFileSync as _wf } from "node:fs";
 { const _h = process.env.DSH_HOME + "/profiles/desktop"; _mk(_h, { recursive: true });
   _wf(_h + "/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy-secret-for-test\n", "utf8"); }
-const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
+const base = new URL('../', import.meta.url).href;
 const { GEARS, gearValues } = await import(base+"lib/gear.js");
 const { createGate } = await import(base+"lib/gate.js");
 const { loadConfig, saveConfig, clone, DEFAULTS } = await import(base+"lib/config.js");
@@ -17,7 +17,7 @@ ok.push(["5 个挡位", Object.keys(GEARS).length===5]);
 ok.push(["挡位含上限字段", !!gearValues(3).naturalPerHour && !!gearValues(3).naturalPerDay]);
 const reset=()=>{S.state.muted={};S.state.muteCalls={};S.state.nm={};S.state.seen=[];S.state.spokeAt={};S.state.windows={};S.state.cooldown={};S.state.counters={}};
 const make=(over={})=>{const c=clone(DEFAULTS);c.scope.groups=["G1"];c.scope.dmUsers=["U1"];c.roles.owners=["U1"];
- c.frequency.naturalMode=true;c.frequency.aliases=["大肥鱼"];c.frequency.probabilityPercent=100;
+ c.frequency.naturalMode=true;c.frequency.aliases=["大肥鱼"];
  c.frequency.stickyMin=5;c.frequency.selfGapSec=0;c.frequency.cooldownGroupSec=0;c.frequency.cooldownMentionSec=0;
  c.frequency.perMinuteGlobal=999;c.frequency.perMinuteGroup=999;c.frequency.perMinuteUser=999;c.frequency.quietEnabled=false;
  c.frequency.fitJudge=false;c.frequency.naturalCooldownSec=0;c.frequency.naturalPerHour=3;c.frequency.naturalPerDay=99;
@@ -28,16 +28,18 @@ const gate=createGate({getConfig:loadConfig,saveConfig,diagRef:{counts:{}},onBot
 const raw=(x,u="U2")=>({group_openid:"G1",author:{member_openid:u},content:x,id:"m"});
 
 saveConfig(make({})); reset();
-let pass=0; for(let i=0;i<6;i++){ const r=await gate.onInbound(bot, raw(`闲聊第${i}句`)); if(r===false) pass++ }
+// 自然接话不靠随机概率：用「明显在对她说」的非点名句（机器人 + 你 + 问句）触发自然额度
+const naturalMsgs = (i) => `机器人 你能看看这个报错吗${i}`;
+let pass=0; for(let i=0;i<6;i++){ const r=await gate.onInbound(bot, raw(naturalMsgs(i))); if(r===false) pass++ }
 ok.push(["每小时上限 3 生效", pass===3]);
 
 saveConfig(make({naturalPerDay:2})); reset();
-pass=0; for(let i=0;i<5;i++){ const r=await gate.onInbound(bot, raw(`再说${i}`)); if(r===false) pass++ }
+pass=0; for(let i=0;i<5;i++){ const r=await gate.onInbound(bot, raw(naturalMsgs(i))); if(r===false) pass++ }
 ok.push(["每日上限 2 生效", pass===2]);
 
 saveConfig(make({naturalCooldownSec:600})); reset();
-const a=await gate.onInbound(bot, raw("第一句"));
-const b2=await gate.onInbound(bot, raw("第二句"));
+const a=await gate.onInbound(bot, raw(naturalMsgs(1)));
+const b2=await gate.onInbound(bot, raw(naturalMsgs(2)));
 ok.push(["最小间隔生效", a===false && b2===true]);
 
 saveConfig(make({naturalPerHour:3, naturalCooldownSec:0, cooldownGroupSec:0, cooldownMentionSec:0, perMinuteGlobal:999, perMinuteGroup:999, perMinuteUser:999})); reset();

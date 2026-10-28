@@ -5,7 +5,7 @@ process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-home' // __TE
 import http from "node:http";
 import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
-const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
+const base = new URL('../', import.meta.url).href;
 const V = await import(base+"lib/voice.js");
 const { ensureDirs, dirs } = await import(base+"lib/store.js");
 ensureDirs();

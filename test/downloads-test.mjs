@@ -32,7 +32,7 @@ const out2 = execFileSync(process.execPath, [probe], { encoding: "utf8", env: { 
 const pj2 = JSON.parse(out2.split("\n").pop());
 T("环境变量 QQBOT_REFINE_HOME 优先", pj2.store.toLowerCase() === join(HOME, "env-data").toLowerCase(), pj2.store);
 
-const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
+const base = new URL('../', import.meta.url).href;
 const D = await import(base + "lib/downloads.js");
 const { loadConfig, saveConfig, clone, DEFAULTS } = await import(base + "lib/config.js");
 const { ensureDirs, dirs } = await import(base + "lib/store.js");

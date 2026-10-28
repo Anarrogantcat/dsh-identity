@@ -8,7 +8,7 @@ const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(HOME + "/profiles/desktop", { recursive: true });
 
-const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
+const base = new URL('../', import.meta.url).href;
 const E = await import(base + "lib/esports.js");
 const K = await import(base + "lib/knowledge.js");
 const { ensureDirs, peerKey } = await import(base + "lib/store.js");

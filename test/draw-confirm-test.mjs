@@ -7,7 +7,7 @@ const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(HOME + "/profiles/desktop", { recursive: true });
 writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy\n", "utf8");
-const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
+const base = new URL('../', import.meta.url).href;
 const { ensureDirs } = await import(base + "lib/store.js");
 ensureDirs();
 const D = await import(base + "lib/draw.js");
@@ -24,7 +24,7 @@ T("「改：白色连衣裙」= 修改", D.parseConfirm("改：白色连衣裙")
 T("普通聊天不算确认", D.parseConfirm("今天吃什么").kind === "none");
 const msg = D.draftMessage({ userText: '大肥鱼吃白饭', width: 512, height: 768, steps: 22, ttl: 90 }, ['大肥鱼是 DeepSeek 的二创形象…']);
 T("确认文案含请求和参考", msg.includes("我准备这样画") && msg.includes("大肥鱼吃白饭") && msg.includes("参考") && msg.includes("画吧"), msg);
-T("默认先搜再问", DEFAULTS.draw.search === true && DEFAULTS.draw.confirm === true, DEFAULTS.draw);
+T("默认不先搜、但仍确认", DEFAULTS.draw.search === false && DEFAULTS.draw.confirm === true, DEFAULTS.draw);
 const snip = await D.searchSnippets("大肥鱼 角色设定", 1);
 T(snip.length ? "联网搜索能取到摘要" : "联网搜索能取到摘要（本次网络不可用，跳过）", true, snip);
 console.log("=== 生图确认流程 测试 ===");

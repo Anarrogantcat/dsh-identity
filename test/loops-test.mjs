@@ -7,7 +7,7 @@ writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  co
 const { pathToFileURL } = await import("node:url");
 const { homedir } = await import("node:os");
 const { join } = await import("node:path");
-const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
+const base = new URL('../', import.meta.url).href;
 const { ensureDirs } = await import(base + "lib/store.js");
 ensureDirs();
 const M = await import(base + "lib/moodlocal.js");

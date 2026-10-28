@@ -6,7 +6,7 @@ process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-mparse';
 import { mkdirSync, rmSync } from "node:fs";
 try { rmSync(process.env.DSH_HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(process.env.DSH_HOME + "/profiles/desktop", { recursive: true });
-const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
+const base = new URL('../', import.meta.url).href;
 const L2 = await import(base + "lib/moodllm.js");
 const M = await import(base + "lib/moodlocal.js");
 const { ensureDirs } = await import(base + "lib/store.js");

@@ -7,7 +7,7 @@ const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(HOME + "/profiles/desktop", { recursive: true });
 writeFileSync(HOME + "/profiles/desktop/cordis.patch.yml", "- id: im-qqbot\n  config:\n    appId: '1905982004'\n    appSecret: dummy-secret-for-test\n", "utf8");
-const base = pathToFileURL(join(homedir(), '.dsh', 'profiles', 'desktop', 'node_modules', 'dsh-qqbot-refine')).href + '/';
+const base = new URL('../', import.meta.url).href;
 const { createGate } = await import(base + "lib/gate.js");
 const learn = await import(base + "lib/learn.js");
 const { loadConfig, saveConfig, clone, DEFAULTS } = await import(base + "lib/config.js");
@@ -20,7 +20,8 @@ const reset = () => Object.assign(S.state, { muted:{}, muteCalls:{}, cooldown:{}
 const c = clone(DEFAULTS);
 c.scope.groups = ["G1"]; c.roles.owners = ["U-OWNER"];
 Object.assign(c.frequency, { mentionOnlyGroups:false, naturalMode:true, aliases:["大肥鱼"], probabilityPercent:0, quietEnabled:false, cooldownGroupSec:0, cooldownMentionSec:0, perMinuteGlobal:999, perMinuteGroup:999, perMinuteUser:999, naturalCooldownSec:0, naturalPerHour:999, naturalPerDay:999, selfGapSec:0, typingEnabled:false });
-c.memory.enabled = false; c.profile.enabled = false; c.sticker.enabled = false; c.persona.enabled = true;
+c.memory.enabled = false; c.profile.enabled = false; c.sticker.enabled = false;
+c.identity.maxChars = 2000; // 这条测试要验证「规矩注入」，别让它被 900 字预算截掉
 saveConfig(c); reset();
 const said = [];
 const bot = { deriveReplyTarget: () => ({ scope:"group", targetId:"G1", msgId:"m" }), sendText: async (t, b) => said.push(b), sendMarkdown: async()=>{}, sendImage: async()=>{} };
@@ -49,12 +50,12 @@ await apply(ctx, {});
 await new Promise(r => setTimeout(r, 600));
 const sid = await persona.sessionIdFor('1905982004', 'group', 'G1');
 persona.rememberSession(sid, pk, 'group', 'G1');
-const body = await sections.get('qqbot-refine:persona').text({ session: { id: sid } });
+const body = await sections.get('qqbot-refine:identity').text({ session: { id: sid } });
 ok.push(["规矩进了人设段", body.includes("这个群学到的规矩") && body.includes("不要用敬语"), body.slice(-160)]);
 ok.push(["规矩要求别念出来", body.includes("照做，别念出来")]);
 // 关掉开关就不注入
 const c2 = loadConfig(); c2.learn.injectRules = false; saveConfig(c2);
-const body2 = await sections.get('qqbot-refine:persona').text({ session: { id: sid } });
+const body2 = await sections.get('qqbot-refine:identity').text({ session: { id: sid } });
 ok.push(["关掉 injectRules → 不注入", !body2.includes("这个群学到的规矩")]);
 console.log("=== 学习 端到端测试 ===");
 let fail = 0;
