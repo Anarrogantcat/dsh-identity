@@ -49,6 +49,7 @@ import * as traits from './lib/traits.js'
 import { resumeStats } from './lib/resume.js'
 import { diaryHint } from './lib/diary.js'
 import * as moodv2 from './lib/moodv2.js'
+import * as autonomy from './lib/autonomy.js'
 import { listPromises } from './lib/promises.js'
 import * as reflection from './lib/reflection.js'
 import { PERM_LEVELS, levelOf } from './lib/permgear.js'
@@ -403,6 +404,7 @@ function snapshot() {
       } catch { return null }
     })(),
     moodV2: (() => { try { return moodv2.summary() } catch { return null } })(),
+    autonomy: (() => { try { return { ...autonomy.autonomyStats(), goals: autonomy.listGoals({}).slice(0, 10) } } catch { return null } })(),
     toolGate,
     gateExisting: loadConfig().tools?.gateExisting === true,
     recentPeers: state.seen ?? [],
