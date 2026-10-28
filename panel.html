@@ -510,7 +510,7 @@ function renderOverview() {
   const tp = STATE.transport || {}
   const todayYuan = (us.totals && us.totals.yuan) || 0
   const blends = (mv.blends || []).join(' / ') || '平稳'
-  const styleName = (STATE.config && STATE.config.identity && STATE.config.identity.baseText) ? '自定义基础人设' : '内置内核'
+  const styleName = (STATE.config && STATE.config.identity && STATE.config.identity.baseText) ? '内核 · 自定义' : '内核 · 内置'
   const overdue = pr.filter((p) => p.overdue).length
   const card = (title, main, sub, go) => '<div class="ovcard" data-goto="' + go + '"><div class="ovt">' + title + '</div><div class="ovm">' + main + '</div><div class="ovs">' + sub + '</div></div>'
   el.innerHTML = `
@@ -930,7 +930,7 @@ function renderRecent(){
   ;[...box.querySelectorAll("[data-add]")].forEach(b=>b.onclick=()=>{const x=list[+b.dataset.add]; addScope({scope:x.scope, peer:x.peer, sender:x.sender, asOwner:false})})
   ;[...box.querySelectorAll("[data-owner]")].forEach(b=>b.onclick=()=>{const x=list[+b.dataset.owner]; addScope({scope:x.scope, peer:x.peer, sender:x.sender, asOwner:true})})
 }
-// ── 身份页：内核（只读）+ 风格切换 + traits（有证据的自我）──
+// ── 身份页：内核（只读）+ traits + 承诺 + 复盘 ──
 function identityCardHtml() {
   const cfg = STATE.config || {}
   const tr = STATE.traits || {}
@@ -964,7 +964,7 @@ function identityCardHtml() {
     '</div>'
   return `
     <div class="pcard">
-      <div class="label">基础人设（你给她的那一套） <span class="badge">锁定</span></div>
+      <div class="label">内核 <span class="badge">锁定</span></div>
       <div class="hint" style="white-space:pre-wrap;line-height:1.6">${baseText ? escapeHtml(baseText) : ('默认内核（没单独填）：\n' + kernel)}</div>
       <div class="hint" style="white-space:pre-wrap;line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">${escapeHtml(String(STATE.identityGuards || ''))}</div>
     </div>
