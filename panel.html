@@ -985,7 +985,7 @@ function identityCardHtml() {
     </div>
     <div class="pcard">
       <div class="label">最近复盘 <span class="badge">${refl && refl.week ? ('7天 群 ' + refl.week.inbound + ' 句 / 我 ' + refl.week.mine + ' 句') : '暂无'}</span></div>
-      <div class="hint">只吃事件与承诺、不读日记；这里只读，不改任何状态。</div>
+      <div class="hint">只吃事件与承诺、不读日记；这里只读，不改任何状态。\${refl && refl.month ? ('　近 30 天：群 ' + refl.month.inbound + ' / 我 ' + refl.month.mine + ' 句') : ''}</div>
       ${reflRows}
     </div>
   `
