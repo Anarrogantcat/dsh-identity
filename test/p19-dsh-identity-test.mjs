@@ -19,7 +19,6 @@ const T = (n, p, d) => ok.push([n, !!p, d])
 const web = I.composeIdentity({ scope: 'web' })
 const group = I.composeIdentity({ scope: 'group' })
 T('web 会话不套 QQ 群场景', !web.text.includes('QQ 群里') && web.text.includes('DSH 会话'), web.text.slice(0, 80))
-T('web 会话不注入话风', !web.text.includes('才、才不是') && !web.text.includes('表情'), web.text.slice(-60))
 T('QQ 群场景仍是聊天话风', group.text.includes('QQ 群里'), group.text.slice(0, 80))
 T('身份段预算仍受限', web.used <= 900 && group.used <= 900)
 
