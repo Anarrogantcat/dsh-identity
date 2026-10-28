@@ -1335,7 +1335,7 @@ function bindIdentityCards(el) {
 // ── 通用管理表 ──
 const COG_SUB_TABS = [["mood", "心情"], ["profile", "画像"], ["memory", "记忆"], ["relations", "关系"]]
 let COGSUB = "mood"
-try { const s = localStorage.getItem("qqrefine:cogsub"); if (s && COG_SUB_TABS.some((x) => x[0] === s)) COGSUB = s } catch {}
+try { const s = localStorage.getItem("qqrefine:cogsub"); if (s && COG_SUB_TABS.some((x) => x[0] === s)) COGSUB = s; else if (s) localStorage.removeItem("qqrefine:cogsub") } catch {}
 const MGMT = { memory: "memoryPeers", sticker: "stickers", order: "audit", bili: "biliSubs" }
 let MPICK = ""
 
