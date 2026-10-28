@@ -47,7 +47,7 @@ import * as mgmt from './lib/mgmt.js'
 import { installToolGate, toolGate } from './lib/toolgate.js'
 import { ensurePolicy } from './lib/policy.js'
 import { stripInjection } from './lib/untrusted.js'
-import { composeIdentity, kernelSummary, kernelText, listStyles, setCurrentStyle, setStyleScope, migrateFromPresets } from './lib/identity.js'
+import { composeIdentity, kernelSummary, kernelText } from './lib/identity.js'
 import * as traits from './lib/traits.js'
 import { resumeStats } from './lib/resume.js'
 import { diaryHint } from './lib/diary.js'
@@ -329,7 +329,6 @@ function snapshot() {
     })(),
     identity: (() => { try { return kernelSummary() } catch { return null } })(),
     identityKernel: (() => { try { return kernelText() } catch { return '' } })(),
-    identityStyles: (() => { try { return listStyles() } catch { return null } })(),
     traits: (() => { try { return { items: traits.listTraits({ limit: 50 }), stats: traits.traitsStats() } } catch { return null } })(),
     resume: (() => { try { return resumeStats() } catch { return null } })(),
     channels: (() => { try { return listChannels() } catch { return null } })(),
@@ -442,12 +441,12 @@ export async function apply(ctx, config = {}) {
     logger.warn?.('[qqbot-refine] 策略存储初始化失败：' + (err?.message ?? err))
   }
 
-  // 身份内核：旧人设库 → 风格库；自我卡 → tentative traits（只读迁移、幂等、原文件不动）
+  // 自我卡 → tentative traits（只读迁移、幂等、原文件不动）
   try {
-    const st = migrateFromPresets()
+
     const tr = traits.migrateSelfCards()
     const swept = traits.sweep()
-    if (st.moved || tr.migrated || swept) audit('identity.boot', { styles: st.moved ?? 0, traits: tr.migrated ?? 0, swept })
+    if (tr.migrated || swept) audit('identity.boot', { traits: tr.migrated ?? 0, swept })
   } catch (err) {
     logger.warn?.('[qqbot-refine] 身份迁移失败：' + (err?.message ?? err))
   }
@@ -743,8 +742,6 @@ export async function apply(ctx, config = {}) {
           if (action === "profileClear") {
             return sendJson(res, 200, { ...profile.clearGroup(body.group) })
           }
-          if (action === "styleSelect") return sendJson(res, 200, setCurrentStyle(String(body.id ?? "")))
-          if (action === "styleScope") return sendJson(res, 200, setStyleScope(String(body.scope ?? "group"), String(body.key ?? ""), String(body.id ?? "")))
           if (action === "traitRetire") return sendJson(res, 200, traits.retireTrait(String(body.id ?? ""), "owner"))
           if (action === "traitPromote") return sendJson(res, 200, traits.promoteTrait(String(body.id ?? "")))
           if (action === "promiseClose") return sendJson(res, 200, closePromise(String(body.id ?? ""), String(body.how ?? "done")))

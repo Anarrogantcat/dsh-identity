@@ -506,7 +506,6 @@ function renderTabs(){
 function renderOverview() {
   const el = $('panel')
   const id = STATE.identity || {}
-  const st = STATE.identityStyles || {}
   const tr = STATE.traits || {}
   const mv = STATE.moodV2 || {}
   const pr = Array.isArray(STATE.promises) ? STATE.promises : []
@@ -517,7 +516,7 @@ function renderOverview() {
   const tp = STATE.transport || {}
   const todayYuan = (us.totals && us.totals.yuan) || 0
   const blends = (mv.blends || []).join(' / ') || '平稳'
-  const styleName = (id.style && id.style.name) || st.currentStyle || '—'
+  const styleName = (STATE.config && STATE.config.identity && STATE.config.identity.baseText) ? '自定义基础人设' : '内置内核'
   const overdue = pr.filter((p) => p.overdue).length
   const card = (title, main, sub, go) => '<div class="ovcard" data-goto="' + go + '"><div class="ovt">' + title + '</div><div class="ovm">' + main + '</div><div class="ovs">' + sub + '</div></div>'
   el.innerHTML = `
@@ -941,7 +940,6 @@ function renderRecent(){
 // ── 身份页：内核（只读）+ 风格切换 + traits（有证据的自我）──
 function identityCardHtml() {
   const cfg = STATE.config || {}
-  const st = STATE.identityStyles || {}
   const tr = STATE.traits || {}
   const id = STATE.identity || {}
   const styles = st.styles || []
