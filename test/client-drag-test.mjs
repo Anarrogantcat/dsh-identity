@@ -57,7 +57,7 @@ const win = {
 }
 let mod = null
 win.__ModuleLoader__ = { load: (m) => { mod = m } }
-const src = readFileSync("C:/Users/Ranmi/.dsh/plugins/dsh-qqbot-refine/client.js", "utf8")
+const src = readFileSync(new URL("../client.js", import.meta.url), "utf8")
 new Function('window', 'localStorage', 'document', 'requestAnimationFrame', 'cancelAnimationFrame', src)(win, win.localStorage, doc, win.requestAnimationFrame, win.cancelAnimationFrame)
 if (!mod || !mod.factory) { console.log("FAIL client 模块没注册"); process.exit(1) }
 const api = mod.factory()

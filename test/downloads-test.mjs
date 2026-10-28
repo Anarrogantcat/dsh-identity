@@ -14,9 +14,10 @@ const DEF = join(HOME, "storages", "dsh-qqbot-refine");
 const ALT = join(HOME, "alt-data");
 mkdirSync(DEF, { recursive: true });
 writeFileSync(join(DEF, ".data-path"), ALT, "utf8");
+const cfgUrl = new URL("../lib/config.js", import.meta.url).href;
 const probe = join(HOME, "probe.mjs");
 writeFileSync(probe, [
-  'import { STORE_DIR, dataPointer, DEFAULT_STORE_DIR } from "file:///C:/Users/Ranmi/.dsh/plugins/dsh-qqbot-refine/lib/config.js";',
+  'import { STORE_DIR, dataPointer, DEFAULT_STORE_DIR } from ' + JSON.stringify(cfgUrl) + ';',
   'console.log(JSON.stringify({ store: STORE_DIR, ptr: dataPointer(), def: DEFAULT_STORE_DIR }))'
 ].join(String.fromCharCode(10)), "utf8");
 const out = execFileSync(process.execPath, [probe], { encoding: "utf8", env: { ...process.env, DSH_HOME: HOME } }).trim();
