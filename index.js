@@ -178,6 +178,7 @@ function identitySectionText(context) {
             try {
               const tb = moodv2.toneBlock(moodv2.getState(), { chars: Number(cfg.mood?.injectChars ?? 120) })
               if (tb) extra += '\n' + tb
+            try { const sb = moodv2.stanceBlock(undefined, { chars: 160 }); if (sb) extra += '\n' + sb } catch { /* ignore */ }
             } catch { /* ignore */ }
           }
         }
