@@ -489,10 +489,6 @@ function renderChips(){
   const qqOk = !!(tp.channel && tp.channel.selfHosted) || tp.connected === true
   const base = (STATE.config && STATE.config.identity && STATE.config.identity.baseText) ? '自定义' : '内置内核'
   const blends = (mv.blends || []).join(' / ') || '平稳'
-  const tItems = Array.isArray(tr.items) ? tr.items : []
-  const tent = tItems.filter((t) => t.status !== 'durable')
-  const weekNew = tent.filter((t) => { const d = (Date.now() - Date.parse(t.firstSeen || 0)) / 86400000; return d >= 0 && d <= 7 })
-  const growthTxt = '观察中 ' + tent.length + ' 条' + (weekNew.length ? (' · 本周新增 ' + weekNew.length) : '') + ' · 已稳定 ' + String((tr.stats && tr.stats.durable) || 0)
   const overdue = pr.filter((p) => p.overdue).length
   const chips = []
   chips.push(['身份', 'ok', '基础人设 · ' + base])
@@ -714,6 +710,10 @@ function renderOverview() {
   const tp = STATE.transport || {}
   const todayYuan = (us.totals && us.totals.yuan) || 0
   const blends = (mv.blends || []).join(' / ') || '平稳'
+  const tItems = Array.isArray(tr.items) ? tr.items : []
+  const tent = tItems.filter((t) => t.status !== 'durable')
+  const weekNew = tent.filter((t) => { const d = (Date.now() - Date.parse(t.firstSeen || 0)) / 86400000; return d >= 0 && d <= 7 })
+  const growthTxt = '观察中 ' + tent.length + ' 条' + (weekNew.length ? (' · 本周新增 ' + weekNew.length) : '') + ' · 已稳定 ' + String((tr.stats && tr.stats.durable) || 0)
   const styleName = (STATE.config && STATE.config.identity && STATE.config.identity.baseText) ? '内核 · 自定义' : '内核 · 内置'
   const overdue = pr.filter((p) => p.overdue).length
   const card = (title, main, sub, go) => '<div class="ovcard" data-goto="' + go + '"><div class="ovt">' + title + '</div><div class="ovm">' + main + '</div><div class="ovs">' + sub + '</div></div>'
