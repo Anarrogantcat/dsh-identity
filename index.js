@@ -48,6 +48,7 @@ import { composeIdentity, kernelSummary, kernelText, listStyles, setCurrentStyle
 import * as traits from './lib/traits.js'
 import { resumeStats } from './lib/resume.js'
 import { diaryHint } from './lib/diary.js'
+import * as moodv2 from './lib/moodv2.js'
 import { listPromises } from './lib/promises.js'
 import * as reflection from './lib/reflection.js'
 import { PERM_LEVELS, levelOf } from './lib/permgear.js'
@@ -160,6 +161,13 @@ function identitySectionText(context) {
         if (cfg.integration?.linkMood !== false && cfg.integration?.moodInPrompt !== false) {
           const tone = moodToneOf(readMood(cfg))
           if (tone) extra += moodBlock(tone)
+          // 心情 v2：七情六欲 + 复合情绪（只改语气）
+          if (cfg.mood?.v2Enabled !== false) {
+            try {
+              const tb = moodv2.toneBlock(moodv2.getState(), { chars: Number(cfg.mood?.injectChars ?? 120) })
+              if (tb) extra += '\n' + tb
+            } catch { /* ignore */ }
+          }
         }
         try {
           const ml = readLocalMood()
@@ -394,6 +402,7 @@ function snapshot() {
         }
       } catch { return null }
     })(),
+    moodV2: (() => { try { return moodv2.summary() } catch { return null } })(),
     toolGate,
     gateExisting: loadConfig().tools?.gateExisting === true,
     recentPeers: state.seen ?? [],
