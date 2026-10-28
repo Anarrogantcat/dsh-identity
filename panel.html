@@ -468,10 +468,11 @@ const TAB_GROUPS = [
   ['治理', ['privacy', 'usage']],
   ['能力', ['sticker', 'draw', 'voice', 'bili', 'matches']],
   ['通道', ['qq']],
+  ['系统', ['system']],
 ]
 const TAB_ORDER = TAB_GROUPS.flatMap(([, ks]) => ks)
-function tabLabel(k) { if (k === 'overview') return '总览'; if (k === 'qq') return 'QQ 通道'; if (k === 'order') return 'QQ 群管'; return ((STATE.tabs.find((t) => t[0] === k) || [k, k])[1]) }
-function tabIcon(k) { return k === 'overview' ? '🧭' : k === 'qq' ? '💬' : (TAB_ICON[k] || '·') }
+function tabLabel(k) { if (k === 'overview') return '总览'; if (k === 'system') return '系统'; if (k === 'qq') return 'QQ 通道'; if (k === 'order') return 'QQ 群管'; return ((STATE.tabs.find((t) => t[0] === k) || [k, k])[1]) }
+function tabIcon(k) { return k === 'overview' ? '🧭' : k === 'qq' ? '💬' : k === 'system' ? '⚙️' : (TAB_ICON[k] || '·') }
 function goTab(k) {
   if (k === 'qq') k = 'scope'
   ACTIVE = k
@@ -497,6 +498,44 @@ function renderTabs(){
   }).join('')
   ;[...document.querySelectorAll('.tab')].forEach((b) => { b.onclick = () => goTab(b.dataset.tab) })
 }
+function renderSystemPage() {
+  const el = $('panel')
+  const caps = Array.isArray(STATE.capabilitiesList) ? STATE.capabilitiesList : []
+  const chs = Array.isArray(STATE.channels) ? STATE.channels : []
+  const mcp = (STATE.config && STATE.config.mcp) || {}
+  const servers = Array.isArray(mcp.servers) ? mcp.servers : []
+  el.innerHTML = `
+    <div class="pcard">
+      <div class="label">通道</div>
+      <div class="hint">${chs.length ? chs.map((c) => escapeHtml(c.id + ' · ' + c.name)).join(' / ') : '还没注册通道'}</div>
+    </div>
+    <div class="pcard">
+      <div class="label">能力（统一契约：policy / 超时 / 审计） <span class="badge">${caps.length}</span></div>
+      ${caps.length ? caps.map((c) => '<div class="row"><div class="meta"><div class="label">' + escapeHtml(c.id) + '</div><div class="hint">provider ' + escapeHtml(c.provider) + ' · 策略键 ' + escapeHtml(c.policyKey) + ' · 超时 ' + c.timeoutMs + 'ms</div></div></div>').join('') : '<div class="hint">暂无注册能力</div>'}
+    </div>
+    <div class="pcard">
+      <div class="label">MCP 服务器（默认关）</div>
+      <div class="hint">只连你显式列出的 HTTP 服务器；工具输出当不可信文本。一行一个 JSON：{"id":"phone","url":"http://127.0.0.1:9000/mcp","token":"","enabled":true}</div>
+      <label class="switch" style="margin:8px 0"><input type="checkbox" id="mcpEnabled" ${mcp.enabled ? 'checked' : ''}><i></i></label>
+      <span class="hint">启用 MCP</span>
+      <textarea id="mcpServers" spellcheck="false" style="min-height:120px">${escapeHtml(servers.map((s) => JSON.stringify(s)).join('\n'))}</textarea>
+      <div class="pbtns" style="margin-top:8px"><button id="mcpSave" class="primary">保存 MCP</button><span id="mcpMsg" class="hint"></span></div>
+    </div>`
+  const btn = el.querySelector('#mcpSave')
+  if (btn) btn.onclick = async () => {
+    const msg = el.querySelector('#mcpMsg')
+    const raw = String((el.querySelector('#mcpServers') || {}).value || '').split('\n').map((x) => x.trim()).filter(Boolean)
+    let list = []
+    try { list = raw.map((x) => JSON.parse(x)) } catch (e) { if (msg) msg.textContent = 'JSON 有问题：' + e.message; return }
+    if (msg) msg.textContent = '保存中…'
+    try {
+      await saveKey('mcp.enabled', !!(el.querySelector('#mcpEnabled') || {}).checked)
+      await saveKey('mcp.servers', list)
+      if (msg) msg.textContent = '已保存'
+    } catch (e) { if (msg) msg.textContent = '失败：' + e.message }
+  }
+}
+
 function renderOverview() {
   const el = $('panel')
   const id = STATE.identity || {}
@@ -646,6 +685,7 @@ function renderSubnav() {
 function renderPanel(){
   renderSubnav()
   if (ACTIVE === "overview") { renderOverview(); return }
+  if (ACTIVE === "system") { renderSystemPage(); return }
   // §clear§ 每次渲染前先清空，避免自定义页用 append 时越切越长
   try { const _el = $("panel"); if (_el) _el.innerHTML = "" } catch {}
   const VIEW = ACTIVE === "cognition" ? COGSUB : ACTIVE

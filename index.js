@@ -50,6 +50,8 @@ import { stripInjection } from './lib/untrusted.js'
 import { composeIdentity, kernelSummary, kernelText, kernelGuardsText } from './lib/identity.js'
 import * as traits from './lib/traits.js'
 import { resumeStats } from './lib/resume.js'
+import { listCapabilities } from './lib/caprun.js'
+import './lib/caps-default.js'
 import { diaryHint } from './lib/diary.js'
 import * as moodv2 from './lib/moodv2.js'
 import * as autonomy from './lib/autonomy.js'
@@ -335,6 +337,7 @@ function snapshot() {
     traits: (() => { try { return { items: traits.listTraits({ limit: 50 }), stats: traits.traitsStats() } } catch { return null } })(),
     resume: (() => { try { return resumeStats() } catch { return null } })(),
     channels: (() => { try { return listChannels() } catch { return null } })(),
+    capabilitiesList: (() => { try { return listCapabilities() } catch { return null } })(),
     promises: (() => { try { return listPromises({}).slice(0, 20) } catch { return [] } })(),
     reflection: (() => {
       try {
