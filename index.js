@@ -1,5 +1,5 @@
 /**
- * dsh-qqbot-refine —— QQ 机器人增强插件
+ * dsh-identity —— DSH 身份系统（大肥鱼）
  * 频率 / 隐私 / 人格 / 记忆(半衰期) / 画像 / 表情包 / 层级 / 群秩序 / B站
  *
  * 协议：DSH 插件（cordis）—— dsh.bundle.patch 插入条目 + webServer 面板；
@@ -259,7 +259,7 @@ function installInfo() {
   try {
     const here = fileURLToPath(import.meta.url)
     const inIgnored = /\\node_modules\\\.ignored\\/.test(here)
-    const viaNodeModules = /\\node_modules\\dsh-qqbot-refine\\/.test(here)
+    const viaNodeModules = /\\node_modules\\(dsh-qqbot-refine|dsh-identity)\\/.test(here)
     return {
       path: here,
       inIgnored,

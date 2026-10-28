@@ -1,5 +1,5 @@
 /**
- * dsh-qqbot-refine —— 浏览器半边：右下角悬浮按钮（🐟）
+ * dsh-identity —— 浏览器半边：右下角悬浮按钮（🐟）
  * 点一下打开控制面板（iframe 指向宿主上的 /qqbot-refine 同源页面）。
  *
  * 只用 DOM + localStorage，不依赖任何 slot 契约，版本升级不易失效；
@@ -53,7 +53,7 @@ window.__ModuleLoader__.load({
 
       const fab = document.createElement('button')
       fab.id = 'qqrefine-fab'
-      fab.title = '大肥鱼 · QQ 增强（控制面板）\n拖动可以挪位置，双击标题栏没用的那种（笑）'
+      fab.title = '大肥鱼 · 身份系统（控制面板）\n拖动可以挪位置，双击标题栏没用的那种（笑）'
       fab.textContent = '🐟'
       fab.addEventListener('dragstart', (e) => e.preventDefault())
       document.body.appendChild(fab)
@@ -144,7 +144,7 @@ window.__ModuleLoader__.load({
       wrap.id = 'qqrefine-wrap'
       wrap.innerHTML = `
         <div id="qqrefine-bar">
-          <span>🐟 大肥鱼 · QQ 增强</span>
+          <span>🐟 大肥鱼 · 身份系统</span>
           <span class="grow"></span>
           <button data-act="reload">重新加载</button>
           <button data-act="newtab">新窗口打开</button>
