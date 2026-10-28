@@ -324,7 +324,6 @@ footer .pbtns{gap:8px}
 </header>
 <main>
   <div id="topbar"></div>
-  <div id="quick" class="panel" style="margin-bottom:12px"></div>
   <div class="searchbar"><input type="text" id="q" placeholder="搜索设置项（跨页签）…"><span class="hint" id="qhint"></span></div>
   <div class="toolbar">
     <button data-act="syncSticker">同步图库</button>
@@ -354,7 +353,6 @@ const draft = {}
 
 // S6：字段表里没有的 key 不进通用渲染；这两个是「面板补录」项（保存后单独核对是否生效）
 const SKIP_KEYS = new Set(["frequency.chatMode", "sticker.remoteSource"])
-const QUICK_KEYS = ["usage.hardLimitEnabled", "usage.dailyYuanHardLimit", "usage.onExceed", "integration.llmEnabled", "knowledge.enabled"]
 const EXTRA_FIELDS = [
   { k: "memory.wBaseline", t: "num", tab: "memory", l: "基础权重 wBaseline（记忆底分）", hint: "召回打分 = wBaseline + 激活 + 重要性 + 情绪；调大 = 更容易想起老事", step: 0.01, min: 0, max: 1 },
   { k: "sticker.genProvider.apiKey", t: "text", tab: "sticker", l: "图像 provider API Key", hint: "自生成表情用的图像接口密钥（字段表里没有它，保存后会核对有没有真的写进去）" },
@@ -485,7 +483,7 @@ function goTab(k) {
   try { history.replaceState(null, '', '#' + k) } catch {}
   const out = $('actout'); if (out) out.textContent = ''
   const msg = $('actmsg'); if (msg) msg.textContent = ''
-  renderTabs(); renderPanel(); renderTopbar(); renderQuick()
+  renderTabs(); renderPanel(); renderTopbar()
   try { updateToolbar() } catch {}
   try { window.scrollTo(0, 0) } catch {}
 }
@@ -826,7 +824,6 @@ async function load(){
   try { const hh = (location.hash || "").replace(/^#/, ""); if (hh && STATE.tabs.some((t) => t[0] === hh)) ACTIVE = hh } catch {}
 
   await ensurePeerKeys()
-  renderQuick()
   renderChips(); renderTopbar(); renderTabs(); renderPanel(); markDirty(); try { updateToolbar() } catch {}
   const qi = $("q"); if (qi) { qi.value = SEARCH; qi.oninput = () => { SEARCH = qi.value; renderPanel() } }
   const rbox = $("recent"); if (rbox) rbox.style.display = "none"
@@ -1676,48 +1673,6 @@ function formCell(label, ctl) {
 }
 
 // ── 常用区（5 个最常改的开关）──
-function quickCellHtml(f) {
-  const v = get(f.k)
-  let ctl = ""
-  if (f.t === "bool") {
-    ctl = '<label class="switch"><input type="checkbox" data-k="' + f.k + '" ' + (v ? "checked" : "") + '><i></i></label>'
-  } else if (f.k === "usage.onExceed") {
-    const cur = String(v == null ? "" : v)
-    const known = cur === "degrade" || cur === "mute"
-    ctl = '<select data-k="' + f.k + '">' +
-      '<option value="degrade"' + (cur === "mute" ? "" : " selected") + '>degrade · 降级回模板</option>' +
-      '<option value="mute"' + (cur === "mute" ? " selected" : "") + '>mute · 直接静默</option>' +
-      (known ? "" : '<option value="' + escapeHtml(cur) + '" selected>' + escapeHtml(cur) + '</option>') +
-      '</select>'
-  } else if (f.t === "num") {
-    ctl = '<input type="number" data-k="' + f.k + '" value="' + (v == null ? "" : v) + '" step="' + (f.step || 1) + '" min="' + (f.min == null ? "" : f.min) + '" max="' + (f.max == null ? "" : f.max) + '">'
-  } else {
-    ctl = '<input type="text" data-k="' + f.k + '" value="' + String(v == null ? "" : v).replace(/"/g, "&quot;") + '">'
-  }
-  return '<div class="qcell"><div class="label">' + escapeHtml(f.l) + '</div><div class="qctl">' + ctl + '</div></div>'
-}
-
-function quickCardHtml() {
-  const rows = QUICK_KEYS.map(function (k) {
-    const f = (STATE.fields || []).find(function (x) { return x.k === k })
-    return f ? quickCellHtml(f) : ""
-  }).join("")
-  if (!rows) return ""
-  return '<div class="pcard" id="quickCard">' +
-    '<div class="label" style="margin-bottom:2px">常用（这几项最常改）</div>' +
-    '<div class="hint" style="margin-bottom:4px">花费硬闸 / 每日上限 / 超限动作 / 心情模型 / 知识库总闸。改完点右下角「保存」热生效。</div>' +
-    '<div class="qgrid">' + rows + '</div></div>'
-}
-
-function renderQuick() {
-  const box = $("quick")
-  if (!box) return
-  if (!['usage', 'freq', 'cognition'].includes(ACTIVE)) { box.style.display = 'none'; box.innerHTML = ''; return }
-  box.style.display = 'block'
-  box.innerHTML = quickCardHtml()
-  bindFields(box)
-}
-
 // 补录字段（字段表里没有的两项，单独成卡 + 保存后核对）
 function extraFieldsCard(tab) {
   const rows = EXTRA_FIELDS.filter(function (f) {
