@@ -381,32 +381,28 @@ function markDirty(){
 }
 
 function renderChips(){
-  const d = STATE.diag || {}
-  const p = d.patch || {}
-  const st = STATE.sticker || {}
-  const chips = []
-  chips.push(['配置', STATE.configPathExists ? 'ok' : 'warn', STATE.configPathExists ? '已生成' : '未生成'])
+  const id = STATE.identity || {}
+  const tr = STATE.traits || {}
+  const g = STATE.growth || {}
+  const mv = STATE.moodV2 || {}
+  const pr = Array.isArray(STATE.promises) ? STATE.promises : []
+  const rf = STATE.reflection || {}
   const tp = STATE.transport || {}
-  if (tp.mode === 'onebot') {
-    // 自建通道：官方 SDK / 官方钩子本来就不存在，别拿它们报红
-    const ch = tp.channel || {}
-    const caps = STATE.capabilities || (tp.capabilities || {})
-    const acct = tp.account && tp.account.uin ? (tp.account.uin + (tp.account.nickname ? '（' + tp.account.nickname + '）' : '')) : '未登录'
-    chips.push(['通道', tp.connected ? 'ok' : 'bad', tp.connected ? 'OneBot 已连接' : ('未连接' + (tp.lastError ? '：' + tp.lastError : ''))])
-    chips.push(['账号', tp.account && tp.account.uin ? 'ok' : 'warn', acct])
-    chips.push(['能力位', 'ok', (caps.available || []).length + '/' + (caps.total || 15)])
-    chips.push(['入站闸', ch.selfHosted ? 'ok' : 'bad', ch.selfHosted ? '自建通道' : '未挂载'])
-    chips.push(['出站', (tp.failedToday || 0) > 2 ? 'warn' : 'ok', '发 ' + (tp.sentToday || 0) + ' / 失败 ' + (tp.failedToday || 0)])
-    chips.push(['最近事件', tp.lastEventAt ? 'ok' : 'warn', tp.lastEventAt ? (Math.max(0, Math.round((Date.now() - tp.lastEventAt) / 1000)) + ' 秒前') : '还没收到消息'])
-  } else {
-    chips.push(['SDK', d.sdkPath ? 'ok' : 'bad', d.sdkPath ? (d.sdkVersion || '已定位') : (d.sdkError || '未定位')])
-    chips.push(['入站闸', p.inbound ? 'ok' : 'bad', p.inbound ? '已挂载' : '未挂载'])
-    chips.push(['出站脱敏', p.outbound ? 'ok' : 'bad', p.outbound ? '已挂载' : '未挂载'])
-  }
-  chips.push(['图库', st.total ? 'ok' : 'warn', st.total ? `${st.total} 张` : '空（点“同步图库”）'])
-  if (tp.mode !== 'onebot') chips.push(['机器人', STATE.botSeen ? 'ok' : 'warn', STATE.botSeen ? '已连接' : '未收到消息'])
-  $('chips').innerHTML = chips.map(([k,s,v])=>`<span class="chip ${s}">${k}：${v}</span>`).join('')
-  $('paths').innerHTML = `<span class="kv">配置：${STATE.configPath}</span>`
+  const tpMode = tp.mode || '未就绪'
+  const qqOk = !!(tp.channel && tp.channel.selfHosted) || tp.connected === true
+  const base = (STATE.config && STATE.config.identity && STATE.config.identity.baseText) ? '自定义' : '内置内核'
+  const blends = (mv.blends || []).join(' / ') || '平稳'
+  const overdue = pr.filter((p) => p.overdue).length
+  const chips = []
+  chips.push(['身份', 'ok', '基础人设 · ' + base])
+  chips.push(['成长', (tr.stats && tr.stats.durable) ? 'ok' : 'warn', String((tr.stats && tr.stats.durable) || 0) + ' durable / ' + String((tr.stats && tr.stats.tentative) || 0) + ' tentative'])
+  chips.push(['承诺', overdue ? 'warn' : 'ok', pr.length + ' 待办' + (overdue ? (' · ' + overdue + ' 逾期') : '')])
+  chips.push(['心情', 'ok', blends])
+  chips.push(['复盘', (rf.week && rf.week.days) ? 'ok' : 'warn', rf.week ? (rf.week.days + ' 天记录') : '暂无'])
+  chips.push(['通道', qqOk ? 'ok' : 'warn', tpMode])
+  chips.push(['配置', STATE.configPathExists ? 'ok' : 'warn', STATE.configPathExists ? '已生成' : '未生成'])
+  $('chips').innerHTML = chips.map(([k, s, v]) => '<span class="chip ' + s + '">' + k + '：' + escapeHtml(String(v)) + '</span>').join('')
+  $('paths').innerHTML = '<span class="kv">配置：' + escapeHtml(String(STATE.configPath || '')) + '</span>'
 }
 
 function healthText(h) {
