@@ -489,6 +489,10 @@ function renderChips(){
   const qqOk = !!(tp.channel && tp.channel.selfHosted) || tp.connected === true
   const base = (STATE.config && STATE.config.identity && STATE.config.identity.baseText) ? '自定义' : '内置内核'
   const blends = (mv.blends || []).join(' / ') || '平稳'
+  const tItems = Array.isArray(tr.items) ? tr.items : []
+  const tent = tItems.filter((t) => t.status !== 'durable')
+  const weekNew = tent.filter((t) => { const d = (Date.now() - Date.parse(t.firstSeen || 0)) / 86400000; return d >= 0 && d <= 7 })
+  const growthTxt = '观察中 ' + tent.length + ' 条' + (weekNew.length ? (' · 本周新增 ' + weekNew.length) : '') + ' · 已稳定 ' + String((tr.stats && tr.stats.durable) || 0)
   const overdue = pr.filter((p) => p.overdue).length
   const chips = []
   chips.push(['身份', 'ok', '基础人设 · ' + base])
@@ -733,7 +737,7 @@ function renderOverview() {
       ${card('自主目标', String((au.by && au.by.proposed) || 0) + ' 待批 / ' + String((au.by && au.by.approved) || 0) + ' 已批', '只提议，你批了才动', 'identity')}
       ${card('今日花费', '¥' + Number(todayYuan).toFixed(2), '软预算提醒，不拦聊天', 'usage')}
       ${card('最近复盘', (rf.week ? ('群 ' + rf.week.inbound + ' / 我 ' + rf.week.mine + ' 句') : '暂无'), '只吃事件、不读日记', 'identity')}
-      ${card('成长指标', (STATE.growth ? ('兑现率 ' + Math.round((STATE.growth.promises.fulfillRate || 0) * 100) + '% · 矛盾率 ' + Math.round((STATE.growth.traits.conflictRate || 0) * 100) + '%') : '暂无'), '稳定认知 / 兑现 / 矛盾，只读', 'identity')}
+      ${card('成长指标', growthTxt, '观察期：≥3 次证据 + 跨 ≥2 天', 'identity')}
     </div>`
   ;[...el.querySelectorAll('[data-goto]')].forEach((b) => { b.onclick = () => goTab(b.dataset.goto) })
 }
@@ -1267,11 +1271,18 @@ function identityCardHtml() {
     : '<div class="hint">还没有复盘（每天 22 点后自动写）。</div>'
   const kernel = escapeHtml(String(STATE.identityKernel || id.name || "")).replace(/\n/g, "<br>")
   const badge = (t) => t.status === "durable" ? '<span class="badge cur">durable</span>' : '<span class="badge">tentative</span>'
-  const traitRow = (t) => '<div class="row">' +
-      '<div class="meta"><div class="label">' + escapeHtml(t.text) + ' ' + badge(t) + '</div>' +
-      '<div class="hint">证据 ' + (t.hits || 0) + ' 次 · 置信 ' + Math.round(Number(t.confidence || 0) * 100) + '% · 最近确认 ' + String(t.lastConfirmed || "").slice(0, 10) + '</div></div>' +
+  const traitRow = (t) => {
+    const days = Math.floor((Date.now() - Date.parse(t.firstSeen || t.lastConfirmed || 0)) / 86400000)
+    const hits = t.hits || 0
+    const needHits = Math.max(0, 3 - hits)
+    const needDays = Math.max(0, 2 - days)
+    const prog = (t.status === 'durable') ? '已稳定' : (needHits || needDays ? ('还差 ' + [needHits ? needHits + ' 次' : '', needDays ? needDays + ' 天' : ''].filter(Boolean).join(' + ')) : '够了，等下一次判定')
+    return '<div class="row">' +
+      '<div class="meta"><div class="label">' + escapeHtml(t.text) + ' ' + badge(t) + ' <span class="hint">' + escapeHtml(String(t.kind || '')) + '</span></div>' +
+      '<div class="hint">证据 ' + hits + '/3 · 第 ' + (days + 1) + ' 天 · ' + prog + ' · 置信 ' + Math.round(Number(t.confidence || 0) * 100) + '%</div></div>' +
       '<div class="ctl pbtns">' + (t.status !== "durable" ? '<button data-tpromote="' + t.id + '">晋升</button>' : '') + '<button data-tretire="' + t.id + '">否决</button></div>' +
     '</div>'
+  }
   return `
     <div class="pcard">
       <div class="label">内核 <span class="badge">你说了算</span></div>
