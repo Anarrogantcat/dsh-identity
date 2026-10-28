@@ -964,15 +964,14 @@ function identityCardHtml() {
     '</div>'
   return `
     <div class="pcard">
-      <div class="label">内核 <span class="badge">你给的</span></div>
-      <div class="hint">这里写她是谁（名字/性格/说话习惯）。留空用默认内核；底线永远锁死，改不掉。</div>
+      <div class="label">内核 <span class="badge">你说了算</span></div>
+      <div class="hint">这里写她是谁，连底线一起写。留空用默认内核。真正的安全（隐私、支付、工具）在代码闸门里，不靠这段话保证。</div>
       <textarea id="idKernelText" spellcheck="false" placeholder="${escapeHtml(String(STATE.identityKernel || ''))}">${escapeHtml(String(STATE.identityBase || ''))}</textarea>
       <div class="pbtns" style="margin-top:8px;align-items:center">
         <button id="idKernelSave" class="primary">保存内核</button>
         <button id="idKernelReset">恢复默认</button>
         <span id="idKernelMsg" class="hint"></span>
       </div>
-      <div class="hint" style="white-space:pre-wrap;line-height:1.6;margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)">${escapeHtml(String(STATE.identityGuards || ''))}</div>
     </div>
     <div class="pcard">
       <div class="label">自我 traits <span class="badge">${stats.durable || 0} durable / ${stats.tentative || 0} tentative</span></div>
