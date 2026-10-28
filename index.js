@@ -155,8 +155,13 @@ function identitySectionText(context) {
     if (cfg.identity?.enabled === false || cfg.identity?.takeover === false) return ''
     const sid = sessionIdOfContext(context)
     const peer = sid ? resolveSession(sid) : null
-    const scope = peer?.scope === 'c2c' ? 'c2c' : 'group'
+        const isQq = peer?.channel === 'qq'
+    const scope = isQq ? (peer.scope === 'c2c' ? 'c2c' : 'group') : 'web'
     const parts = []
+    if (!isQq) {
+      // 非 QQ 会话：只保留内核/场景/traits，不套聊天机器人
+      return composeIdentity({ scope, peer: peer?.peer ?? '', parts: [], maxChars: Number(cfg.identity?.maxChars ?? 900), traitsMax: Number(cfg.identity?.traitsMax ?? 5) }).text
+    }
     // traits 由 composeIdentity 内部注入（只取 durable）
     // 关系/情绪/尺度：只改"怎么说"，不改事实与边界
     if (peer) {
