@@ -47,7 +47,7 @@ import * as mgmt from './lib/mgmt.js'
 import { installToolGate, toolGate } from './lib/toolgate.js'
 import { ensurePolicy } from './lib/policy.js'
 import { stripInjection } from './lib/untrusted.js'
-import { composeIdentity, kernelSummary, kernelText } from './lib/identity.js'
+import { composeIdentity, kernelSummary, kernelText, kernelGuardsText } from './lib/identity.js'
 import * as traits from './lib/traits.js'
 import { resumeStats } from './lib/resume.js'
 import { diaryHint } from './lib/diary.js'
@@ -330,6 +330,8 @@ function snapshot() {
     })(),
     identity: (() => { try { return kernelSummary() } catch { return null } })(),
     identityKernel: (() => { try { return kernelText() } catch { return '' } })(),
+    identityGuards: (() => { try { return kernelGuardsText() } catch { return '' } })(),
+    identityBase: (() => { try { return String(loadConfig()?.identity?.baseText ?? '') } catch { return '' } })(),
     traits: (() => { try { return { items: traits.listTraits({ limit: 50 }), stats: traits.traitsStats() } } catch { return null } })(),
     resume: (() => { try { return resumeStats() } catch { return null } })(),
     channels: (() => { try { return listChannels() } catch { return null } })(),

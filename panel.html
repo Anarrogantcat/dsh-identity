@@ -964,12 +964,9 @@ function identityCardHtml() {
     '</div>'
   return `
     <div class="pcard">
-      <div class="label">内核（不可谈判） <span class="badge">锁定</span></div>
-      <div class="hint" style="white-space:normal;line-height:1.6">${kernel}</div>
-    </div>
-    <div class="pcard">
-      <div class="label">基础人设（你给她的那一套） <span class="badge">只学不改</span></div>
-      <div class="hint" style="white-space:pre-wrap">${baseText ? escapeHtml(baseText) : '没单独填：用内置内核（名字/价值观/底线），traits 和情绪在她之上生长。'}</div>
+      <div class="label">基础人设（你给她的那一套） <span class="badge">锁定</span></div>
+      <div class="hint" style="white-space:pre-wrap;line-height:1.6">${baseText ? escapeHtml(baseText) : ('默认内核（没单独填）：\n' + kernel)}</div>
+      <div class="hint" style="white-space:pre-wrap;line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">${escapeHtml(String(STATE.identityGuards || ''))}</div>
     </div>
     <div class="pcard">
       <div class="label">自我 traits <span class="badge">${stats.durable || 0} durable / ${stats.tentative || 0} tentative</span></div>
