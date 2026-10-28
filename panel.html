@@ -567,6 +567,12 @@ function renderMemoryPage() {
     ${flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项）</summary><div class="pcard">' + flds.map((f) => fieldRow(f)).join('') + '</div></details>' : ''}`
   bindFields(el)
 }
+function renderProactivePage() {
+  const el = $('panel')
+  const flds = (STATE.fields || []).filter((f) => f.tab === 'proactive')
+  el.innerHTML = behaviorCardHtml() + (flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项）</summary><div class="pcard">' + flds.map((f) => fieldRow(f)).join('') + '</div></details>' : '')
+  bindFields(el)
+}
 function renderOverview() {
   const el = $('panel')
   const id = STATE.identity || {}
@@ -720,8 +726,8 @@ function renderPanel(){
   // §clear§ 每次渲染前先清空，避免自定义页用 append 时越切越长
   try { const _el = $("panel"); if (_el) _el.innerHTML = "" } catch {}
   const VIEW = ACTIVE === "cognition" ? COGSUB : ACTIVE
-  if (VIEW === "proactive") { try { el.insertAdjacentHTML("afterbegin", behaviorCardHtml()) } catch (e) {} }
   if (VIEW === "memory") { renderMemoryPage(); return }
+  if (VIEW === "proactive") { renderProactivePage(); return }
   if (VIEW === "identity") {
     const el = $("panel")
     const flds = (STATE.fields || []).filter((f) => f.tab === "identity")
