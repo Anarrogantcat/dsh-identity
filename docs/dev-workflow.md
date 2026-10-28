@@ -77,32 +77,34 @@
 
 ---
 
-## 6. P0.5 任务清单（第一轮）
+## 6. P0.5 任务清单（第一轮，✅ 已完成）
 
-1. **接线扫描**（脚本或命令）：
-   - 配置字段 → 代码引用（无引用报错/白名单"占位"）
-   - 导出 → 使用（无人使用报错）
-   - import 环扫描（必须 0）
-2. **现状清单**：列出线上"暂未生效"旋钮、孤儿模块、装饰性依赖（生图搜索等）；
-3. **竖切 1（身份）**：
-   - P0 的 policy/budget/scheduler/events 接进 index/gate 的最小路径
-   - 只做"读策略 + 记事件 + 身份注入"，不扩功能
-   - 端到端：一条群消息 → 事件落盘 → 提示词含身份段 → 回复 → 审计
-4. 回归：全量 + 新接线测试全绿。
+已落地：
+1. **接线扫描** `node scripts/wiring-scan.mjs`（死旋钮 / 幽灵字段 / 孤儿模块 / 死导出 / import 环；ERROR 非 0 退出）——当前全绿。
+2. **现状清单**：13 个「暂未生效」旋钮全部接上（入站媒体/外发文件上限/B站封面与模板/单张表情/@脱敏/丢链接/外链白名单/新人观察/群与个人每日预算/告警比例）；`ctxwindow` 的 `contextLinesFor` 忘记 import 已修（群聊上下文此前被 try/catch 吞掉）。
+3. **竖切 1（身份）**：P0 policy/budget/scheduler/events 接进 index/gate 最小路径——消息落盘（ref 幂等）→ 身份段注入 → 回复落盘 → 审计；`event.record` 受策略闸（auto/dryrun/off）。
+4. 回归 + 新测试 `test/p05-wiring-test.mjs`（31 断言）。
 
 ---
 
-## 7. P1 任务清单（第二轮，开工后细化）
+## 7. P1 任务清单（第二轮，✅ 核心完成）
 
-1. 内核/风格数据结构与迁移（现有 4 套 preset 拆分，原样备份 `legacy.md`）
-2. traits 存储（`lib/traits.js`）+ 证据晋升（复用 `lifecycle.js`）
-3. 存量 self 卡 → traits tentative 的只读迁移
-4. 单一身份注入（合并现有 chat-mode/persona/memory/profile 段落）
-5. **去依赖**：
-   - 本地 setup 注入身份，删除 `agentPresets` 调用与配置项
-   - 删除 `feiyu-mood` 读取器与 `auto/plugin` 选项
-6. 面板「身份」页（内核锁定 / 自我可纠正 / 风格切换）
-7. 测试：卸宿主预设、删 feiyu-mood 文件、无第三方插件环境全绿
+1. ~~内核/风格拆分~~：`lib/identity.js`（KERNEL + SCENES + 4 套风格）；旧 `presets.json` 只读迁移，原文备份 `identity-legacy.md`。
+2. ~~traits 存储~~：`lib/traits.js`（复用 `lifecycle.js`：≥3 证据 / 跨 ≥2 天 / 非纯情绪 → durable；90 天过期；Owner 否决）。
+3. ~~self 卡迁移~~：只读、按 ref 幂等，备份 `traits-legacy.md`。
+4. ~~单一身份注入~~：`qqbot-refine:identity`（≤900 字，身份优先，风格最后裁）＋ `qqbot-refine:context`（记忆/画像/知识/认知/标记）。
+5. ~~去依赖~~：删 `agentPresets` 调用与 `transport.onebot.preset`；删 `feiyu-mood` 读取器与 `moodSource`；`presets.js` 删除，`#人设/#身份` 改走风格库。
+6. ~~面板「身份」页~~：内核只读 / 风格全局与按群按人 / traits 晋升与否决。
+7. 测试：`test/p1-identity-test.mjs`（30 断言）。
+
+---
+
+## 7.5 P2 防压缩/接续（✅ 核心完成）
+
+- 宿主压缩信号已确认：`user/message` 且 `source.kind` 含 `compact`（`onSessionEvent` 本就有这个分支，现在同时置 `needResume`）。
+- `lib/resume.js`：接续包 = 身份一句 + 最近 8 条事实（events，按 peer seq 去重）+ durable traits；≤420 字；提交只前进不后退。
+- 触发：压缩后、`agents.resume` 恢复会话、上下文压力 >0.75（读 session 文件 `pressureRatioOf`）。
+- 测试：`test/p2-resume-test.mjs`（13 断言）。
 
 ---
 

@@ -8,3 +8,4 @@ tmp/
 backups/
 dsh-test-*
 *.tgz
+_diag/

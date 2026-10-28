@@ -21,12 +21,12 @@ import { createGate, startJobs } from './lib/gate.js'
 import { loadCognition, createHooks, cognitionText, consolidatePeers } from './lib/hooks.js'
 import { probeService as probeVoice, lastJobInfo } from './lib/voice.js'
 import { assetStatus, progressOf, downloadAsset, removeAsset, sttAutoCommand, downloadsStats } from './lib/downloads.js'
-import { usageReport, sampleBuckets, bucketsReport, sidOfForConfig, usageTargets } from './lib/usage.js'
+import { usageReport, sampleBuckets, bucketsReport, sidOfForConfig, usageTargets, withBudget } from './lib/usage.js'
 import { syncFromApi as syncEsports, loadCache as esportsCache, dayMatches } from './lib/esports.js'
 import { resolveRoute, withRoute } from './lib/llmroute.js'
 import { dataPointer, STORE_DIR as DATA_DIR } from './lib/config.js'
 import { memoryCard, listMemory, forgetMemory, pinMemory, prunePeer, takePendingRecall, recall } from './lib/memory.js'
-import { personaFor, sessionIdOfContext, peerOfSession, scaleBlock, effectiveScale } from './lib/persona.js'
+import { sessionIdOfContext, peerOfSession, scaleBlock, effectiveScale } from './lib/persona.js'
 import { readMood, moodToneOf, moodSummary, moodBlock } from './lib/mood.js'
 import { readLocalMood } from './lib/moodlocal.js'
 import { bondAvg } from './lib/bond.js'
@@ -36,7 +36,6 @@ import { knowledgeBlock, lastQueryOf, kbStats, listKbFiles, readKbFile, saveKbFi
 import { topicBlock, topicStats } from './lib/topic.js'
 import { matchStats } from './lib/esports.js'
 import { rulesFor as learnRulesFor, learnStats, learnView } from './lib/learn.js'
-import { listPresets, getPresetText, savePreset, deletePreset, togglePreset, setCurrent, setScope } from './lib/presets.js'
 import { gearValues, GEARS } from './lib/gear.js'
 import { roleDiagnostics, clearRoleCache } from './lib/roles.js'
 import * as sticker from './lib/sticker.js'
@@ -44,6 +43,10 @@ import * as bili from './lib/bili.js'
 import * as profile from './lib/profile.js'
 import * as mgmt from './lib/mgmt.js'
 import { installToolGate, toolGate } from './lib/toolgate.js'
+import { ensurePolicy } from './lib/policy.js'
+import { composeIdentity, kernelSummary, kernelText, listStyles, setCurrentStyle, setStyleScope, migrateFromPresets, resolveStyle } from './lib/identity.js'
+import * as traits from './lib/traits.js'
+import { resumeStats } from './lib/resume.js'
 import { PERM_LEVELS, levelOf } from './lib/permgear.js'
 import { currentVersion, latestCached, checkLatest, applyUpdate, pluginDirOf, isPnpmManaged, compareVersions, readCache } from './lib/update.js'
 
@@ -63,16 +66,8 @@ let stopJobs = null
 let modsRef = null
 /** 宿主的 agentDefaultModel 服务（拿「默认用哪个模型」） */
 let defaultModelSvc = null
-/** 宿主可用的 agent 预设（QQ 会话最好选一个纯聊天的） */
-let agentPresetList = null
 
-/** QQ 群聊模式的硬约束：抵消宿主「编程 agent」提示词带来的助理腔 */
-const CHAT_MODE_TEXT = [
-  '你现在是在 QQ 群/私聊里聊天，不是在执行编码任务。',
-  '宿主给你的开发环境说明、技能目录、沙箱、工作目录、工具清单都与你此刻无关：不要提它们，也不要用它们的口吻说话。',
-  '禁止助理腔：不说「收到」「好的」「明白」「已记录」「需要我帮忙吗」「希望对你有帮助」。',
-  '一次只回一两句人话；接不下去就吐槽或反问一句；对方只发了个表情时不要接。',
-].join('\n')
+/** QQ 群聊模式的硬约束（已并入 lib/identity.js 的场景段） */
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
 
 function isLoopback(req) {
@@ -142,87 +137,102 @@ function profileSectionText(context) {
     return ''
   }
 }
-function personaSectionText(context) {
+/** 身份段（单一注入）：内核 + 场景 + 风格 + durable traits + 关系/情绪 + 群规，总预算硬上限 */
+function identitySectionText(context) {
   try {
     const cfg = loadConfig()
-    if (!cfg.persona.enabled) return ''
+    if (cfg.identity?.enabled === false) return ''
     const sid = sessionIdOfContext(context)
     const peer = sid ? peerOfSession(sid) : null
-    if (!peer) return ''
-    const p = personaFor(cfg, peer.scope, peer.peer)
-    let body = p?.text ?? ''
-    // 诊断模式：只读排查，产出原因 + diff 补丁，不直接改文件
-    try {
-      const dg = takeDiag(peer.peer)
-      if (dg) {
-        body += [
-          '',
-          '# 现在是诊断模式（Owner 发起的排查）',
-          dg.task ? ('排查目标：' + dg.task) : '排查目标：按我说的现象定位原因',
-          '- 只用 read/grep/glob/pwsh 读代码和日志，**不要改动任何文件**',
-          '- 结论说清：现象 → 根因 → 证据（文件:行）',
-          '- 需要改代码时，把补丁贴在 diff 代码块里（git apply 能直接用的格式），不要自己动手改',
-          '- 最后一行写明「要不要 #合并」',
-        ].join('\n')
-      }
-    } catch { /* ignore */ }
-    // 聊天尺度（滑条）：低=克制，高=更放得开
-    try {
-      if (body) {
+    const scope = peer?.scope === 'c2c' ? 'c2c' : 'group'
+    const parts = []
+    // traits 由 composeIdentity 内部注入（只取 durable）
+    // 关系/情绪/尺度：只改"怎么说"，不改事实与边界
+    if (peer) {
+      try {
         const toneName = (() => { try { return moodToneOf(readMood(cfg))?.tone ?? '' } catch { return '' } })()
         const avg = (() => { try { return bondAvg(peer.peer) } catch { return 0 } })()
         const eff = effectiveScale(cfg.persona?.scale ?? 50, { tone: toneName, bondAverage: avg })
-        body += scaleBlock(eff.scale)
-        if (eff.offset <= -6) body += '\n（这会儿心情/关系让你比设定收敛一点，别硬撑着闹。）'
-        else if (eff.offset >= 6) body += '\n（这会儿心情和关系都在线，可以比设定稍微放得开一点。）'
-      }
-    } catch { /* ignore */ }
-
-    // 心情 → 语气（只给数值和一句建议，不带主会话里聊过的具体事）
-    if (body && cfg.integration?.linkMood !== false && cfg.integration?.moodInPrompt !== false) {
-      const tone = moodToneOf(readMood(cfg))
-      if (tone) body += moodBlock(tone)
+        let extra = scaleBlock(eff.scale)
+        if (cfg.integration?.linkMood !== false && cfg.integration?.moodInPrompt !== false) {
+          const tone = moodToneOf(readMood(cfg))
+          if (tone) extra += moodBlock(tone)
+        }
+        try {
+          const ml = readLocalMood()
+          const recent = Date.now() - Number(ml?.at ?? 0) < 15 * 60 * 1000
+          if (ml?.lastBy && recent && /情绪|生气|难过|心情/.test(String(ml.lastKind ?? 'text'))) {
+            extra += '\n（刚才那句是「' + String(ml.lastBy).slice(0, 12) + '」说的——只影响你这一下的情绪，别把原话学出去。）'
+          }
+        } catch { /* ignore */ }
+        if (extra.trim()) parts.push({ name: 'mood', text: extra.trim(), cap: 200 })
+      } catch { /* ignore */ }
+    }
+    // 这个群学到的规矩
+    if (peer && cfg.learn?.enabled !== false && cfg.learn?.injectRules !== false) {
       try {
-        const ml = readLocalMood()
-        const recent = Date.now() - Number(ml?.at ?? 0) < 15 * 60 * 1000
-        if (ml?.lastBy && recent && /情绪|生气|难过|心情/.test(String(ml.lastKind ?? 'text'))) {
-          body += '\n（刚才那句是「' + String(ml.lastBy).slice(0, 12) + '」说的——只影响你这一下的情绪，别把原话学出去。）'
+        const rules = learnRulesFor(peer.peerKey, 5)
+        if (rules.length) parts.push({ name: 'rules', text: '# 这个群学到的规矩（照做，别念出来）\n' + rules.map((r, i) => `${i + 1}. ${r}`).join('\n'), cap: 200 })
+      } catch { /* ignore */ }
+    }
+    // 诊断模式（Owner 发起的排查）
+    if (peer) {
+      try {
+        const dg = takeDiag(peer.peer)
+        if (dg) {
+          parts.push({
+            name: 'diag',
+            cap: 400,
+            text: [
+              '# 现在是诊断模式（Owner 发起的排查）',
+              dg.task ? ('排查目标：' + dg.task) : '排查目标：按我说的现象定位原因',
+              '- 只用 read/grep/glob/pwsh 读代码和日志，**不要改动任何文件**',
+              '- 结论说清：现象 → 根因 → 证据（文件:行）',
+              '- 需要改代码时，把补丁贴在 diff 代码块里（git apply 能直接用的格式），不要自己动手改',
+              '- 最后一行写明「要不要 #合并」',
+            ].join('\n'),
+          })
         }
       } catch { /* ignore */ }
     }
-    // 学到的规矩（Owner/管理员教的，最多 5 条）
-    if (body && cfg.learn?.enabled !== false && cfg.learn?.injectRules !== false) {
-      try {
-        const rules = learnRulesFor(peer.peerKey, 5)
-        if (rules.length) body += `
+    const budget = Number(cfg.identity?.maxChars ?? 900)
+    return composeIdentity({ scope, peer: peer?.peer ?? '', parts, maxChars: budget }).text
+  } catch (err) {
+    try { console.warn('[qqbot-refine] identity section 失败:', err?.message) } catch {}
+    return ''
+  }
+}
 
-# 这个群学到的规矩（照做，别念出来）
-${rules.map((r, i) => `${i + 1}. ${r}`).join('\n')}`
-      } catch { /* ignore */ }
+/** 上下文段：记忆 + 画像 + 知识库/话题 + 认知卡 + 标记说明（属于"素材"，不属于人格） */
+function contextSectionText(context) {
+  try {
+    const cfg = loadConfig()
+    const bits = []
+    const mem = memorySectionText(context)
+    if (mem) bits.push(mem)
+    const prof = profileSectionText(context)
+    if (prof) bits.push(prof)
+    const sid = sessionIdOfContext(context)
+    const peer = sid ? peerOfSession(sid) : null
+    if (peer) {
+      if (cfg.knowledge?.enabled !== false) {
+        try { const q = lastQueryOf(peer.peerKey); if (q) bits.push(knowledgeBlock(q, peer.peerKey, { top: 2 })) } catch { /* ignore */ }
+      }
+      try { bits.push(topicBlock(peer.peerKey)) } catch { /* ignore */ }
+      try { bits.push(cognitionText(mods, peer.peerKey, cfg)) } catch { /* ignore */ }
     }
-    // 群知识库：按「最近一条消息」检索，命中才注入（0 token 检索）
-    if (body && cfg.knowledge?.enabled !== false) {
-      try {
-        const q = lastQueryOf(peer.peerKey)
-        if (q) body += knowledgeBlock(q, peer.peerKey, { top: 2 })
-      } catch { /* ignore */ }
-    }
-    // 话题：这个群现在在聊哪一场（防止把历史战绩当成今天这场）
-    if (body) {
-      try { body += topicBlock(peer.peerKey) } catch { /* ignore */ }
-    }
-    // 认知四张卡 + 离线摘要（在场的人 / 说过答应过 / 还没答完的 / 群里最近在聊）
-    try { body += cognitionText(mods, peer.peerKey, cfg) } catch { /* ignore */ }
-    if (!body || cfg.ui?.markers === false) return body
-    return body + `
-
+    let body = bits.filter(Boolean).join('\n\n')
+    if (cfg.ui?.markers !== false) {
+      body += `
 # 可用标记（只写标记，不要解释）
 [[sticker:auto]] 发一张表情（auto=按当前心情挑）；也可以写具体情绪，如 [[sticker:无语]]
 [[remember: 要点]] 记一笔长期记忆（会淡忘，被提到会加强）
 [[recall: 关键词]] 想不起旧事时让它翻记忆
 [[voice: 文本]] 想让这句话用声音说出来`
+    }
+    return body.trim()
   } catch (err) {
-    try { console.warn('[qqbot-refine] persona section 失败:', err?.message) } catch {}
+    try { console.warn('[qqbot-refine] context section 失败:', err?.message) } catch {}
     return ''
   }
 }
@@ -291,7 +301,11 @@ function snapshot() {
         return map
       } catch { return {} }
     })(),
-    agentPresets: agentPresetList,
+    identity: (() => { try { return kernelSummary() } catch { return null } })(),
+    identityKernel: (() => { try { return kernelText() } catch { return '' } })(),
+    identityStyles: (() => { try { return listStyles() } catch { return null } })(),
+    traits: (() => { try { return { items: traits.listTraits({ limit: 50 }), stats: traits.traitsStats() } } catch { return null } })(),
+    resume: (() => { try { return resumeStats() } catch { return null } })(),
     profileNotices: (() => { try { const g = (loadConfig()?.scope?.groups ?? [])[0]; const list = g ? profile.noticesOf(String(g)) : []; return { count: list.length, latest: list.length ? String(list[list.length - 1].text || '') : '' } } catch (e) { return { count: 0, latest: '' } } })(),
     esports: (() => { try { const c = esportsCache(); return { at: c.at || 0, source: c.source || '', count: c.count || 0, today: dayMatches().length, errors: (c.errors || []).slice(0, 3), attempts: (c.attempts || []).slice(0, 4) } } catch (e) { return null } })(),
     mutedGroups: (() => { try { return Object.keys(state.muted ?? {}) } catch (e) { return [] } })(),
@@ -314,7 +328,7 @@ function snapshot() {
       } catch (e) { return { current: currentVersion(), error: String(e?.message ?? e) } }
     })(),
     voiceLast: (() => { try { return lastJobInfo() } catch (e) { return null } })(),
-    usage: (() => { try { const c0 = loadConfig(); return { ...usageReport(c0), buckets: (() => { try { return bucketsReport(c0) } catch { return null } })() } } catch (e) { return { ok: false, error: String(e && e.message || e) } } })(),
+    usage: (() => { try { const c0 = loadConfig(); return { ...withBudget(c0, usageReport(c0)), buckets: (() => { try { return bucketsReport(c0) } catch { return null } })() } } catch (e) { return { ok: false, error: String(e && e.message || e) } } })(),
     llmRoute: (() => {
       try {
         const cfg0 = loadConfig()
@@ -361,7 +375,7 @@ function snapshot() {
           stale: !!m.stale,
           lastReason: m.lastReason ?? '',
           lastSource: m.lastSource ?? '',
-          mode: String(cfg.integration?.moodSource ?? 'local'),
+          mode: 'local',
         }
       } catch { return null }
     })(),
@@ -379,6 +393,23 @@ export async function apply(ctx, config = {}) {
   ensureStore()
   ensureDirs()
   loadState()
+  // 策略存储：没有就落一份默认（动作模式/限额/确认码都在这里，与模型隔离）
+  try {
+    const p0 = ensurePolicy()
+    audit('policy.boot', { actions: Object.keys(p0.actions ?? {}).length, limits: Object.keys(p0.limits ?? {}) })
+  } catch (err) {
+    logger.warn?.('[qqbot-refine] 策略存储初始化失败：' + (err?.message ?? err))
+  }
+
+  // 身份内核：旧人设库 → 风格库；自我卡 → tentative traits（只读迁移、幂等、原文件不动）
+  try {
+    const st = migrateFromPresets()
+    const tr = traits.migrateSelfCards()
+    const swept = traits.sweep()
+    if (st.moved || tr.migrated || swept) audit('identity.boot', { styles: st.moved ?? 0, traits: tr.migrated ?? 0, swept })
+  } catch (err) {
+    logger.warn?.('[qqbot-refine] 身份迁移失败：' + (err?.message ?? err))
+  }
 
   if (!existsSync(CFG_PATH)) {
     try { saveConfig(clone(DEFAULTS)) } catch { /* ignore */ }
@@ -388,11 +419,6 @@ export async function apply(ctx, config = {}) {
   const mods = await loadCognition(logger)
   modsRef = mods
   try { defaultModelSvc = ctx.get?.('agentDefaultModel') ?? null } catch { defaultModelSvc = null }
-  try {
-    const ps = ctx.get?.('agentPresets')
-    const list = ps?.list ? await ps.list() : null
-    if (Array.isArray(list)) agentPresetList = list.map((p) => ({ id: p.id, name: p.name ?? p.id, description: p.description ?? '' }))
-  } catch { agentPresetList = null }
 
   /** 配置里没写模型就用宿主默认；返回配置副本（不落盘） */
   const withLlmRoute = (c, section) => {
@@ -447,29 +473,18 @@ export async function apply(ctx, config = {}) {
   if (typeof ctx.inject === 'function') {
     ctx.inject(['systemPrompt'], (scope) => {
       scope.effect(() => scope.systemPrompt.section({
-        name: 'qqbot-refine:chat-mode',
-        order: 10,
+        name: 'qqbot-refine:identity',
+        order: 100,
+        text: identitySectionText,
         interpolate: false,
-        text: () => CHAT_MODE_TEXT,
-      }), 'qqbot-refine: chat-mode section')
+      }), 'qqbot-refine: identity section')
       scope.effect(() => scope.systemPrompt.section({
-        name: 'qqbot-refine:persona',
-        order: loadConfig().persona.order ?? 120,
-        text: personaSectionText,
-        interpolate: false,
-      }), 'qqbot-refine: persona section')
-      scope.effect(() => scope.systemPrompt.section({
-        name: 'qqbot-refine:memory',
+        name: 'qqbot-refine:context',
         order: 130,
-        text: memorySectionText,
+        text: contextSectionText,
         interpolate: false,
-      }), 'qqbot-refine: memory section')
-      scope.effect(() => scope.systemPrompt.section({
-        name: 'qqbot-refine:profile',
-        order: 135,
-        text: profileSectionText,
-        interpolate: false,
-      }), 'qqbot-refine: profile section')
+      }), 'qqbot-refine: context section')
+      try { audit('identity.inject', kernelSummary()) } catch { /* 审计失败不影响注入 */ }
     })
   }
 
@@ -687,19 +702,11 @@ export async function apply(ctx, config = {}) {
           if (action === "profileClear") {
             return sendJson(res, 200, { ...profile.clearGroup(body.group) })
           }
-          if (action === "presets") return sendJson(res, 200, { ok: true, ...listPresets() })
-          if (action === "presetText") {
-            const p = getPresetText(body.id)
-            return p ? sendJson(res, 200, { ok: true, ...p }) : sendJson(res, 404, { ok: false, error: "找不到" })
-          }
-          if (action === "presetSave") {
-            try { return sendJson(res, 200, { ok: true, preset: savePreset(body) }) }
-            catch (e) { return sendJson(res, 400, { ok: false, error: String(e?.message ?? e) }) }
-          }
-          if (action === "presetDelete") return sendJson(res, 200, deletePreset(body.id))
-          if (action === "presetToggle") return sendJson(res, 200, togglePreset(body.id, body.enabled))
-          if (action === "setCurrent") return sendJson(res, 200, setCurrent(body.id))
-          if (action === "setScope") return sendJson(res, 200, setScope(body.scope, body.key, body.id ?? null))
+          if (action === "styleSelect") return sendJson(res, 200, setCurrentStyle(String(body.id ?? "")))
+          if (action === "styleScope") return sendJson(res, 200, setStyleScope(String(body.scope ?? "group"), String(body.key ?? ""), String(body.id ?? "")))
+          if (action === "traitRetire") return sendJson(res, 200, traits.retireTrait(String(body.id ?? ""), "owner"))
+          if (action === "traitPromote") return sendJson(res, 200, traits.promoteTrait(String(body.id ?? "")))
+          if (action === "traitsSweep") return sendJson(res, 200, { ok: true, swept: traits.sweep() })
           return sendJson(res, 400, { ok: false, error: `未知操作 ${action}` })
         } catch (err) { sendJson(res, 500, { ok: false, error: String(err?.message ?? err) }) }
       },
