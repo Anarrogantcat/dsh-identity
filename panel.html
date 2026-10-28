@@ -465,7 +465,7 @@ const TAB_GROUPS = [
   ['身份', ['identity']],
   ['认知', ['cognition']],
   ['自主', ['proactive']],
-  ['治理', ['freq', 'privacy', 'usage']],
+  ['治理', ['privacy', 'usage']],
   ['能力', ['sticker', 'draw', 'voice', 'bili', 'matches']],
   ['通道', ['qq']],
 ]
@@ -485,13 +485,13 @@ function goTab(k) {
 }
 function renderTabs(){
   const HIDDEN_TABS = new Set(COG_SUB_TABS.map((x) => x[0]))
-  const QQ_TABS = ['scope', 'channel', 'order']
+  const QQ_TABS = ['scope', 'channel', 'order', 'freq']
   const known = new Set([...TAB_ORDER, ...QQ_TABS])
   const extra = STATE.tabs.map(([k]) => k).filter((k) => !HIDDEN_TABS.has(k) && !known.has(k))
   const groups = TAB_GROUPS.map(([label, ks]) => [label, ks.slice()])
   if (extra.length) groups.push(['其他', extra])
   $('tabs').innerHTML = groups.map(([label, ks]) => {
-    const isActive = (k) => k === ACTIVE || (k === 'qq' && ['scope', 'channel', 'order'].includes(ACTIVE))
+    const isActive = (k) => k === ACTIVE || (k === 'qq' && ['scope', 'channel', 'order', 'freq'].includes(ACTIVE))
     const items = ks.map((k) => '<button class="tab ' + (isActive(k) ? 'active' : '') + '" data-tab="' + k + '"><span class="ti">' + tabIcon(k) + '</span>' + tabLabel(k) + '</button>').join('')
     return '<div class="tabgroup"><div class="tglabel">' + label + '</div>' + items + '</div>'
   }).join('')
@@ -637,7 +637,7 @@ function cogNavHtml() {
 function renderSubnav() {
   const box = $('subnav')
   if (!box) return
-  const QQ_TABS = [['scope', '白名单 / 名册'], ['channel', '连接设置'], ['order', '群管']]
+  const QQ_TABS = [['scope', '白名单 / 名册'], ['channel', '连接设置'], ['order', '群管'], ['freq', '接话策略']]
   if (!QQ_TABS.some(([k]) => k === ACTIVE)) { box.innerHTML = ''; box.style.display = 'none'; return }
   box.style.display = 'block'
   box.innerHTML = '<div class="subnav">' + QQ_TABS.map(([k, n]) => '<button class="subtab ' + (ACTIVE === k ? 'active' : '') + '" data-subq="' + k + '">' + n + '</button>').join('') + '</div>'
