@@ -467,10 +467,10 @@ const TAB_GROUPS = [
   ['自主', ['proactive']],
   ['治理', ['freq', 'privacy', 'usage']],
   ['能力', ['sticker', 'draw', 'voice', 'bili', 'matches']],
-  ['通道（QQ）', ['scope', 'channel', 'order']],
+  ['通道', ['scope', 'channel', 'order']],
 ]
 const TAB_ORDER = TAB_GROUPS.flatMap(([, ks]) => ks)
-function tabLabel(k) { return k === 'overview' ? '总览' : ((STATE.tabs.find((t) => t[0] === k) || [k, k])[1]) }
+function tabLabel(k) { if (k === 'overview') return '总览'; if (k === 'order') return 'QQ 群管'; return ((STATE.tabs.find((t) => t[0] === k) || [k, k])[1]) }
 function tabIcon(k) { return k === 'overview' ? '🧭' : (TAB_ICON[k] || '·') }
 function goTab(k) {
   ACTIVE = k
@@ -515,7 +515,7 @@ function renderOverview() {
     <div class="pcard ovhero">
       <div>
         <div class="ovname">🐟 大肥鱼 <span class="badge cur">${escapeHtml(String(id.species || '鲸鱼娘'))}</span></div>
-        <div class="hint">身份段 ${id.chars || 0} 字 · 当前风格 <b>${escapeHtml(String(styleName))}</b> · 通道 ${escapeHtml(String(tp.mode || '未就绪'))}</div>
+        <div class="hint">DSH 身份系统 · 当前通道 QQ（NapCat/OneBot）· 身份段 ${id.chars || 0} 字 · 风格 <b>${escapeHtml(String(styleName))}</b></div>
         <div class="ovchips">
           <span class="chip ${tp.mode ? 'ok' : 'warn'}">通道：${escapeHtml(String(tp.mode || '未就绪'))}</span>
           <span class="chip ok">图库：${sp.total || 0} 张</span>
