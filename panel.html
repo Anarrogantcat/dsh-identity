@@ -352,7 +352,7 @@ let SEARCH = ""
 const draft = {}
 
 // S6：字段表里没有的 key 不进通用渲染；这两个是「面板补录」项（保存后单独核对是否生效）
-const SKIP_KEYS = new Set(["frequency.chatMode", "sticker.remoteSource"])
+const SKIP_KEYS = new Set(["frequency.chatMode", "sticker.remoteSource", "knowledge.enabled", "knowledge.injectChars"])
 const EXTRA_FIELDS = [
   { k: "memory.wBaseline", t: "num", tab: "memory", l: "基础权重 wBaseline（记忆底分）", hint: "召回打分 = wBaseline + 激活 + 重要性 + 情绪；调大 = 更容易想起老事", step: 0.01, min: 0, max: 1 },
   { k: "sticker.genProvider.apiKey", t: "text", tab: "sticker", l: "图像 provider API Key", hint: "自生成表情用的图像接口密钥（字段表里没有它，保存后会核对有没有真的写进去）" },
@@ -466,7 +466,7 @@ const TAB_GROUPS = [
   ['认知', ['cognition']],
   ['自主', ['proactive']],
   ['治理', ['privacy', 'usage']],
-  ['能力', ['sticker', 'draw', 'voice', 'bili', 'matches']],
+  ['能力', ['sticker', 'draw', 'voice']],
   ['通道', ['qq']],
   ['系统', ['system']],
 ]
@@ -1085,7 +1085,7 @@ function bindIdentityCards(el) {
 }
 
 // ── 通用管理表 ──
-const COG_SUB_TABS = [["mood", "心情"], ["profile", "画像"], ["memory", "记忆"], ["knowledge", "知识库"], ["relations", "关系"]]
+const COG_SUB_TABS = [["mood", "心情"], ["profile", "画像"], ["memory", "记忆"], ["relations", "关系"]]
 let COGSUB = "mood"
 try { const s = localStorage.getItem("qqrefine:cogsub"); if (s && COG_SUB_TABS.some((x) => x[0] === s)) COGSUB = s } catch {}
 const MGMT = { memory: "memoryPeers", sticker: "stickers", order: "audit", bili: "biliSubs" }
