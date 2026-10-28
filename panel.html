@@ -536,6 +536,17 @@ function renderSystemPage() {
   }
 }
 
+function behaviorCardHtml() {
+  const mv = STATE.moodV2 || {}
+  const lp = STATE.lifeparams || {}
+  const au = STATE.autonomy || {}
+  const blends = (mv.blends || []).join(' / ') || '平稳'
+  const goals = Array.isArray(au.goals) ? au.goals : []
+  const vals = lp.values || {}
+  const keys = ['active', 'proactivity', 'curiosity', 'patience', 'tease', 'shy', 'grumpy']
+  return `<div class="pcard"><div class="label">此刻状态</div><div class="hint">心情：${escapeHtml(blends)} · 目标：${goals.length} 个（待批 ${(au.by && au.by.proposed) || 0} / 已批 ${(au.by && au.by.approved) || 0}）</div></div>
+  <div class="pcard"><div class="label">生活参数</div>${keys.filter((k) => k in vals).map((k) => '<div class="row"><div class="meta"><div class="label">' + k + '</div></div><div class="ctl"><span class="hint">' + vals[k] + '</span></div></div>').join('')}</div>`
+}
 function renderOverview() {
   const el = $('panel')
   const id = STATE.identity || {}
@@ -689,6 +700,7 @@ function renderPanel(){
   // §clear§ 每次渲染前先清空，避免自定义页用 append 时越切越长
   try { const _el = $("panel"); if (_el) _el.innerHTML = "" } catch {}
   const VIEW = ACTIVE === "cognition" ? COGSUB : ACTIVE
+  if (VIEW === "proactive") { try { el.insertAdjacentHTML("afterbegin", behaviorCardHtml()) } catch (e) {} }
   if (VIEW === "identity") {
     const el = $("panel")
     const flds = (STATE.fields || []).filter((f) => f.tab === "identity")
