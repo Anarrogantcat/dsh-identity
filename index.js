@@ -148,7 +148,7 @@ function profileSectionText(context) {
 function identitySectionText(context) {
   try {
     const cfg = loadConfig()
-    if (cfg.identity?.enabled === false) return ''
+    if (cfg.identity?.enabled === false || cfg.identity?.takeover === false) return ''
     const sid = sessionIdOfContext(context)
     const peer = sid ? peerOfSession(sid) : null
     const scope = peer?.scope === 'c2c' ? 'c2c' : 'group'
