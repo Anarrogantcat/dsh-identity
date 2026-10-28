@@ -949,7 +949,7 @@ async function loadRelations() {
 function cogNavHtml() {
   const tabs = COG_SUB_TABS.map((x) => '<button class="tab ' + (x[0] === COGSUB ? 'active' : '') + '" data-cog="' + x[0] + '">' + x[1] + '</button>').join('')
   return '<div class="pcard"><div class="tabs">' + tabs + '</div>' +
-    '<div class="hint">认知相关都收在这：心情（语气）、画像（谁是谁）、记忆（长期记得的事）、知识库（文档片段）。当前：<b id="cogname"></b></div></div>'
+    '<div class="hint">认知相关都收在这：心情（语气）· 画像（谁是谁）· 记忆（长期记得的事）· 关系（谁和谁熟）。当前：<b id="cogname"></b></div></div>'
 }
 
 function renderSubnav() {
@@ -968,7 +968,7 @@ function renderPanel(){
   // §clear§ 每次渲染前先清空，避免自定义页用 append 时越切越长
   try { const _el = $("panel"); if (_el) _el.innerHTML = "" } catch {}
   const VIEW = ACTIVE === "cognition" ? COGSUB : ACTIVE
-  if (VIEW === "memory") { renderMemoryPage(); return }
+  if (VIEW === "memory") { renderMemoryPage(); attachCogNav(); return }
   if (VIEW === "proactive") { renderProactivePage(); return }
   if (VIEW === "identity") {
     const el = $("panel")
