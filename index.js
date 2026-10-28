@@ -152,6 +152,19 @@ function profileSectionText(context) {
   }
 }
 /** 身份段（单一注入）：内核 + 场景 + 风格 + durable traits + 关系/情绪 + 群规，总预算硬上限 */
+function ownerLineOf(cfg) {
+  try {
+    const ids = Array.isArray(cfg?.roles?.owners) ? cfg.roles.owners : []
+    if (!ids.length) return ''
+    const r = loadRoster() || {}
+    const all = [...(r.friends || []), ...(r.members || [])]
+    const id = String(ids[0])
+    const hit = all.find((x) => String(x?.id ?? x?.user_id ?? '') === id)
+    const name = hit?.nickname || hit?.card || hit?.remark || id
+    return `养你的人是「${name}」；钱、账号、权限只向他提议，别替别人做主。`
+  } catch { return '' }
+}
+
 function identitySectionText(context) {
   try {
     const cfg = loadConfig()
@@ -163,7 +176,8 @@ function identitySectionText(context) {
     const parts = []
     if (!isQq) {
       // 非 QQ 会话：只保留内核/场景/traits，不套聊天机器人
-      return composeIdentity({ scope, peer: peer?.peer ?? '', baseText: cfg.identity?.baseText ?? '', parts: [], maxChars: Number(cfg.identity?.maxChars ?? 900), traitsMax: Number(cfg.identity?.traitsMax ?? 5) }).text
+      const ol = ownerLineOf(cfg)
+      return composeIdentity({ scope, peer: peer?.peer ?? '', baseText: cfg.identity?.baseText ?? '', parts: ol ? [{ name: 'owner', text: ol, cap: 80 }] : [], maxChars: Number(cfg.identity?.maxChars ?? 900), traitsMax: Number(cfg.identity?.traitsMax ?? 5) }).text
     }
     // traits 由 composeIdentity 内部注入（只取 durable）
     // 关系/情绪/尺度：只改"怎么说"，不改事实与边界
