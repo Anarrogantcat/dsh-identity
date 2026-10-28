@@ -547,6 +547,26 @@ function behaviorCardHtml() {
   return `<div class="pcard"><div class="label">此刻状态</div><div class="hint">心情：${escapeHtml(blends)} · 目标：${goals.length} 个（待批 ${(au.by && au.by.proposed) || 0} / 已批 ${(au.by && au.by.approved) || 0}）</div></div>
   <div class="pcard"><div class="label">生活参数</div>${keys.filter((k) => k in vals).map((k) => '<div class="row"><div class="meta"><div class="label">' + k + '</div></div><div class="ctl"><span class="hint">' + vals[k] + '</span></div></div>').join('')}</div>`
 }
+function renderMemoryPage() {
+  const el = $('panel')
+  const mp = STATE.memoryPage || {}
+  const diary = Array.isArray(mp.diary) ? mp.diary : []
+  const refl = Array.isArray(mp.reflections) ? mp.reflections : []
+  const mem = Array.isArray(mp.memory) ? mp.memory : []
+  const flds = (STATE.fields || []).filter((f) => f.tab === 'memory')
+  el.innerHTML = `
+    <div class="pcard"><div class="label">日记 <span class="badge">${diary.length} 天</span></div>
+      ${diary.length ? diary.map((d) => '<div class="row"><div class="meta"><div class="label">' + escapeHtml(d.date) + '</div><div class="hint">' + escapeHtml((d.lines || []).join(' ').slice(0, 160)) + '</div></div></div>').join('') : '<div class="hint">还没有日记（每天 22 点后写）。</div>'}
+    </div>
+    <div class="pcard"><div class="label">反思 <span class="badge">${refl.length} 天</span></div>
+      ${refl.length ? refl.map((d) => '<div class="row"><div class="meta"><div class="label">' + escapeHtml(d.date) + '</div><div class="hint">' + escapeHtml((d.lines || []).slice(0, 2).join(' ').slice(0, 140)) + '</div></div></div>').join('') : '<div class="hint">还没有复盘。</div>'}
+    </div>
+    <div class="pcard"><div class="label">记忆（衰减卡） <span class="badge">${mem.length}</span></div>
+      ${mem.length ? mem.slice(0, 10).map((m) => '<div class="row"><div class="meta"><div class="label">' + escapeHtml(String(m.text).slice(0, 80)) + (m.pinned ? ' <span class="badge cur">置顶</span>' : '') + '</div><div class="hint">P ' + m.P + ' · 重要度 ' + m.importance + '</div></div></div>').join('') : '<div class="hint">还没有记忆。</div>'}
+    </div>
+    ${flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项）</summary><div class="pcard">' + flds.map((f) => fieldRow(f)).join('') + '</div></details>' : ''}`
+  bindFields(el)
+}
 function renderOverview() {
   const el = $('panel')
   const id = STATE.identity || {}
@@ -701,6 +721,7 @@ function renderPanel(){
   try { const _el = $("panel"); if (_el) _el.innerHTML = "" } catch {}
   const VIEW = ACTIVE === "cognition" ? COGSUB : ACTIVE
   if (VIEW === "proactive") { try { el.insertAdjacentHTML("afterbegin", behaviorCardHtml()) } catch (e) {} }
+  if (VIEW === "memory") { renderMemoryPage(); return }
   if (VIEW === "identity") {
     const el = $("panel")
     const flds = (STATE.fields || []).filter((f) => f.tab === "identity")

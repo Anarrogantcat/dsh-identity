@@ -52,7 +52,7 @@ import * as traits from './lib/traits.js'
 import { resumeStats } from './lib/resume.js'
 import { listCapabilities } from './lib/caprun.js'
 import './lib/caps-default.js'
-import { diaryHint } from './lib/diary.js'
+import { diaryHint, listDiary } from './lib/diary.js'
 import * as moodv2 from './lib/moodv2.js'
 import * as autonomy from './lib/autonomy.js'
 import * as anti8gu from './lib/anti8gu.js'
@@ -422,6 +422,14 @@ function snapshot() {
     })(),
     moodV2: (() => { try { return moodv2.summary() } catch { return null } })(),
     lifeparams: (() => { try { return lifeparams.summary() } catch { return null } })(),
+    memoryPage: (() => {
+      try {
+        const g = (loadConfig()?.scope?.groups ?? [])[0]
+        if (!g) return null
+        const pk = peerKey('group', String(g))
+        return { diary: listDiary(pk, 7), reflections: reflection.listReflections(pk, 7), memory: listMemory(pk).slice(0, 20) }
+      } catch { return null }
+    })(),
     growth: (() => { try { const g = (loadConfig()?.scope?.groups ?? [])[0]; return growth.growthMetrics(g ? peerKey('group', String(g)) : '') } catch { return null } })(),
     anti8gu: (() => { try { return anti8gu.styleAudit(7) } catch { return null } })(),
     autonomy: (() => { try { return { ...autonomy.autonomyStats(), goals: autonomy.listGoals({}).slice(0, 10) } } catch { return null } })(),
