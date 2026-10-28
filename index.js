@@ -160,7 +160,7 @@ function identitySectionText(context) {
     const parts = []
     if (!isQq) {
       // 非 QQ 会话：只保留内核/场景/traits，不套聊天机器人
-      return composeIdentity({ scope, peer: peer?.peer ?? '', parts: [], maxChars: Number(cfg.identity?.maxChars ?? 900), traitsMax: Number(cfg.identity?.traitsMax ?? 5) }).text
+      return composeIdentity({ scope, peer: peer?.peer ?? '', baseText: cfg.identity?.baseText ?? '', parts: [], maxChars: Number(cfg.identity?.maxChars ?? 900), traitsMax: Number(cfg.identity?.traitsMax ?? 5) }).text
     }
     // traits 由 composeIdentity 内部注入（只取 durable）
     // 关系/情绪/尺度：只改"怎么说"，不改事实与边界

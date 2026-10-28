@@ -988,11 +988,8 @@ function identityCardHtml() {
       <div class="hint" style="white-space:normal;line-height:1.6">${kernel}</div>
     </div>
     <div class="pcard">
-      <div class="label">当前风格：<b>${escapeHtml(curStyle)}</b></div>
-      <div class="row"><div class="meta"><div class="label">全局当前</div><div class="hint">按群/按私聊可单独指定，越细越优先</div></div>
-        <div class="ctl"><select id="idStyleGlobal">${opt(st.currentStyle || "")}</select></div></div>
-      ${groups.map((g) => scopeRow("group", g, "群 " + String(g).slice(0, 10))).join("")}
-      ${dms.map((u) => scopeRow("user", u, "私聊 " + String(u).slice(0, 10))).join("")}
+      <div class="label">基础人设（你给她的那一套） <span class="badge">只学不改</span></div>
+      <div class="hint" style="white-space:pre-wrap">${(STATE.config.identity && STATE.config.identity.baseText) ? escapeHtml(String(STATE.config.identity.baseText)) : '没单独填：用内置内核（名字/价值观/底线），traits 和情绪在她之上生长。'}</div>
     </div>
     <div class="pcard">
       <div class="label">自我 traits <span class="badge">${stats.durable || 0} durable / ${stats.tentative || 0} tentative</span></div>
@@ -1012,14 +1009,6 @@ function identityCardHtml() {
 }
 
 function bindIdentityCards(el) {
-  const g = el.querySelector("#idStyleGlobal")
-  if (g) g.onchange = async () => { await mg({ action: "styleSelect", id: g.value }); await load() }
-  ;[...el.querySelectorAll("[data-sscope]")].forEach((s) => {
-    s.onchange = async () => {
-      await mg({ action: "styleScope", scope: s.dataset.sscope, key: s.dataset.key, id: s.value || "" })
-      await load()
-    }
-  })
   ;[...el.querySelectorAll("[data-tpromote]")].forEach((b) => { b.onclick = async () => { const j = await mg({ action: "traitPromote", id: b.dataset.tpromote }); if (j && !j.ok) alert("晋升失败：" + (j.error || "")); await load() } })
   ;[...el.querySelectorAll("[data-tretire]")].forEach((b) => { b.onclick = async () => { await mg({ action: "traitRetire", id: b.dataset.tretire }); await load() } })
   ;[...el.querySelectorAll("[data-pclose]")].forEach((b) => { b.onclick = async () => { await mg({ action: "promiseClose", id: b.dataset.pclose, how: "done" }); await load() } })
