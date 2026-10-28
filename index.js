@@ -26,7 +26,9 @@ import { syncFromApi as syncEsports, loadCache as esportsCache, dayMatches } fro
 import { resolveRoute, withRoute } from './lib/llmroute.js'
 import { dataPointer, STORE_DIR as DATA_DIR } from './lib/config.js'
 import { memoryCard, listMemory, forgetMemory, pinMemory, prunePeer, takePendingRecall, recall } from './lib/memory.js'
-import { sessionIdOfContext, peerOfSession, scaleBlock, effectiveScale } from './lib/persona.js'
+import { sessionIdOfContext, scaleBlock, effectiveScale } from './lib/persona.js'
+import { resolveSession, listChannels } from './lib/channel.js'
+import './lib/channel-qq.js'
 import { readMood, moodToneOf, moodSummary, moodBlock } from './lib/mood.js'
 import { readLocalMood } from './lib/moodlocal.js'
 import { bondAvg } from './lib/bond.js'
@@ -104,7 +106,7 @@ function memorySectionText(context) {
     const cfg = loadConfig()
     if (!cfg.memory.enabled) return ''
     const sid = sessionIdOfContext(context)
-    const peer = sid ? peerOfSession(sid) : null
+    const peer = sid ? resolveSession(sid) : null
     if (!peer) return ''
     // 上下文压力大（快要压缩/截断）时，临时扩大召回，别让「记得的事」被挤掉
     let pressureBoost = false
@@ -137,7 +139,7 @@ function profileSectionText(context) {
     const cfg = loadConfig()
     if (!cfg.profile.enabled) return ''
     const sid = sessionIdOfContext(context)
-    const peer = sid ? peerOfSession(sid) : null
+    const peer = sid ? resolveSession(sid) : null
     if (!peer || peer.scope !== 'group') return ''
     return profile.speedCard(peer.peer, cfg)
   } catch (err) {
@@ -151,7 +153,7 @@ function identitySectionText(context) {
     const cfg = loadConfig()
     if (cfg.identity?.enabled === false || cfg.identity?.takeover === false) return ''
     const sid = sessionIdOfContext(context)
-    const peer = sid ? peerOfSession(sid) : null
+    const peer = sid ? resolveSession(sid) : null
     const scope = peer?.scope === 'c2c' ? 'c2c' : 'group'
     const parts = []
     // traits 由 composeIdentity 内部注入（只取 durable）
@@ -229,9 +231,9 @@ function contextSectionText(context) {
     if (prof) bits.push(prof)
     const sid = sessionIdOfContext(context)
     if (sid) {
-      try { const dh = diaryHint(peerOfSession(sid)?.peerKey ?? ''); if (dh) bits.push(dh) } catch { /* ignore */ }
+      try { const dh = diaryHint(resolveSession(sid)?.peerKey ?? ''); if (dh) bits.push(dh) } catch { /* ignore */ }
     }
-    const peer = sid ? peerOfSession(sid) : null
+    const peer = sid ? resolveSession(sid) : null
     if (peer) {
       if (cfg.knowledge?.enabled !== false) {
         try { const q = lastQueryOf(peer.peerKey); if (q) bits.push(knowledgeBlock(q, peer.peerKey, { top: 2 })) } catch { /* ignore */ }
@@ -324,6 +326,7 @@ function snapshot() {
     identityStyles: (() => { try { return listStyles() } catch { return null } })(),
     traits: (() => { try { return { items: traits.listTraits({ limit: 50 }), stats: traits.traitsStats() } } catch { return null } })(),
     resume: (() => { try { return resumeStats() } catch { return null } })(),
+    channels: (() => { try { return listChannels() } catch { return null } })(),
     promises: (() => { try { return listPromises({}).slice(0, 20) } catch { return [] } })(),
     reflection: (() => {
       try {
