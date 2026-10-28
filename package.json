@@ -56,5 +56,8 @@
   "homepage": "https://github.com/Anarrogantcat/dsh-qqbot-refine",
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "jsdom": "^27.0.0"
   }
 }
