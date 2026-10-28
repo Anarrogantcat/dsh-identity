@@ -458,6 +458,8 @@ function bindModeButtons(root) {
 function renderTopbar() {
   const box = $("topbar")
   if (!box) return
+  if (ACTIVE !== 'channel') { box.style.display = 'none'; box.innerHTML = ''; return }
+  box.style.display = 'flex'
   box.innerHTML = topbarHtml()
   bindModeButtons(box)
 }
@@ -477,12 +479,13 @@ const TAB_ORDER = TAB_GROUPS.flatMap(([, ks]) => ks)
 function tabLabel(k) { if (k === 'overview') return '总览'; if (k === 'qq') return 'QQ 通道'; if (k === 'order') return 'QQ 群管'; return ((STATE.tabs.find((t) => t[0] === k) || [k, k])[1]) }
 function tabIcon(k) { return k === 'overview' ? '🧭' : k === 'qq' ? '💬' : (TAB_ICON[k] || '·') }
 function goTab(k) {
+  if (k === 'qq') k = 'scope'
   ACTIVE = k
   try { localStorage.setItem('qqrefine:tab', k) } catch {}
   try { history.replaceState(null, '', '#' + k) } catch {}
   const out = $('actout'); if (out) out.textContent = ''
   const msg = $('actmsg'); if (msg) msg.textContent = ''
-  renderTabs(); renderPanel()
+  renderTabs(); renderPanel(); renderTopbar(); renderQuick()
   try { updateToolbar() } catch {}
   try { window.scrollTo(0, 0) } catch {}
 }
@@ -1723,6 +1726,8 @@ function quickCardHtml() {
 function renderQuick() {
   const box = $("quick")
   if (!box) return
+  if (!['usage', 'freq', 'cognition'].includes(ACTIVE)) { box.style.display = 'none'; box.innerHTML = ''; return }
+  box.style.display = 'block'
   box.innerHTML = quickCardHtml()
   bindFields(box)
 }
