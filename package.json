@@ -1,5 +1,5 @@
 {
-  "name": "dsh-qqbot-refine",
+  "name": "dsh-identity",
   "version": "0.12.0",
   "description": "DSH 身份系统（大肥鱼）：内核/风格/证据 traits + 事件流 + 记忆双卡 + 心情 v2 + 自主循环（提议/批准）+ 反八股 + 能力运行时 + 支付网关；NapCat/OneBot 主线，聊天与命令 0 token 优先。",
   "type": "module",

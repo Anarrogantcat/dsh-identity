@@ -6,7 +6,7 @@
  * 面板本身仍是 loopback 页面，也可直接用浏览器打开同一路径。
  */
 window.__ModuleLoader__.load({
-  id: 'dsh-qqbot-refine',
+  id: 'dsh-identity',
   factory: () => {
     const CSS = `
       #qqrefine-fab{position:fixed;left:0;top:0;z-index:2147483000;
