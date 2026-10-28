@@ -313,6 +313,59 @@ footer .pbtns{gap:8px}
   details.adv>.pcard{border:0;border-radius:0;background:transparent;margin:0}
   .searchbar input{height:40px;border-radius:12px}
   .toolbar button{background:rgba(12,20,34,.8)}
+  /* v2 扩展：QQ 通道子页 / 心情 / 画像 / 关系（状态卡 + 高级设置折叠） */
+  .qhero{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+  .qmain{min-width:0;flex:1 1 320px}
+  .qtitle{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14.5px;font-weight:650;color:#e9f1ff}
+  .qmeta{font-size:12px;color:#8296b8;margin-top:5px;line-height:1.55}
+  .qchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+  .qstat{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:8px;margin-top:12px}
+  .qcell2{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:rgba(9,15,26,.55);min-width:0}
+  .qcell2 .k{font-size:10.5px;letter-spacing:.08em;color:#6d80a2}
+  .qcell2 .v{font-size:14px;font-weight:600;color:#e8f1ff;margin-top:3px;word-break:break-all;font-variant-numeric:tabular-nums}
+  .qcell2 .v.ok{color:var(--ok)}.qcell2 .v.warn{color:var(--warn)}.qcell2 .v.bad{color:var(--bad)}
+  .qcell2 .s{font-size:11px;color:#66799c;margin-top:2px}
+  .qact{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center}
+  .qnote{font-size:11.5px;color:#7d90b3;margin-top:8px;line-height:1.55}
+  .qsep{border-top:1px dashed rgba(30,43,68,.9);margin-top:12px;padding-top:10px}
+  .mgmtbox{border:1px solid var(--line);border-radius:12px;padding:4px 10px;background:rgba(9,15,26,.45);margin-top:8px}
+  .moodhero{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center}
+  .moodring{width:112px;height:112px;border-radius:50%;display:grid;place-items:center;text-align:center;
+    border:1px solid rgba(53,214,201,.32);background:radial-gradient(circle at 50% 32%,rgba(53,214,201,.18),rgba(139,123,255,.1) 62%,transparent 74%)}
+  .moodring b{font-size:22px;line-height:1.15;color:#eafffb}
+  .moodring span{display:block;font-size:10px;letter-spacing:.16em;color:#7d90b3;margin-top:3px}
+  .moodbars{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:2px 20px}
+  .mbrow{display:grid;grid-template-columns:60px minmax(0,1fr) 34px;gap:8px;align-items:center;font-size:12px;color:#9fb0cf;margin:5px 0}
+  .mbrow .track{height:6px;border-radius:999px;background:#0b1524;overflow:hidden}
+  .mbrow .fill{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .mbrow .num{text-align:right;font-variant-numeric:tabular-nums;color:#8396b8}
+  .msection{font-size:10.5px;letter-spacing:.16em;color:#5d6f90;margin:14px 0 4px}
+  .mstance{margin:6px 0 0 18px;padding:0;color:#c9d6ea;font-size:12.5px;line-height:1.65}
+  .mfactor{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .mfactor .chip{font-variant-numeric:tabular-nums}
+  .memhead{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+  .memgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:10px;margin-top:10px}
+  .memcard{border:1px solid var(--line);border-radius:14px;padding:12px 14px;min-width:0;
+    background:linear-gradient(180deg,rgba(16,24,39,.85),rgba(11,18,30,.85));transition:.15s}
+  .memcard:hover{border-color:rgba(53,214,201,.4);transform:translateY(-1px)}
+  .memtop{display:flex;gap:8px;align-items:center;justify-content:space-between}
+  .memname{font-size:13.5px;font-weight:650;color:#e8f1ff;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .memstat{font-size:11.5px;color:#8296b8;margin-top:6px;line-height:1.55}
+  .memtags{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+  .membtns{display:flex;gap:6px;margin-top:9px;flex-wrap:wrap}
+  .relgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:10px}
+  .relcard{border:1px solid var(--line);border-radius:14px;padding:12px 14px;min-width:0;
+    background:linear-gradient(180deg,rgba(16,24,39,.9),rgba(11,18,30,.9))}
+  .reltop{display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .relname{font-weight:650;color:#e8f1ff;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .reln{font-size:19px;font-weight:700;color:#eafffb;font-variant-numeric:tabular-nums}
+  .relsub{font-size:11.5px;color:#8296b8;margin-top:4px;line-height:1.55}
+  .relbar{height:5px;background:#0b1524;border-radius:999px;overflow:hidden;margin-top:8px}
+  .relbar i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .reledge{display:flex;gap:8px;align-items:center;justify-content:space-between;font-size:11.5px;color:#9fb0cf;
+    border:1px solid var(--line);border-radius:10px;padding:7px 10px;background:rgba(9,15,26,.45);margin-top:6px;min-width:0}
+  .reledge .w{color:#eafffb;font-weight:600;flex:0 0 auto}
+  @media(max-width:640px){.moodhero{grid-template-columns:1fr}.moodring{margin:0 auto}}
   @media(max-width:860px){
     .app{grid-template-columns:1fr}
     .side{position:sticky;top:0;height:auto;padding:10px 12px;border-right:0;border-bottom:1px solid var(--line);flex-direction:row;align-items:center;gap:12px;overflow:auto}
@@ -681,45 +734,88 @@ function learnCardHtml(){
     '<br>资料放这里：<code>' + ((kb && kb.dir) || 'storages/dsh-qqbot-refine/knowledge/') + '</code>（common.md 共享，g_xxx.md 单群）' +
     '<br>录入比赛：#赛程 加 2026-10-26 IG 2:1 HLE Worlds</div></div>'
 }
+// ── 心情页（v2）：七情六欲实时卡 + 语气/内容倾向 + 设置折叠 ──
+const SEVEN_LABEL = { joy: '喜', anger: '怒', sorrow: '哀', fear: '惧', love: '爱', disgust: '恶', desire: '欲' }
+const NEED_LABEL = { belly: '饭', safety: '安全', belonging: '归属', respect: '尊重', curiosity: '好奇', intimacy: '亲近' }
+function moodBar(label, v) {
+  const pct = Math.max(0, Math.min(100, Math.round((Number(v) || 0) * 100)))
+  return '<div class="mbrow"><span>' + label + '</span><div class="track"><i class="fill" style="width:' + pct + '%"></i></div><span class="num">' + pct + '</span></div>'
+}
 function moodCardHtml(){
-  var m = STATE.mood
-  if (!m) return '<div class="pcard"><div class="label">心情</div><div class="hint">还没有心情数据：本地心情引擎还没攒到信号。群里说两句（夸她或怼她）就有反应了，不需要任何其他插件。</div></div>'
-  var src = m.source === 'local' ? '本地心情（自带，0 token）' : '第三方心情插件（可选）'
-  var age = (m.ageHours == null) ? '' : (m.ageHours < 1 ? Math.round(m.ageHours * 60) + ' 分钟前' : m.ageHours.toFixed(1) + ' 小时前')
-  var warn = m.stale ? '<div class="hint" style="color:#ff9f9f">心情源已过期（超过 24 小时没更新），现在按「已过期」处理，不影响正常聊天</div>' : ''
-  var names = { happy: '开心', calm: '平静', sweet: '甜', heartache: '心疼', worry: '担心', sad: '难过', jealous: '吃醋' }
-  var dims = m.dims || {}
-  var bars = Object.keys(dims).map(function (k) {
-    var v = Number(dims[k]) || 0
-    var pct = Math.max(0, Math.min(100, v * 10))
-    return '<div style="display:flex;align-items:center;gap:8px;margin:3px 0">' +
-      '<span style="width:44px;color:#93a4bd;font-size:12px">' + (names[k] || k) + '</span>' +
-      '<div style="flex:1;height:6px;background:#0d1320;border-radius:3px;overflow:hidden"><i style="display:block;height:100%;width:' + pct + '%;background:#5b8cff"></i></div>' +
-      '<span style="width:28px;text-align:right;color:#93a4bd;font-size:12px">' + v.toFixed(1) + '</span></div>'
-  }).join('')
-  var rules = (m.rules || []).map(function (r) { return '<li>' + r + '</li>' }).join('')
+  const mv = STATE.moodV2
+  if (!mv || !mv.seven) return '<div class="pcard"><div class="label">此刻心情</div><div class="hint">还没有心情数据：本地心情引擎还没攒到信号。群里说两句（夸她或怼她）就有反应了，不需要任何其他插件。</div></div>'
+  const seven = mv.seven || {}
+  const needs = mv.needs || {}
+  const topSeven = Array.isArray(mv.topSeven) ? mv.topSeven[0] : ''
+  const topNeed = Array.isArray(mv.topNeed) ? mv.topNeed[0] : ''
+  const blends = Array.isArray(mv.blends) ? mv.blends : []
+  const bf = mv.behavior || {}
+  const factor = function (k, label) { return bf[k] == null ? '' : '<span class="chip">' + label + ' ×' + Number(bf[k]).toFixed(2) + '</span>' }
+  const sevenHtml = Object.keys(seven).map(function (k) { return moodBar(SEVEN_LABEL[k] || k, seven[k]) }).join('')
+  const needHtml = Object.keys(needs).map(function (k) { return moodBar(NEED_LABEL[k] || k, needs[k]) }).join('')
   return '<div class="pcard">' +
-    '<div style="display:flex;align-items:baseline;gap:10px">' +
-      '<div style="font-size:34px;font-weight:700;line-height:1">' + Math.round(m.score) + '</div>' +
-      '<div class="label" style="font-size:16px">' + (m.tone || '未知') + '</div>' +
-      '<div class="hint" style="margin-left:auto">' + src + (age ? ' · ' + age : '') + ' · 模式 ' + (m.mode || 'auto') + '</div>' +
+    '<div class="moodhero">' +
+      '<div class="moodring"><div><b>' + escapeHtml(String(SEVEN_LABEL[topSeven] || '平稳')) + '</b><span>此刻主导</span></div></div>' +
+      '<div class="qmain">' +
+        '<div class="qtitle">七情六欲 <span class="badge">本地 · 0 token</span></div>' +
+        '<div class="qmeta">' + (blends.length ? ('复合：' + escapeHtml(blends.join(' / '))) : '平稳：没有复合情绪') +
+          ' · 最想要 ' + escapeHtml(String(NEED_LABEL[topNeed] || '—')) +
+          ' · 事件 ' + (mv.events || 0) + ' 次' +
+          (mv.at ? ' · 更新 ' + escapeHtml(fmtAgo(Date.parse(mv.at))) : '') + '</div>' +
+        '<div class="mfactor">' + factor('proactive', '主动') + factor('reply', '接话') + factor('sticker', '表情') + '</div>' +
+      '</div>' +
     '</div>' +
-    (m.hint ? '<div class="hint" style="margin:6px 0">' + m.hint + '</div>' : '') + warn + bars +
-    (rules ? '<div class="hint" style="margin-top:8px">现在会这样说话：</div><ul style="margin:4px 0 0 18px;padding:0;color:#c9d6ea;font-size:13px">' + rules + '</ul>' : '') +
-    '<div class="hint" style="margin-top:8px">心情只改语气和话的长短，事实、边界、安全规则不变。</div>' +
+    '<div class="msection">七情</div><div class="moodbars">' + sevenHtml + '</div>' +
+    '<div class="msection">六欲</div><div class="moodbars">' + needHtml + '</div>' +
+    '<div class="qnote">心情只改「怎么说」和「想不想接」，不改事实、边界、收费与安全规则。</div>' +
+  '</div>'
+}
+function moodStanceCardHtml(){
+  const m = STATE.mood || null
+  const mv = STATE.moodV2 || {}
+  const stance = Array.isArray(mv.stance) ? mv.stance : []
+  const rules = (m && Array.isArray(m.rules)) ? m.rules : []
+  const src = m ? (m.source === 'local' ? '本地心情（自带，0 token）' : '第三方心情插件（可选）') : ''
+  const age = (m && m.ageHours != null) ? (m.ageHours < 1 ? Math.round(m.ageHours * 60) + ' 分钟前' : m.ageHours.toFixed(1) + ' 小时前') : ''
+  const warn = (m && m.stale) ? '<div class="qnote" style="color:var(--warn)">心情源已过期（超过 24 小时没更新），现在按「已过期」处理，不影响正常聊天</div>' : ''
+  const rulesList = rules.length ? '<div class="msection">语气</div><ul class="mstance">' + rules.map(function (r) { return '<li>' + escapeHtml(String(r)) + '</li>' }).join('') + '</ul>' : ''
+  const stanceList = stance.length ? '<div class="msection">内容倾向</div><ul class="mstance">' + stance.map(function (r) { return '<li>' + escapeHtml(String(r)) + '</li>' }).join('') + '</ul>' : ''
+  return '<div class="pcard">' +
+    '<div class="qtitle">语气 / 内容倾向 ' + (m && m.tone ? '<span class="badge cur">' + escapeHtml(String(m.tone)) + '</span>' : '<span class="badge">平稳</span>') + '</div>' +
+    '<div class="qmeta">' + (m ? escapeHtml(src) + (age ? ' · ' + escapeHtml(age) : '') + ' · 模式 ' + escapeHtml(String(m.mode || 'auto')) : '本地心情还没攒到信号') + '</div>' +
+    (m && m.hint ? '<div class="qnote">' + escapeHtml(String(m.hint)) + '</div>' : '') + warn +
+    rulesList + stanceList +
     (function () {
       var s = STATE.moodLlm
       if (!s || (!s.lastAt && !s.paused)) return ''
-      var pause = s.paused ? '<span style="color:#ff9f9f"> · 已暂停（连续失败 ' + (s.failStreak || 0) + ' 次）</span>' : ''
-      var raw = s.lastRaw ? '<div class="hint" style="margin-top:2px;color:#93a4bd">上次原始输出：' + String(s.lastRaw).slice(0, 120) + '</div>' : ''
-      return '<div class="hint" style="margin-top:6px">模型评估：今日 ' + (s.calls || 0) + ' 次 / ' + (s.tokens || 0) + ' tokens' +
-        (s.lastReason ? ' · 最近理由：' + s.lastReason : '') +
-        (s.lastError ? ' · 上次失败：' + s.lastError : '') + pause +
+      var pause = s.paused ? '<span style="color:var(--warn)"> · 已暂停（连续失败 ' + (s.failStreak || 0) + ' 次）</span>' : ''
+      var raw = s.lastRaw ? '<div class="qnote">上次原始输出：' + escapeHtml(String(s.lastRaw).slice(0, 120)) + '</div>' : ''
+      return '<div class="qsep"></div><div class="qnote">模型评估：今日 ' + (s.calls || 0) + ' 次 / ' + (s.tokens || 0) + ' tokens' +
+        (s.lastReason ? ' · 最近理由：' + escapeHtml(String(s.lastReason)) : '') +
+        (s.lastError ? ' · 上次失败：' + escapeHtml(String(s.lastError)) : '') + pause +
         (s.paused ? ' <button id="moodllmreset" style="margin-left:6px">重置熔断</button>' : '') + '</div>' + raw
     })() +
-    '<div class="pbtns" style="margin-top:8px"><button id="moodrefresh">刷新</button><button id="moodreset">重置本地心情</button></div>' +
-    '<div class="hint" id="moodmsg" style="min-height:16px;margin-top:4px"></div>' +
+    '<div class="qact"><button id="moodrefresh">刷新</button><button id="moodreset">重置本地心情</button></div>' +
+    '<div class="qnote" id="moodmsg" style="min-height:16px"></div>' +
   '</div>'
+}
+function bindMoodCard(){
+  var mm = function (s) { var m = $("moodmsg"); if (m) m.textContent = s }
+  var mf = $("moodrefresh")
+  if (mf) mf.onclick = async function () { mm("刷新中…"); await load() }
+  var mr = $("moodreset")
+  if (mr) mr.onclick = async function () { mm("重置本地心情中…"); try { var j = await mg({ action: "mgmtOp", kind: "mood", op: "resetLocal" }); mm(j && j.ok ? "本地心情已重置" : ("失败：" + ((j && j.error) || ""))) } catch (e) { mm("失败：" + e.message) } ; await load() }
+  var ml = $("moodllmreset")
+  if (ml) ml.onclick = async function () { mm("重置熔断中…"); try { var j2 = await mg({ action: "mgmtOp", kind: "mood", op: "resetLlm" }); mm(j2 && j2.ok ? "熔断已重置" : ("失败：" + ((j2 && j2.error) || ""))) } catch (e) { mm("失败：" + e.message) } ; await load() }
+}
+function renderMoodPage(){
+  const el = $("panel")
+  if (!el) return
+  const flds = (STATE.fields || []).filter(function (f) { return f.tab === "mood" && !SKIP_KEYS.has(f.k) })
+  el.innerHTML = moodCardHtml() + moodStanceCardHtml() +
+    (flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项：心情开关 / 注入 / 模型评估）</summary><div class="pcard">' + flds.map(function (f) { return fieldRow(f) }).join('') + '</div></details>' : '')
+  bindFields(el)
+  bindMoodCard()
 }
 function attachCogNav() {
   if (ACTIVE !== "cognition") return
@@ -732,22 +828,93 @@ function attachCogNav() {
   } catch (e) {}
 }
 
+// ── 关系页（v2）：按人卡片 + 谁和谁熟，纯本地统计 ──
+let RELGROUP = ''
+try { const s = localStorage.getItem('qqrefine:rgroup'); if (s) RELGROUP = s } catch {}
+function relDayLabel(iso) {
+  const t = Date.parse(iso || '') || 0
+  if (!t) return '还没记录'
+  const d = Math.round((Date.now() - t) / 86400000)
+  return d <= 0 ? '今天活跃' : d === 1 ? '昨天活跃' : (d + ' 天前活跃')
+}
+function relKindsHtml(kinds) {
+  const keys = Object.keys(kinds || {}).filter(function (k) { return Number(kinds[k]) > 0 })
+  if (!keys.length) return ''
+  return keys.slice(0, 3).map(function (k) { return '<span class="badge">' + escapeHtml(k) + ' ×' + Number(kinds[k]) + '</span>' }).join(' ')
+}
+function relCardHtml(row, max) {
+  const name = String(row.name || '').trim() || ('成员 ' + String(row.uid || '').slice(-4))
+  const count = Number(row.count || 0)
+  const pct = max > 0 ? Math.max(4, Math.round((count / max) * 100)) : 4
+  const role = row.role === 'owner' ? '<span class="badge cur">群主</span>' : row.role === 'admin' ? '<span class="badge">管理</span>' : ''
+  return '<div class="relcard"><div class="reltop"><div class="relname">' + escapeHtml(name) + ' ' + role + '</div>' +
+    '<div class="reln">' + count + '</div></div>' +
+    '<div class="relbar"><i style="width:' + pct + '%"></i></div>' +
+    '<div class="relsub">' + escapeHtml(relDayLabel(row.lastAt)) + (row.daysAgo != null ? ' · ' + (Math.round(Number(row.daysAgo) * 10) / 10) + ' 天前最后一句' : '') + '</div>' +
+    (Object.keys(row.kinds || {}).length ? '<div class="memtags">' + relKindsHtml(row.kinds) + '</div>' : '') +
+  '</div>'
+}
 function cogRelationsHtml() {
   const c = STATE.cognition || {}
   const r = c.relations || {}
   const d = c.digest || {}
   const s = c.self || {}
-  const cell = (k, v) => '<div class="kcell"><span class="k">' + k + '</span><span class="v">' + v + '</span></div>'
-  return '<div class="pcard"><div class="label">关系图</div>' +
-    '<div class="kgrid">' + cell('聊过的人', r.people || 0) + cell('会话数', r.peers || 0) + cell('互动次数', r.interactions || 0) + cell('最近更新', r.lastAt ? new Date(r.lastAt).toLocaleString() : '—') + '</div>' +
-    '<div class="hint">谁和谁熟、谁常跟谁说话。纯本地统计，0 token。</div></div>' +
-    '<div class="pcard"><div class="label">离线摘要</div>' +
-    '<div class="kgrid">' + cell('会话', d.peers || 0) + cell('摘要条数', d.items || 0) + cell('最近更新', d.lastAt ? new Date(d.lastAt).toLocaleString() : '—') + '</div>' +
-    '<div class="hint">攒够消息后压缩成几句，注入时只带摘要，不带全文。</div></div>' +
-    '<div class="pcard"><div class="label">自我卡</div>' +
-    '<div class="kgrid">' + cell('条目', s.items || 0) + cell('最近更新', s.lastAt ? new Date(s.lastAt).toLocaleString() : '—') + '</div>' +
-    '<div class="hint">她对自己的认知（自称、偏好、常做的事），会随聊天慢慢长。</div></div>' +
-    '<div class="pcard"><div class="hint">这些数据是聊天时顺便积累的，没有「立刻刷新」——群里聊几句再回来看。</div></div>'
+  const groups = ((STATE.config && STATE.config.scope && STATE.config.scope.groups) || []).slice()
+  if (!RELGROUP) RELGROUP = groups[0] || ''
+  const cell = (k, v) => '<div class="qcell2"><div class="k">' + escapeHtml(k) + '</div><div class="v">' + escapeHtml(String(v)) + '</div></div>'
+  const gopts = groups.length
+    ? groups.map(function (g) { return '<option value="' + escapeHtml(g) + '"' + (g === RELGROUP ? ' selected' : '') + '>' + escapeHtml(g) + '</option>' }).join('')
+    : '<option value="">（还没有白名单群）</option>'
+  return '<div class="pcard"><div class="qhero"><div class="qmain">' +
+      '<div class="qtitle">关系图 <span class="badge">纯本地 · 0 token</span></div>' +
+      '<div class="qmeta">谁和谁熟、谁常跟谁说话。只记统计，不存原话。</div></div>' +
+      '<div class="qact"><select id="rgroup" style="min-width:150px">' + gopts + '</select><button id="rreload">重读</button></div></div>' +
+      '<div class="qstat">' + cell('聊过的人', r.people || 0) + cell('会话数', r.peers || 0) + cell('互动次数', r.interactions || 0) + cell('最近更新', r.lastAt ? new Date(r.lastAt).toLocaleString() : '—') + '</div>' +
+    '</div>' +
+    '<div class="pcard"><div class="qtitle">关系卡</div><div class="qnote">按「互动次数 + 最近活跃」排序；只列这个群里说过话的人。</div><div id="relCards"><div class="hint">加载…</div></div></div>' +
+    '<div class="pcard"><div class="qtitle">谁和谁熟</div><div class="qnote">同一分钟内都说过话，算一次共现。</div><div id="relGraph"><div class="hint">加载…</div></div></div>' +
+    '<div class="pcard"><div class="qtitle">离线摘要</div><div class="qstat">' + cell('会话', d.peers || 0) + cell('摘要条数', d.items || 0) + cell('最近更新', d.lastAt ? new Date(d.lastAt).toLocaleString() : '—') + '</div><div class="qnote">攒够消息后压成几句，注入时只带摘要，不带全文。</div></div>' +
+    '<div class="pcard"><div class="qtitle">自我卡</div><div class="qstat">' + cell('条目', s.items || 0) + cell('最近更新', s.lastAt ? new Date(s.lastAt).toLocaleString() : '—') + '</div><div class="qnote">她对自己的认知（自称、偏好、常做的事），会随聊天慢慢长。</div></div>'
+}
+async function loadRelations() {
+  const cards = $('relCards')
+  const graphBox = $('relGraph')
+  if (!cards) return
+  const sel = $('rgroup')
+  if (sel) sel.onchange = function () { RELGROUP = sel.value; try { localStorage.setItem('qqrefine:rgroup', RELGROUP) } catch (e) {} ; loadRelations() }
+  const rl = $('rreload')
+  if (rl) rl.onclick = function () { loadRelations() }
+  const group = RELGROUP
+  if (!group) {
+    cards.innerHTML = '<div class="hint">还没有白名单群。先去「QQ 通道 · 白名单 / 名册」加一个群。</div>'
+    if (graphBox) graphBox.innerHTML = '<div class="hint">—</div>'
+    return
+  }
+  cards.innerHTML = '<div class="hint">读取关系…</div>'
+  try {
+    const j = await pfetch({ action: 'relationsList', group: group })
+    const rows = (j && j.ok && Array.isArray(j.rows)) ? j.rows : []
+    const max = rows.reduce(function (a, x) { return Math.max(a, Number(x.count || 0)) }, 0)
+    cards.innerHTML = rows.length
+      ? '<div class="relgrid">' + rows.slice(0, 12).map(function (row) { return relCardHtml(row, max) }).join('') + '</div>'
+      : '<div class="hint">还没有关系数据。群里聊几句再回来看（通过这些群的消息才计入）。</div>'
+    const g = (j && j.graph) || { nodes: [], edges: [] }
+    const nameOf = new Map()
+    ;(g.nodes || []).forEach(function (n) { nameOf.set(String(n.uid), String(n.name || '').trim() || ('成员 ' + String(n.uid).slice(-4))) })
+    const edges = (g.edges || []).slice(0, 8)
+    if (graphBox) {
+      graphBox.innerHTML = edges.length
+        ? edges.map(function (e) {
+            const a = nameOf.get(String(e.a)) || ('成员 ' + String(e.a).slice(-4))
+            const b = nameOf.get(String(e.b)) || ('成员 ' + String(e.b).slice(-4))
+            return '<div class="reledge"><span>' + escapeHtml(a) + ' ↔ ' + escapeHtml(b) + '</span><span class="w">×' + Number(e.weight || 0) + '</span></div>'
+          }).join('') + '<div class="qnote">节点 ' + (g.nodes || []).length + ' 个 · 共现边 ' + (g.edges || []).length + ' 条</div>'
+        : '<div class="hint">还没有共现数据：同一个群里一分钟内都说过话，才会连起一条边。</div>'
+    }
+  } catch (e) {
+    cards.innerHTML = '<div class="hint" style="color:var(--bad)">读关系失败：' + escapeHtml(e.message) + '</div>'
+    if (graphBox) graphBox.innerHTML = ''
+  }
 }
 
 function cogNavHtml() {
@@ -782,10 +949,14 @@ function renderPanel(){
     bindIdentityCards(el)
     return
   }
+  if (VIEW === "mood") { renderMoodPage(); attachCogNav(); return }
   if (VIEW === "profile") { renderProfilePanel(); attachCogNav(); return }
   if (VIEW === "knowledge") { renderKbPanel(); attachCogNav(); return }
-  if (VIEW === "relations") { $("panel").innerHTML = cogRelationsHtml(); attachCogNav(); return }
+  if (VIEW === "relations") { $("panel").innerHTML = cogRelationsHtml(); attachCogNav(); try { loadRelations() } catch (e) {} ; return }
   if (ACTIVE === "scope") { renderScopeClaim(); return }
+  if (ACTIVE === "channel") { renderChannelPage(); return }
+  if (ACTIVE === "order") { renderOrderPage(); return }
+  if (ACTIVE === "freq") { renderFreqPage(); return }
   if (ACTIVE === "matches") { renderMatchesPanel(); return }
 
   const el = $("panel")
@@ -824,12 +995,6 @@ function renderPanel(){
   if (VIEW === "identity") {
     try { el.insertAdjacentHTML("beforeend", identityCardHtml()); bindIdentityCards(el) } catch (e) {}
   }
-  if (ACTIVE === "channel") {
-    try { el.insertAdjacentHTML("afterbegin", transportCardHtml()) } catch (e) {}
-  }
-  if (VIEW === "freq") {
-    try { el.insertAdjacentHTML("beforeend", topicsCardHtml()) } catch (e) {}
-  }
   if (VIEW === "usage") {
     try { el.insertAdjacentHTML("afterbegin", usageCardHtml()) } catch (e) {}
     try { el.insertAdjacentHTML("beforeend", safetyCardHtml()) } catch (e) {}
@@ -842,19 +1007,6 @@ function renderPanel(){
       startAssetPoll()
     } catch (e) {}
   }
-  if (VIEW === "mood") {
-    try {
-      el.insertAdjacentHTML("afterbegin", moodCardHtml())
-      var mm = function (s) { var m = $("moodmsg"); if (m) m.textContent = s }
-      var mf = $("moodrefresh")
-      if (mf) mf.onclick = async function () { mm("刷新中…"); await load() }
-      var mr = $("moodreset")
-      if (mr) mr.onclick = async function () { mm("重置本地心情中…"); try { var j = await mg({ action: "mgmtOp", kind: "mood", op: "resetLocal" }); mm(j && j.ok ? "本地心情已重置" : ("失败：" + ((j && j.error) || ""))) } catch (e) { mm("失败：" + e.message) } ; await load() }
-      var ml = $("moodllmreset")
-      if (ml) ml.onclick = async function () { mm("重置熔断中…"); try { var j2 = await mg({ action: "mgmtOp", kind: "mood", op: "resetLlm" }); mm(j2 && j2.ok ? "熔断已重置" : ("失败：" + ((j2 && j2.error) || ""))) } catch (e) { mm("失败：" + e.message) } ; await load() }
-    } catch (e) {}
-  }
-
   attachCogNav()
   try {
     if (VIEW === 'profile' && STATE.profileNotices && STATE.profileNotices.count) {
