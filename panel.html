@@ -291,6 +291,9 @@ footer .pbtns{gap:8px}
   .ovt{font-size:12px;color:#8ea0bf;letter-spacing:.08em}
   .ovm{font-size:19px;font-weight:700;margin:6px 0 2px;color:#eafffb}
   .ovs{font-size:11.5px;color:#66779a}
+  .subnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .subtab{border:1px solid var(--line);background:#0c1422;color:#9fb0cf;border-radius:999px;padding:6px 13px;font-size:12.5px}
+  .subtab.active{background:rgba(53,214,201,.14);border-color:rgba(53,214,201,.45);color:#eafffb}
   @media(max-width:860px){
     .app{grid-template-columns:1fr}
     .side{position:sticky;top:0;height:auto;padding:10px 12px;border-right:0;border-bottom:1px solid var(--line);flex-direction:row;align-items:center;gap:12px;overflow:auto}
@@ -330,6 +333,7 @@ footer .pbtns{gap:8px}
     <button data-act="clearRoleCache">清角色缓存</button>
     <span id="actmsg" class="hint"></span>
   </div>
+  <div id="subnav"></div>
   <div id="recent" class="panel" style="margin-bottom:12px;display:none"></div>
   <div class="panel" id="panel"></div>
   <pre id="actout" class="kv" style="white-space:pre-wrap"></pre>
@@ -467,11 +471,11 @@ const TAB_GROUPS = [
   ['自主', ['proactive']],
   ['治理', ['freq', 'privacy', 'usage']],
   ['能力', ['sticker', 'draw', 'voice', 'bili', 'matches']],
-  ['通道', ['scope', 'channel', 'order']],
+  ['通道', ['qq']],
 ]
 const TAB_ORDER = TAB_GROUPS.flatMap(([, ks]) => ks)
-function tabLabel(k) { if (k === 'overview') return '总览'; if (k === 'order') return 'QQ 群管'; return ((STATE.tabs.find((t) => t[0] === k) || [k, k])[1]) }
-function tabIcon(k) { return k === 'overview' ? '🧭' : (TAB_ICON[k] || '·') }
+function tabLabel(k) { if (k === 'overview') return '总览'; if (k === 'qq') return 'QQ 通道'; if (k === 'order') return 'QQ 群管'; return ((STATE.tabs.find((t) => t[0] === k) || [k, k])[1]) }
+function tabIcon(k) { return k === 'overview' ? '🧭' : k === 'qq' ? '💬' : (TAB_ICON[k] || '·') }
 function goTab(k) {
   ACTIVE = k
   try { localStorage.setItem('qqrefine:tab', k) } catch {}
@@ -489,7 +493,8 @@ function renderTabs(){
   const groups = TAB_GROUPS.map(([label, ks]) => [label, ks.slice()])
   if (extra.length) groups.push(['其他', extra])
   $('tabs').innerHTML = groups.map(([label, ks]) => {
-    const items = ks.map((k) => '<button class="tab ' + (k === ACTIVE ? 'active' : '') + '" data-tab="' + k + '"><span class="ti">' + tabIcon(k) + '</span>' + tabLabel(k) + '</button>').join('')
+    const isActive = (k) => k === ACTIVE || (k === 'qq' && ['scope', 'channel', 'order'].includes(ACTIVE))
+    const items = ks.map((k) => '<button class="tab ' + (isActive(k) ? 'active' : '') + '" data-tab="' + k + '"><span class="ti">' + tabIcon(k) + '</span>' + tabLabel(k) + '</button>').join('')
     return '<div class="tabgroup"><div class="tglabel">' + label + '</div>' + items + '</div>'
   }).join('')
   ;[...document.querySelectorAll('.tab')].forEach((b) => { b.onclick = () => goTab(b.dataset.tab) })
@@ -632,7 +637,17 @@ function cogNavHtml() {
     '<div class="hint">认知相关都收在这：心情（语气）、画像（谁是谁）、记忆（长期记得的事）、知识库（文档片段）。当前：<b id="cogname"></b></div></div>'
 }
 
+function renderSubnav() {
+  const box = $('subnav')
+  if (!box) return
+  const QQ_TABS = [['scope', '白名单 / 名册'], ['channel', '连接设置'], ['order', '群管']]
+  if (!QQ_TABS.some(([k]) => k === ACTIVE)) { box.innerHTML = ''; box.style.display = 'none'; return }
+  box.style.display = 'block'
+  box.innerHTML = '<div class="subnav">' + QQ_TABS.map(([k, n]) => '<button class="subtab ' + (ACTIVE === k ? 'active' : '') + '" data-subq="' + k + '">' + n + '</button>').join('') + '</div>'
+  ;[...box.querySelectorAll('[data-subq]')].forEach((b) => { b.onclick = () => goTab(b.dataset.subq) })
+}
 function renderPanel(){
+  renderSubnav()
   if (ACTIVE === "overview") { renderOverview(); return }
   // §clear§ 每次渲染前先清空，避免自定义页用 append 时越切越长
   try { const _el = $("panel"); if (_el) _el.innerHTML = "" } catch {}
