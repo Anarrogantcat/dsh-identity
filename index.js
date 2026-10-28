@@ -50,6 +50,7 @@ import { stripInjection } from './lib/untrusted.js'
 import { composeIdentity, kernelSummary, kernelText, kernelGuardsText } from './lib/identity.js'
 import * as traits from './lib/traits.js'
 import { resumeStats } from './lib/resume.js'
+import { installSessionGrowth } from './lib/webgrowth.js'
 import { listCapabilities } from './lib/caprun.js'
 import './lib/caps-default.js'
 import { diaryHint, listDiary } from './lib/diary.js'
@@ -483,6 +484,11 @@ export async function apply(ctx, config = {}) {
     } catch { return c }
   }
   const hooks = createHooks({ mods, getConfig: loadConfig, logger, saveConfig })
+  // 非 QQ 会话的成长入口：订阅宿主 session/event（官方 ctx.on 事件总线）
+  try {
+    const ok = installSessionGrowth(ctx, { getConfig: loadConfig, logger })
+    if (ok) logger.info?.('[identity] web 会话成长已挂载')
+  } catch { /* ignore */ }
 
   const gate = createGate({
     getLlm: () => llmRef,
