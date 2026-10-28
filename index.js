@@ -52,7 +52,7 @@ import * as moodv2 from './lib/moodv2.js'
 import * as autonomy from './lib/autonomy.js'
 import * as anti8gu from './lib/anti8gu.js'
 import * as lifeparams from './lib/lifeparams.js'
-import { listPromises } from './lib/promises.js'
+import { listPromises, closePromise } from './lib/promises.js'
 import * as reflection from './lib/reflection.js'
 import { PERM_LEVELS, levelOf } from './lib/permgear.js'
 import { currentVersion, latestCached, checkLatest, applyUpdate, pluginDirOf, isPnpmManaged, compareVersions, readCache } from './lib/update.js'
@@ -736,6 +736,9 @@ export async function apply(ctx, config = {}) {
           if (action === "styleScope") return sendJson(res, 200, setStyleScope(String(body.scope ?? "group"), String(body.key ?? ""), String(body.id ?? "")))
           if (action === "traitRetire") return sendJson(res, 200, traits.retireTrait(String(body.id ?? ""), "owner"))
           if (action === "traitPromote") return sendJson(res, 200, traits.promoteTrait(String(body.id ?? "")))
+          if (action === "promiseClose") return sendJson(res, 200, closePromise(String(body.id ?? ""), String(body.how ?? "done")))
+          if (action === "promiseList") return sendJson(res, 200, { ok: true, items: listPromises({ status: String(body.status ?? "") }).slice(0, 50) })
+          if (action === "reflectionDays") return sendJson(res, 200, { ok: true, days: reflection.listReflections(String(body.peerKey ?? ""), 7), week: reflection.weekSummary(String(body.peerKey ?? "")) })
           if (action === "traitsSweep") return sendJson(res, 200, { ok: true, swept: traits.sweep() })
           return sendJson(res, 400, { ok: false, error: `未知操作 ${action}` })
         } catch (err) { sendJson(res, 500, { ok: false, error: String(err?.message ?? err) }) }

@@ -43,6 +43,9 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..')
   const html = readFileSync(join(root, 'panel.html'), 'utf8')
   T('面板标题是身份系统', html.includes('<title>大肥鱼 · 身份系统</title>'))
   T('页头是身份系统', html.includes('大肥鱼 <span class="tag">身份系统</span>'))
+  T('身份页有承诺卡片', html.includes('没做完的承诺') && html.includes('data-pclose'))
+  T('身份页有复盘卡片', html.includes('最近复盘') && html.includes('reflRows'))
+  T('面板后端有承诺动作', readFileSync(join(root, 'index.js'), 'utf8').includes('promiseClose'))
 }
 
 console.log('=== P14 收尾测试 ===')
