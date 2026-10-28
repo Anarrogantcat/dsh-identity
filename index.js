@@ -688,6 +688,14 @@ export async function apply(ctx, config = {}) {
           if (action === "profileList") {
             return sendJson(res, 200, { ok: true, group: body.group, stats: profile.stats(body.group), members: profile.listMembers(body.group) })
           }
+          if (action === "relationsList") {
+            const group = String(body.group ?? "")
+            const pk = group ? peerKey("group", group) : ""
+            const rel = modsRef?.relations
+            const rows = pk && rel?.relationsOf ? rel.relationsOf(pk, 50) : []
+            const graph = pk && rel?.relationGraph ? rel.relationGraph(pk, 12) : { nodes: [], edges: [] }
+            return sendJson(res, 200, { ok: true, group, rows, graph })
+          }
           if (action === "knowledgeImport") {
             return sendJson(res, 200, importKbFromPath(String(body.path ?? ""), { asName: String(body.name ?? "") }))
           }

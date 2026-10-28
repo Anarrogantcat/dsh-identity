@@ -330,6 +330,21 @@ footer .pbtns{gap:8px}
   .qact{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center}
   .qnote{font-size:11.5px;color:#7d90b3;margin-top:8px;line-height:1.55}
   .qsep{border-top:1px dashed rgba(30,43,68,.9);margin-top:12px;padding-top:10px}
+  .caplist{border:1px solid var(--line);border-radius:12px;padding:8px 12px;background:rgba(9,15,26,.55)}
+  .cap{display:flex;gap:8px;align-items:baseline;font-size:12.5px;padding:5px 0;border-bottom:1px dashed rgba(30,43,68,.7)}
+  .cap:last-child{border-bottom:0}
+  .cap.miss{color:#7d8aa3}
+  .cap .why{color:#6f7d96;font-size:11px;margin-left:auto;text-align:right}
+  .copy{border-color:#22314c;background:#101a2b;color:#9fb6dd}
+  .copy:hover{background:#132239;color:#eafffb}
+  #topbar{border-radius:14px;border:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(16,24,39,.9),rgba(11,18,30,.9))}
+  #topbar .tlabel{color:#8ea0bf}
+  #topbar .metrics{color:#9fb0cf}
+  #topbar .metrics b{color:#eafffb}
+  .seg{border-color:#22314c}
+  .seg button{background:#0c1422;color:#9fb0cf}
+  .seg button.on{background:linear-gradient(90deg,rgba(53,214,201,.92),rgba(139,123,255,.8));color:#061018}
   .mgmtbox{border:1px solid var(--line);border-radius:12px;padding:4px 10px;background:rgba(9,15,26,.45);margin-top:8px}
   .moodhero{display:grid;grid-template-columns:auto minmax(0,1fr);gap:18px;align-items:center}
   .moodring{width:112px;height:112px;border-radius:50%;display:grid;place-items:center;text-align:center;
@@ -367,6 +382,10 @@ footer .pbtns{gap:8px}
   .reledge{display:flex;gap:8px;align-items:center;justify-content:space-between;font-size:11.5px;color:#9fb0cf;
     border:1px solid var(--line);border-radius:10px;padding:7px 10px;background:rgba(9,15,26,.45);margin-top:6px;min-width:0}
   .reledge .w{color:#eafffb;font-weight:600;flex:0 0 auto}
+  .wlrow{display:flex;gap:10px;align-items:center;justify-content:space-between;min-width:0;
+    padding:8px 0;border-bottom:1px dashed rgba(30,43,68,.8)}
+  .wlrow:last-child{border-bottom:0}
+  .wlrow .memname{font-weight:500;font-size:12.5px;color:#dfe8f8}
   @media(max-width:640px){.moodhero{grid-template-columns:1fr}.moodring{margin:0 auto}}
   @media(max-width:860px){
     .app{grid-template-columns:1fr}
@@ -852,7 +871,7 @@ function relCardHtml(row, max) {
   return '<div class="relcard"><div class="reltop"><div class="relname">' + escapeHtml(name) + ' ' + role + '</div>' +
     '<div class="reln">' + count + '</div></div>' +
     '<div class="relbar"><i style="width:' + pct + '%"></i></div>' +
-    '<div class="relsub">' + escapeHtml(relDayLabel(row.lastAt)) + (row.daysAgo != null ? ' · ' + (Math.round(Number(row.daysAgo) * 10) / 10) + ' 天前最后一句' : '') + '</div>' +
+    '<div class="relsub">' + escapeHtml(relDayLabel(row.lastAt)) + '</div>' +
     (Object.keys(row.kinds || {}).length ? '<div class="memtags">' + relKindsHtml(row.kinds) + '</div>' : '') +
   '</div>'
 }
@@ -862,7 +881,7 @@ function cogRelationsHtml() {
   const d = c.digest || {}
   const s = c.self || {}
   const groups = ((STATE.config && STATE.config.scope && STATE.config.scope.groups) || []).slice()
-  if (!RELGROUP) RELGROUP = groups[0] || ''
+  if (!RELGROUP || groups.indexOf(RELGROUP) < 0) RELGROUP = groups[0] || ''
   const cell = (k, v) => '<div class="qcell2"><div class="k">' + escapeHtml(k) + '</div><div class="v">' + escapeHtml(String(v)) + '</div></div>'
   const gopts = groups.length
     ? groups.map(function (g) { return '<option value="' + escapeHtml(g) + '"' + (g === RELGROUP ? ' selected' : '') + '>' + escapeHtml(g) + '</option>' }).join('')
@@ -1407,7 +1426,9 @@ function renderScopeClaim() {
   // §scope-clear§ 这里必须清空：后面用 beforeend 追加
   const el = $("panel")
   el.innerHTML = ""
+  el.insertAdjacentHTML("beforeend", qqStatusCardHtml("白名单 / 名册"))
   el.insertAdjacentHTML("beforeend", rosterCardHtml())
+  bindQqStatus(el)
   try { bindRosterCard() } catch (e) {}
   const cfg = STATE.config
   const groups = cfg.scope.groups || []
@@ -1435,51 +1456,52 @@ function renderScopeClaim() {
     const already = isGroup(e) ? groups.includes(e.peer) : dms.includes(e.peer)
     const n = e.senders.size
     const senders = [...e.senders.entries()]
-    const senderLine = (sid, at) => `<div class="prow" style="padding:4px 0;border-bottom:0">
-        <div class="grow"><div class="hint" style="font-size:12px">发送者 ${sid} · ${new Date(at).toLocaleTimeString()}</div></div>
+    const senderLine = (sid, at) => `<div class="wlrow">
+        <div class="qmeta">发送者 ${escapeHtml(String(sid))} · ${new Date(at).toLocaleTimeString()}</div>
         <div class="pbtns"><button class="copy" data-copy="${sid}">复制</button><button data-owner="${sid}">设为 Owner</button></div>
       </div>`
-    const head = `<div class="prow" style="border-bottom:1px solid rgba(38,49,74,.6)">
-      <div class="grow">
-        <div class="label">${who} · ${e.peer}
+    const head = `<div class="qhero">
+      <div class="qmain">
+        <div class="qtitle">${who} · ${escapeHtml(String(e.peer))}
           ${already ? '<span class="badge cur">已在白名单</span>' : ""}
           <span class="badge">${n} 人</span></div>
-        <div class="hint">最近 ${new Date(e.at).toLocaleTimeString()}</div>
+        <div class="qmeta">最近 ${new Date(e.at).toLocaleTimeString()}</div>
       </div>
-      <div class="pbtns">
+      <div class="qact">
         <button class="copy" data-copy="${e.peer}">复制 openid</button>
         ${already ? "" : `<button data-addgroup="${e.peer}" data-scope="${e.scope}">加白名单</button>`}
       </div>
     </div>`
     const visible = senders.slice(0, 2).map(([sid, at]) => senderLine(sid, at)).join("")
     const rest = senders.length > 2
-      ? `<details class="adv" style="borderTop:0"><summary>还有 ${senders.length - 2} 位发言者</summary>${senders.slice(2).map(([sid, at]) => senderLine(sid, at)).join("")}</details>`
+      ? `<details class="adv" style="margin-top:6px"><summary>还有 ${senders.length - 2} 位发言者</summary>${senders.slice(2).map(([sid, at]) => senderLine(sid, at)).join("")}</details>`
       : ""
-    return `<div class="pcard" style="margin-bottom:10px;padding:10px 12px">${head}${visible}${rest}</div>`
+    return `<div class="pcard" style="margin:8px 0 0;padding:12px 14px">${head}${visible}${rest}</div>`
   }
 
   const recentHtml = list.length
     ? list.slice(0, 4).map(groupRow).join("") +
       (list.length > 4 ? `<details class="adv"><summary>还有 ${list.length - 4} 个群/人（展开）</summary>${list.slice(4).map(groupRow).join("")}</details>` : "")
-    : '<div class="pcard"><div class="hint" style="padding:6px 0">还没有来源记录。让她先收到一条消息（群里 @ 她一句），这里就会出现。</div></div>'
+    : '<div class="qnote">还没有来源记录。让她先收到一条消息（群里 @ 她一句），这里就会出现。</div>'
 
   const listCard = (title, kind, rows, hint) => {
     const body = (rows || []).length
-      ? rows.map((r) => `<div class="prow"><div class="grow"><div class="label">${r}</div></div><div class="pbtns"><button class="copy" data-copy="${r}">复制</button><button data-rm2="${kind}|${r}">删除</button></div></div>`).join("")
-      : '<div class="hint" style="padding:6px 0">暂无</div>'
-    return `<div class="pcard"><div class="label" style="margin-bottom:6px">${title}${hint ? ` <span class="hint">${hint}</span>` : ""}</div>${body}</div>`
+      ? rows.map((r) => `<div class="wlrow"><div class="memname">${escapeHtml(String(r))}</div><div class="pbtns"><button class="copy" data-copy="${r}">复制</button><button data-rm2="${kind}|${r}">删除</button></div></div>`).join("")
+      : '<div class="qnote">暂无</div>'
+    return `<div class="pcard"><div class="qtitle">${title} <span class="badge">${(rows || []).length}</span></div>${hint ? '<div class="qnote">' + hint + '</div>' : ""}${body}</div>`
   }
 
   el.insertAdjacentHTML("beforeend", `
     <div class="pcard">
-      <div class="label" style="margin-bottom:8px">认领方式① 最近来源（按群聚合）</div>
+      <div class="qtitle">认领方式① 最近来源 <span class="badge">按群聚合</span></div>
+      <div class="qnote">她收到过消息的来源都会出现在这；点「加白名单」就能开始用。</div>
       ${recentHtml}
     </div>
     <div class="pcard">
-      <div class="label" style="margin-bottom:8px">认领方式② 绑定码（最稳）</div>
-      <div id="claimmsg" class="hint" style="color:#f0b34a;min-height:18px"></div>
-      <div class="hint" style="margin-bottom:8px">${b ? `当前码：<span class="code">${b.code}</span><button class="copy" data-copy="${b.code}">复制码</button><button class="copy" data-copy="#绑定 ${b.code}">复制命令</button>（用途 ${b.purpose}，剩 ${left} 分钟）` : "还没有码：点下面任一按钮生成（一次性、10 分钟有效）。"}</div>
-      <div class="pbtns">
+      <div class="qtitle">认领方式② 绑定码 <span class="badge">最稳</span></div>
+      <div id="claimmsg" class="qnote" style="color:var(--warn);min-height:18px"></div>
+      <div class="qnote">${b ? `当前码：<span class="code">${b.code}</span><button class="copy" data-copy="${b.code}">复制码</button><button class="copy" data-copy="#绑定 ${b.code}">复制命令</button>（用途 ${b.purpose}，剩 ${left} 分钟）` : "还没有码：点下面任一按钮生成（一次性、10 分钟有效）。"}</div>
+      <div class="qact">
         <button data-bind="owner">绑 Owner</button>
         <button data-bind="group">绑本群</button>
         <button data-bind="dm">绑私聊</button>
@@ -1487,8 +1509,8 @@ function renderScopeClaim() {
       </div>
     </div>
     <div class="pcard">
-      <details class="adv"><summary>认领方式③ 手动填 openid</summary>
-        <div class="row"><div class="meta"><input id="claimval" placeholder="粘贴 openid / UP mid"></div>
+      <details class="adv" style="margin-top:0"><summary>认领方式③ 手动填 openid</summary>
+        <div class="row" style="grid-template-columns:minmax(0,1fr) auto"><div class="meta"><input id="claimval" placeholder="粘贴 openid / UP mid"></div>
           <div class="ctl pbtns">
             <select id="claimkind">
               <option value="groups">→ 群白名单</option>
@@ -1505,7 +1527,9 @@ function renderScopeClaim() {
     ${listCard("私聊白名单", "dmUsers", dms)}
     ${listCard("Owner", "owners", owners, "最高权限")}
     ${listCard("手动 Admin", "admins", admins, "QQ 群主/群管自动成为 Admin")}
+    ${advFieldsHtml("scope", "openid 列表")}
   `)
+  bindFields(el)
 
   ;[...el.querySelectorAll("[data-copy]")].forEach((btn) => { btn.onclick = (e) => { e.stopPropagation(); copyText(btn.dataset.copy, btn) } })
   ;[...el.querySelectorAll("[data-addgroup]")].forEach((btn) => {
@@ -1544,6 +1568,139 @@ function renderScopeClaim() {
 }
 
 
+// ── QQ 通道四页（v2）：状态优先，原始字段收进「高级设置」──
+function fieldsOfTab(tab) {
+  return (STATE.fields || []).filter(function (f) { return f.tab === tab && !SKIP_KEYS.has(f.k) })
+}
+function advFieldsHtml(tab, note) {
+  const flds = fieldsOfTab(tab)
+  if (!flds.length) return ''
+  return '<details class="adv"><summary>高级设置（' + flds.length + ' 项' + (note ? '：' + note : '') + '）</summary><div class="pcard">' +
+    flds.map(function (f) { return fieldRow(f) }).join('') + '</div></details>'
+}
+function qqStatusCardHtml(label) {
+  const t = STATE.transport || {}
+  const c = STATE.capabilities || t.capabilities || null
+  const h = t.health || (t.connected ? 'ok' : 'bad')
+  const modeTxt = t.mode === 'onebot' ? 'NapCat / OneBot 11' : (t.mode ? '官方 QQ（im-qqbot）' : '未就绪')
+  const acct = (t.account && t.account.uin) ? (String(t.account.uin) + (t.account.nickname ? '（' + t.account.nickname + '）' : '')) : '—'
+  const caps = c ? ((c.available || []).length + '/' + (c.total || 15)) : '—'
+  const chip = function (name, val, tone) { return '<span class="chip' + (tone ? ' ' + tone : '') + '">' + name + '：' + escapeHtml(String(val)) + '</span>' }
+  const tabBtn = function (k, n) { return '<button data-goq="' + k + '">' + n + '</button>' }
+  return '<div class="pcard"><div class="qhero"><div class="qmain">' +
+    '<div class="qtitle">' + escapeHtml(label) + ' ' + healthChip(h) + ' <span class="badge">' + escapeHtml(modeTxt) + '</span></div>' +
+    '<div class="qmeta">账号 ' + escapeHtml(acct) + ' · 延迟 ' + (t.latencyMs == null ? '—' : (t.latencyMs + 'ms')) + ' · 最近事件 ' + escapeHtml(fmtAgo(t.lastEventAt)) + '</div>' +
+    '<div class="qchips">' +
+      chip('连接', t.connected ? '已连接' : '未连接', t.connected ? 'ok' : 'bad') +
+      chip('能力位', caps, '') +
+      chip('会话', (t.channel && t.channel.sessions != null ? t.channel.sessions : 0), '') +
+      chip('今日发送', '成功 ' + (t.sentToday == null ? '—' : t.sentToday) + ' / 失败 ' + (t.failedToday == null ? '—' : t.failedToday), (t.failedToday || 0) > 0 ? 'warn' : 'ok') +
+    '</div>' +
+  '</div><div class="qact">' + tabBtn('channel', '连接设置') + tabBtn('scope', '白名单') + tabBtn('order', '群管') + tabBtn('freq', '接话策略') + '</div></div></div>'
+}
+function bindQqStatus(root) {
+  if (!root) return
+  ;[...root.querySelectorAll('[data-goq]')].forEach(function (b) {
+    b.onclick = function () { goTab(b.dataset.goq) }
+  })
+}
+function renderChannelPage() {
+  const el = $('panel')
+  if (!el) return
+  el.innerHTML = transportCardHtml() + advFieldsHtml('channel', '地址 / token / 看图 / 转写')
+  bindFields(el)
+  try { bindTransportCard() } catch (e) {}
+}
+function orderLimitsCardHtml() {
+  const cfg = STATE.config || {}
+  const o = cfg.order || {}
+  const r = cfg.roles || {}
+  const cell = function (k, v) { return '<div class="qcell2"><div class="k">' + k + '</div><div class="v">' + escapeHtml(String(v)) + '</div></div>' }
+  return '<div class="pcard"><div class="qhero"><div class="qmain">' +
+      '<div class="qtitle">群管额度 <span class="badge">Owner / Admin</span></div>' +
+      '<div class="qmeta">禁言、撤回、闭麦都按同一套额度走；Owner 不受限；QQ 群主 / 群管自动是 Admin。</div>' +
+    '</div><div class="qact"><button data-goq="scope">管理 Owner / Admin</button></div></div>' +
+    '<div class="qstat">' +
+      cell('单次禁言上限', (o.muteMaxSec == null ? '—' : (o.muteMaxSec + ' 秒'))) +
+      cell('默认闭麦', (o.muteDefaultSec == null ? '—' : (o.muteDefaultSec + ' 秒'))) +
+      cell('Admin 每小时闭麦', (o.mutePerHour == null ? '—' : (o.mutePerHour + ' 次'))) +
+      cell('Admin 每日禁言', (r.adminMaxMutePerDay == null ? '—' : (r.adminMaxMutePerDay + ' 次'))) +
+      cell('Admin 每日撤回', (r.adminMaxRecallPerDay == null ? '—' : (r.adminMaxRecallPerDay + ' 次'))) +
+      cell('自动撤回', (o.autoRecallEnabled ? ('开 · ' + (o.autoRecallDelaySec || 0) + ' 秒') : '关')) +
+    '</div>' +
+    '<div class="qnote">超时 / 越权会被拦下并记审计；这里的值只写配置，不会热改已经发出的动作。</div>' +
+  '</div>'
+}
+async function loadOrderAudit() {
+  const box = $('orderAudit')
+  if (!box) return
+  box.innerHTML = '<div class="hint">读取审计…</div>'
+  try {
+    const j = await mg({ action: 'mgmt', kind: 'audit' })
+    const rows = (j && j.rows) || []
+    box.innerHTML = rows.length
+      ? rows.slice(0, 20).map(function (r) {
+          return '<div class="wlrow"><div style="min-width:0"><div class="memname">' + escapeHtml(String(r.kind || '')) + '</div>' +
+            '<div class="qmeta">' + escapeHtml(String(r.at || '')) + '</div></div>' +
+            '<div class="qmeta" style="text-align:right;max-width:56%">' + escapeHtml(String(r.detail || '')) + '</div></div>'
+        }).join('')
+      : '<div class="qnote">还没有审计记录。</div>'
+  } catch (e) {
+    box.innerHTML = '<div class="qnote" style="color:var(--bad)">读审计失败：' + escapeHtml(e.message) + '</div>'
+  }
+}
+function renderOrderPage() {
+  const el = $('panel')
+  if (!el) return
+  el.innerHTML = qqStatusCardHtml('群管') + orderLimitsCardHtml() +
+    '<div class="pcard"><div class="qhero"><div class="qmain"><div class="qtitle">最近动作 <span class="badge">审计</span></div>' +
+      '<div class="qnote">最近 100 条闸门动作（禁言 / 撤回 / 闭麦 / 丢弃 / 图库同步…），只读。</div></div>' +
+      '<div class="qact"><button id="orderAuditRefresh">刷新</button></div></div>' +
+      '<div id="orderAudit"><div class="hint">加载审计…</div></div></div>' +
+    advFieldsHtml('order', '禁言 / 撤回 / 闭麦')
+  bindFields(el)
+  bindQqStatus(el)
+  const rf = $('orderAuditRefresh')
+  if (rf) rf.onclick = function () { loadOrderAudit() }
+  loadOrderAudit()
+}
+function freqPolicyCardHtml() {
+  const cfg = STATE.config || {}
+  const f = cfg.frequency || {}
+  const gear = (STATE.gears || {})[String(f.chatGear)] || {}
+  const join = function (a) { return a == null ? '—' : String(a) }
+  const ownerTxt = f.ownerPriority === 'always' ? '最高 · 你说就回' : f.ownerPriority === 'high' ? '高 · 冷却减半' : f.ownerPriority === 'normal' ? '普通' : '—'
+  const quiet = f.quietEnabled ? ((f.quietStart || '?') + '–' + (f.quietEnd || '?')) : '关'
+  const cell = function (k, v) { return '<div class="qcell2"><div class="k">' + k + '</div><div class="v">' + escapeHtml(String(v)) + '</div></div>' }
+  return '<div class="pcard"><div class="qhero"><div class="qmain">' +
+      '<div class="qtitle">接话策略 <span class="badge">' + (f.naturalMode ? '自然接话' : '仅 @') + '</span></div>' +
+      '<div class="qmeta">挡位 ' + join(f.chatGear) + (gear.name ? ' · ' + escapeHtml(gear.name) : '') + '；只影响没点名时的随机接话，被 @ 或叫小名不受影响。</div>' +
+    '</div><div class="qact"><button data-goq="channel">连接设置</button></div></div>' +
+    '<div class="qstat">' +
+      cell('仅 @ 才回', f.mentionOnlyGroups ? '是' : '否') +
+      cell('群内冷却', join(f.cooldownGroupSec) + ' 秒 · @ ' + join(f.cooldownMentionSec) + ' 秒') +
+      cell('每群每小时', join(f.naturalPerHour)) +
+      cell('每群每日', join(f.naturalPerDay)) +
+      cell('两次主动间隔', join(f.naturalCooldownSec) + ' 秒') +
+      cell('免打扰', quiet) +
+      cell('对 Owner', ownerTxt) +
+      cell('接话判定', f.fitJudge ? ('开 · 对她说 ≥' + join(f.directThreshold) + ' / 话题 ≥' + join(f.fitThreshold)) : '关') +
+    '</div>' +
+    '<div class="qnote">判定先看她是不是在跟她说话、话题适不适合；阈值和词表在「高级设置」里。</div>' +
+  '</div>'
+}
+function renderFreqPage() {
+  const el = $('panel')
+  if (!el) return
+  el.innerHTML = qqStatusCardHtml('接话策略') + freqPolicyCardHtml() + topicsCardHtml()
+  bindQqStatus(el)
+  try { renderGearCard() } catch (e) {}
+  el.insertAdjacentHTML('beforeend', advFieldsHtml('freq', '频率 / 冷却 / 判定阈值 / 拆条'))
+  bindFields(el)
+  try { bindTabCards() } catch (e) {}
+}
+
+
 function renderGearCard() {
   const el = $("panel")
   const gears = STATE.gears || {}
@@ -1554,10 +1711,12 @@ function renderGearCard() {
     .join("")
   el.insertAdjacentHTML("beforeend", `
     <div class="pcard">
-      <div class="label" style="margin-bottom:6px">自然接话挡位（当前 ${cur}）</div>
-      <div class="hint" style="margin-bottom:8px">点一下整组写入：随机概率 / 粘连窗口 / 说完静默 / 话题阈值 / 每小时·每日上限 / 最小间隔。写入后仍可单独微调。</div>
-      <div class="pbtns">${btns}</div>
-      <div class="hint" id="gearmsg" style="margin-top:8px"></div>
+      <div class="qhero"><div class="qmain">
+        <div class="qtitle">自然接话挡位 <span class="badge cur">当前 ${cur}</span></div>
+        <div class="qnote">点一下整组写入：随机概率 / 粘连窗口 / 说完静默 / 话题阈值 / 每小时·每日上限 / 最小间隔。写入后仍可单独微调。</div>
+      </div></div>
+      <div class="qact">${btns}</div>
+      <div class="qnote" id="gearmsg"></div>
     </div>`)
   ;[...el.querySelectorAll("[data-gear]")].forEach((b) => {
     b.onclick = async () => {
@@ -1719,7 +1878,7 @@ function renderProfilePanel() {
   const el = $("panel")
   const groups = (STATE.config.scope.groups || [])
   if (!groups.length) {
-    el.innerHTML = '<div class="pcard"><div class="hint">还没有白名单群。先在「白名单 / 层级」里加群，画像才有对象。</div></div>'
+    el.innerHTML = '<div class="pcard"><div class="hint">还没有白名单群。先在「白名单 / 名册」里加群，画像才有对象。</div></div>'
     return
   }
   if (!PGROUP) PGROUP = groups[0]
@@ -1730,43 +1889,59 @@ function renderProfilePanel() {
   try { showAll = localStorage.getItem('qqrefine:pshowall') === '1' } catch (e) {}
   const spoken = members.filter((m) => (m.msgs || 0) > 0)
   const visible = (showAll ? members : spoken)
-  const rows = visible.map((m, i) => `
-    <div class="prow">
-      <div class="grow">
-        <div class="label">${escapeHtml(m.nick || ("成员 " + (i + 1)))}${m.uid ? '<span class="hint" style="margin-left:6px">' + escapeHtml(String(m.uid)) + "</span>" : ""}${m.role === "owner" ? ' <span class="badge cur">群主</span>' : m.role === "admin" ? ' <span class="badge">管理</span>' : ""}${m.sealed ? '<span class="badge">已屏蔽</span>' : ""}</div>
-        <div class="hint">发言 ${m.msgs} 条${m.chars ? " · " + m.chars + " 字" : ""} · 均长 ${m.avgLen} 字${(m.topWords || []).length ? " · 常聊 " + m.topWords.join("/") : ""}</div>
-        <div style="margin-top:3px">${(m.tags || []).length ? (m.tags || []).map((t) => `<span class="badge">${escapeHtml(t.text)} ${Math.round((t.conf || 0) * 100)}%</span>`).join(" ") : '<span class="hint">未归纳（点「本地归纳」）</span>'}</div>
-        ${(m.interests && Object.keys(m.interests).length) ? `<div class="hint" style="margin-top:2px">兴趣：${Object.entries(m.interests).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => k + " " + v).join(" · ")}</div>` : ""}
-        ${(m.attitude && (m.attitude.ask || m.attitude.praise || m.attitude.tease)) ? `<div class="hint" style="margin-top:2px">对她：找 ${m.attitude.ask || 0} · 夸 ${m.attitude.praise || 0} · 逗 ${m.attitude.tease || 0}</div>` : ""}
-          ${(m.topWords || []).length ? " · 常聊 " + m.topWords.join("/") : ""}</div>
-      </div>
-      <div class="pbtns">
-        <button data-pdel2="${m.key}">删除</button>
-        <button data-pseal2="${m.key}">屏蔽重建</button>
-      </div>
-    </div>`).join("")
+  const card = function (m, i) {
+    const nick = escapeHtml(m.nick || ("成员 " + (i + 1)))
+    const role = m.role === "owner" ? ' <span class="badge cur">群主</span>' : m.role === "admin" ? ' <span class="badge">管理</span>' : ""
+    const sealed = m.sealed ? ' <span class="badge">已屏蔽</span>' : ""
+    const tags = (m.tags || []).length
+      ? (m.tags || []).map(function (t) { return '<span class="badge">' + escapeHtml(t.text) + ' ' + Math.round((t.conf || 0) * 100) + '%</span>' }).join(' ')
+      : '<span class="hint">未归纳（点「本地归纳」）</span>'
+    const interests = (m.interests && Object.keys(m.interests).length)
+      ? '<div class="memstat">兴趣：' + Object.entries(m.interests).sort(function (a, b) { return b[1] - a[1] }).slice(0, 3).map(function ([k, v]) { return escapeHtml(k) + ' ' + escapeHtml(String(v)) }).join(' · ') + '</div>'
+      : ''
+    const attitude = (m.attitude && (m.attitude.ask || m.attitude.praise || m.attitude.tease))
+      ? '<div class="memstat">对她：找 ' + (m.attitude.ask || 0) + ' · 夸 ' + (m.attitude.praise || 0) + ' · 逗 ' + (m.attitude.tease || 0) + '</div>'
+      : ''
+    const words = (m.topWords || []).length ? '<div class="memstat">常聊 ' + escapeHtml((m.topWords || []).join('/')) + '</div>' : ''
+    return '<div class="memcard">' +
+      '<div class="memtop"><div class="memname">' + nick + '</div><div>' + role + sealed + '</div></div>' +
+      '<div class="memstat">发言 ' + (m.msgs || 0) + ' 条' + (m.chars ? ' · ' + m.chars + ' 字' : '') + ' · 均长 ' + (m.avgLen || 0) + ' 字' + (m.uid ? ' · ' + escapeHtml(String(m.uid)) : '') + '</div>' +
+      words +
+      '<div class="memtags">' + tags + '</div>' + interests + attitude +
+      '<div class="membtns"><button data-pdel2="' + m.key + '">删除</button><button data-pseal2="' + m.key + '">屏蔽重建</button></div>' +
+    '</div>'
+  }
+  const cards = visible.map(card).join("")
+  const cell = (k, v) => '<div class="qcell2"><div class="k">' + escapeHtml(k) + '</div><div class="v">' + escapeHtml(String(v)) + '</div></div>'
+  const route = (STATE.llmRoute && STATE.llmRoute.profile && STATE.llmRoute.profile.provider)
+    ? ((STATE.llmRoute.profile.source === "config" ? "配置指定 " : "宿主默认 ") + STATE.llmRoute.profile.provider + " / " + STATE.llmRoute.profile.model)
+    : "未找到（填 profile.llmProvider / llmModel 或检查宿主默认模型）"
 
   el.innerHTML = `
     <div class="pcard">
-      <div class="row"><div class="meta"><div class="label">选择群</div>
-        <div class="hint">画像按群隔离，不跨群共享</div></div>
-        <div class="ctl"><select id="pgroup">${groups.map((g) => `<option value="${g}" ${g === PGROUP ? "selected" : ""}>${g}</option>`).join("")}</select></div>
+      <div class="qhero"><div class="qmain">
+        <div class="qtitle">群成员画像 <span class="badge">按群隔离</span></div>
+        <div class="qmeta">名册里谁是谁、爱聊什么、对她什么态度。刚重建的画像只有身份，统计从 0 开始。</div>
+        <div class="qnote">语义归纳用的模型：${escapeHtml(route)}</div>
+      </div><div class="qact">
+        <select id="pgroup">${groups.map((g) => `<option value="${g}" ${g === PGROUP ? "selected" : ""}>${g}</option>`).join("")}</select>
+        <button id="pinduce">本地归纳</button><button id="pllm">语义归纳（模型）</button><button id="pclear">清空本群画像</button>
+      </div></div>
+      <div class="qstat">
+        ${cell('名册成员', st.total ?? 0)}${cell('已发言', st.spoken ?? spoken.length)}${cell('达标', st.active ?? 0)}${cell('已屏蔽', st.sealed ?? 0)}${cell('累计发言', st.msgs ?? 0)}
       </div>
-      <div class="row"><div class="meta"><div class="label">统计</div>
-        <div class="hint">名册成员 ${st.total ?? 0} · 已发言 ${st.spoken ?? spoken.length} · 达标 ${st.active ?? 0} · 已屏蔽 ${st.sealed ?? 0} · 累计发言 ${st.msgs ?? 0}<br>「达标」= 单个成员发言 &ge; ${(STATE.config && STATE.config.profile && STATE.config.profile.minMsgs7d) || 20} 条才会归纳特质；刚重建的画像只有身份（群名片/角色），统计从 0 开始，群里聊几句就有了。</div></div>
-    <div class="hint" style="margin-top:2px">语义归纳用的模型：${((STATE.llmRoute && STATE.llmRoute.profile && STATE.llmRoute.profile.provider) ? ((STATE.llmRoute.profile.source === "config" ? "配置指定 " : "宿主默认 ") + STATE.llmRoute.profile.provider + " / " + STATE.llmRoute.profile.model) : "未找到（填 profile.llmProvider / llmModel 或检查宿主默认模型）")}</div>
-        <div class="ctl pbtns"><button id="pinduce">本地归纳</button><button id="pllm">语义归纳（模型）</button><button id="pclear">清空本群画像</button></div>
-      </div>
-      <div class="hint" id="pmsg2"></div>
+      <div class="qnote">「达标」= 单个成员发言 &ge; ${(STATE.config && STATE.config.profile && STATE.config.profile.minMsgs7d) || 20} 条才会归纳特质。</div>
+      <div class="qnote" id="pmsg2"></div>
     </div>
     <div class="pcard">
-      <div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta">
-        <div class="label">成员（按发言排序）</div>
-        <div class="hint">默认只列发过言的人；机器人的号不参与画像。</div>
-      </div><div class="ctl pbtns"><label class="hint" style="display:flex;gap:6px;align-items:center">
-        <input type="checkbox" id="pshowall" ${showAll ? "checked" : ""}> 显示全部名册成员（${members.length}）
-      </label></div></div>
-      ${rows || '<div class="hint">还没有统计到发言。让群友在白名单群里说几句话再回来（通过闸门的消息才计入）。</div>'}
+      <div class="memhead">
+        <div class="qtitle">成员（按发言排序） <span class="badge">${visible.length}</span></div>
+        <label class="hint" style="display:flex;gap:6px;align-items:center">
+          <input type="checkbox" id="pshowall" ${showAll ? "checked" : ""}> 显示全部名册成员（${members.length}）
+        </label>
+      </div>
+      <div class="qnote">默认只列发过言的人；机器人的号不参与画像。</div>
+      ${cards ? '<div class="memgrid">' + cards + '</div>' : '<div class="hint">还没有统计到发言。让群友在白名单群里说几句话再回来（通过闸门的消息才计入）。</div>'}
     </div>`
 
   const sa = $("pshowall")
@@ -2005,29 +2180,38 @@ function transportCardHtml() {
   ]
   const isOb = t.mode === "onebot"
   const modeBtn = (id, label, on) => '<button data-mode="' + id + '" class="' + (on ? 'primary' : '') + '" ' + (on ? 'disabled' : '') + '>' + label + (on ? " ✓" : "") + '</button>'
+  const chip = (label, val, tone) => '<span class="chip' + (tone ? ' ' + tone : '') + '">' + label + '：' + escapeHtml(String(val)) + '</span>'
+  const cell = function (k, v, bad) {
+    return '<div class="qcell2"><div class="k">' + escapeHtml(k) + '</div><div class="v' + (bad ? ' bad' : '') + '">' + escapeHtml(String(v)) + '</div></div>'
+  }
   return '<div class="pcard" id="trCard">' +
-    '<div class="label" style="margin:0 0 4px">通道模式（单活：同一时刻只走一条）</div>' +
-    '<div class="pbtns" id="trMode">' +
+    '<div class="qhero"><div class="qmain">' +
+      '<div class="qtitle">连接设置 ' + healthChip(t.health) + ' <span class="badge">' + escapeHtml(modeTxt) + '</span></div>' +
+      '<div class="qmeta">账号 ' + escapeHtml(String(acct)) + ' · 地址 ' + escapeHtml(String(t.endpoint || '—')) + '</div>' +
+      '<div class="qchips">' +
+        chip('连接', t.connected ? '已连接' : '未连接', t.connected ? 'ok' : 'bad') +
+        chip('延迟', t.latencyMs == null ? '—' : (t.latencyMs + 'ms'), t.latencyMs != null && t.latencyMs > 800 ? 'warn' : 'ok') +
+        chip('今日发送', '成功 ' + (sent == null ? '—' : sent) + ' / 失败 ' + (failed == null ? '—' : failed), (failed || 0) > 0 ? 'warn' : 'ok') +
+        chip('能力位', capCnt, '') +
+        (breaker ? '<span class="chip warn">熔断保护中</span>' : '') +
+        (t.lastError ? '<span class="chip bad">有错误</span>' : '') +
+      '</div>' +
+    '</div><div class="qact"><div class="pbtns" id="trMode">' +
       modeBtn("tencent", "官方 QQ（im-qqbot）", !isOb) +
       modeBtn("onebot", "NapCat / OneBot 11", isOb) +
-      '<span class="hint" style="margin-left:8px">提交后要重启 DSH 才生效；官方号配置会留着，随时能切回</span>' +
     '</div>' +
-    '<div class="row" style="border-bottom:0;padding:6px 0 6px"><div class="meta">' +
-      '<div class="label">当前通道：' + modeTxt + ' ' + healthChip(t.health) + '</div>' +
-      '<div class="hint">改通道模式（transport.mode）要重启 DSH 才生效；面板只写配置，不会热切。</div>' +
-    '</div><div class="ctl pbtns">' +
       '<button id="trPing">测延迟</button>' +
       (breaker ? '<button id="trBreaker">重置熔断</button>' : "") +
       '<button id="trReload">重新读状态</button>' +
     '</div></div>' +
-    '<div class="kgrid">' + items.map(function (x) {
-      const bad = x[0] === "最后错误" && !!t.lastError
-      return '<div class="kcell"><span class="k">' + x[0] + '</span><span class="v' + (bad ? " bad" : "") + '">' + escapeHtml(x[1]) + '</span></div>'
+    '<div class="qnote">单活：同一时刻只走一条。提交后要重启 DSH 才生效（transport.mode），官方号配置会留着，随时能切回。</div>' +
+    '<div class="qstat">' + items.map(function (x) {
+      return cell(x[0], x[1], x[0] === "最后错误" && !!t.lastError)
     }).join("") + '</div>' +
-    '<div class="hint" id="trMsg" style="margin-top:8px;min-height:16px"></div>' +
-    '<div class="label" style="margin:10px 0 4px">能力位清单（缺失的置灰）</div>' +
-    '<div id="trCaps" class="caplist"><div class="hint">加载能力位…</div></div>' +
-    '<details class="adv"><summary>通道数据（服务端原样）</summary><div id="trRows" style="margin-top:6px"><div class="hint">加载…</div></div></details>' +
+    '<div class="qnote" id="trMsg" style="min-height:16px"></div>' +
+    '<div class="qsep"></div><div class="qtitle" style="font-size:13px">能力位清单 <span class="badge">' + escapeHtml(String(capCnt)) + '</span></div>' +
+    '<div id="trCaps" class="caplist" style="margin-top:8px"><div class="hint">加载能力位…</div></div>' +
+    '<details class="adv"><summary>通道数据（服务端原样）</summary><div id="trRows" class="kgrid" style="margin-top:6px"><div class="hint">加载…</div></div></details>' +
   '</div>'
 }
 
@@ -2103,23 +2287,23 @@ async function bindTransportCard() {
 
 // ── 「本群正在聊」小卡 ──
 function topicsRowsHtml(rows) {
-  if (!rows || !rows.length) return '<div class="hint" style="padding:4px 0">还没有记录（群里有人说话后就有了）</div>'
-  return '<div class="kgrid">' + rows.map(function (r) {
+  if (!rows || !rows.length) return '<div class="qnote">还没有记录（群里有人说话后就有了）</div>'
+  return '<div class="memgrid">' + rows.map(function (r) {
     const at = typeof r.at === "number" ? (r.at ? new Date(r.at).toLocaleTimeString() : "") : String(r.at || "")
     const m = r.match ? ' <span class="badge">' + escapeHtml(String(r.match)) + '</span>' : ""
-    return '<div class="kcell"><span class="k">' + escapeHtml(groupLabelOfPeer(r.peerKey)) + '</span>' +
-      '<span class="v">' + escapeHtml(r.text || "（空）") + m + '</span>' +
-      '<span class="ago">' + escapeHtml(at) + '</span></div>'
+    return '<div class="memcard"><div class="memtop"><div class="memname">' + escapeHtml(groupLabelOfPeer(r.peerKey)) + '</div>' +
+      '<span class="qmeta">' + escapeHtml(at) + '</span></div>' +
+      '<div class="memstat">' + escapeHtml(r.text || "（空）") + m + '</div></div>'
   }).join("") + '</div>'
 }
 
 function topicsCardHtml() {
   const t = STATE.topics || {}
   return '<div class="pcard" id="topicsCard">' +
-    '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta">' +
-      '<div class="label">本群正在聊</div>' +
-      '<div class="hint">每个群最后一句 + 当时指认到的赛程。只给面板看，不进提示词。</div>' +
-    '</div><div class="ctl pbtns"><button id="topicsReload">刷新</button></div></div>' +
+    '<div class="qhero"><div class="qmain">' +
+      '<div class="qtitle">本群正在聊</div>' +
+      '<div class="qnote">每个群最后一句 + 当时指认到的赛程。只给面板看，不进提示词。</div>' +
+    '</div><div class="qact"><button id="topicsReload">刷新</button></div></div>' +
     '<div id="topicsBox">' + topicsRowsHtml(t.rows || []) + '</div>' +
   '</div>'
 }
@@ -2227,20 +2411,22 @@ function rosterCardHtml() {
     ["上次刷新", r.updatedAt ? new Date(r.updatedAt).toLocaleString() : "还没刷新"],
     ["模式", r.supported ? "支持名册" : "当前通道不支持名册（切 onebot）"],
   ]
+  const cell = function (x) {
+    return '<div class="qcell2"><div class="k">' + escapeHtml(x[0]) + '</div><div class="v">' + escapeHtml(String(x[1])) + '</div></div>'
+  }
   return '<div class="pcard" id="rosterCard">' +
-    '<div class="row" style="border-bottom:0;padding:0 0 6px"><div class="meta">' +
-      '<div class="label">名册</div>' +
-      '<div class="hint">' + (r.supported ? "群/好友/成员来自通道接口，刷新后可以用来一键填白名单。" : "当前通道拿不到名册；切 onebot 模式（NapCat）后可用。") + '</div>' +
-    '</div><div class="ctl pbtns"><button id="rosterRefresh">刷新名册</button><button id="rosterPrune">清理旧通道条目</button></div></div>' +
-    '<div class="kgrid">' + items.map(function (x) {
-      return '<div class="kcell"><span class="k">' + x[0] + '</span><span class="v">' + escapeHtml(x[1]) + '</span></div>'
-    }).join("") + '</div>' +
+    '<div class="qhero"><div class="qmain">' +
+      '<div class="qtitle">名册 <span class="badge">' + (r.supported ? '可用' : '当前通道不支持') + '</span></div>' +
+      '<div class="qmeta">' + (r.supported ? "群/好友/成员来自通道接口，刷新后可以用来一键填白名单。" : "当前通道拿不到名册；切 onebot 模式（NapCat）后可用。") + '</div>' +
+    '</div><div class="qact"><button id="rosterRefresh">刷新名册</button><button id="rosterPrune">清理旧通道条目</button></div></div>' +
+    '<div class="qstat">' + items.map(cell).join("") + '</div>' +
     (opts
-      ? '<div class="row" style="border-bottom:0;padding:10px 0 0"><div class="meta"><div class="label">从群列表加入白名单</div>' +
-        '<div class="hint">选中一个群 → [加入白名单]；已经在白名单里的按钮会禁用。</div></div>' +
-        '<div class="ctl pbtns"><select id="rosterGroup">' + opts + '</select><button id="rosterAdd">加入白名单</button></div></div>'
-      : '<div class="hint" style="margin-top:8px">名册里还没有群（点 [刷新名册]，或切到 onebot 通道）</div>') +
-    '<div class="hint" id="rosterMsg" style="min-height:16px;margin-top:6px"></div>' +
+      ? '<div class="qsep"></div><div class="qhero"><div class="qmain">' +
+          '<div class="qtitle" style="font-size:13px">从群列表加入白名单</div>' +
+          '<div class="qnote">选中一个群 → [加入白名单]；已经在白名单里的按钮会禁用。</div>' +
+        '</div><div class="qact"><select id="rosterGroup">' + opts + '</select><button id="rosterAdd">加入白名单</button></div></div>'
+      : '<div class="qnote">名册里还没有群（点 [刷新名册]，或切到 onebot 通道）</div>') +
+    '<div class="qnote" id="rosterMsg" style="min-height:16px"></div>' +
     '<details class="adv"><summary>名册明细（服务端原样）</summary><div id="rosterRows" style="margin-top:6px"><div class="hint">加载…</div></div></details>' +
   '</div>'
 }
@@ -2306,13 +2492,13 @@ function groupListCard(groups) {
   const body = (groups || []).length
     ? groups.map(function (g) {
         const nm = names[g] || ""
-        return '<div class="prow"><div class="grow"><div class="label">' + escapeHtml(g) +
-          (nm ? ' <span class="badge">' + escapeHtml(nm) + '</span>' : "") + '</div></div>' +
+        return '<div class="wlrow"><div class="memname">' + escapeHtml(g) +
+          (nm ? ' <span class="badge">' + escapeHtml(nm) + '</span>' : "") + '</div>' +
           '<div class="pbtns"><button class="copy" data-copy="' + escapeHtml(g) + '">复制</button>' +
           '<button data-rm2="groups|' + escapeHtml(g) + '">删除</button></div></div>'
       }).join("")
-    : '<div class="hint" style="padding:6px 0">暂无</div>'
-  return '<div class="pcard"><div class="label" style="margin-bottom:6px">白名单群</div>' + body + '</div>'
+    : '<div class="qnote">暂无</div>'
+  return '<div class="pcard"><div class="qtitle">白名单群 <span class="badge">' + (groups || []).length + '</span></div>' + body + '</div>'
 }
 
 // ── 知识库页 ──

@@ -9,33 +9,52 @@ window.__ModuleLoader__.load({
   id: 'dsh-identity',
   factory: () => {
     const CSS = `
+      /* v2：深海玻璃 + 青/紫点缀，和面板同一套语言 */
       #qqrefine-fab{position:fixed;left:0;top:0;z-index:2147483000;
-        width:46px;height:46px;border-radius:50%;border:1px solid rgba(120,150,210,.45);
-        background:linear-gradient(160deg,#1a2233,#0f1420);color:#dfe8fb;cursor:grab;
-        box-shadow:0 6px 20px rgba(0,0,0,.45);font-size:20px;line-height:46px;text-align:center;
+        width:46px;height:46px;border-radius:16px;border:1px solid rgba(53,214,201,.38);
+        background:linear-gradient(150deg,rgba(17,27,43,.96),rgba(9,15,26,.96));color:#eafffb;cursor:grab;
+        box-shadow:0 10px 28px rgba(0,0,0,.45),inset 0 0 0 1px rgba(139,123,255,.12);
+        font-size:21px;line-height:44px;text-align:center;
+        backdrop-filter:blur(12px) saturate(1.2);-webkit-backdrop-filter:blur(12px) saturate(1.2);
         user-select:none;-webkit-user-select:none;touch-action:none;-webkit-tap-highlight-color:transparent;
         will-change:transform;transform:translate3d(var(--x,0px),var(--y,0px),0);
-        transition:box-shadow .15s ease, filter .15s ease, transform .12s ease}
-      #qqrefine-fab:hover{filter:brightness(1.08);box-shadow:0 10px 26px rgba(77,141,255,.35)}
+        transition:box-shadow .15s ease, border-color .15s ease, transform .12s ease}
+      #qqrefine-fab::before{content:"";position:absolute;inset:-1px;border-radius:17px;pointer-events:none;
+        background:radial-gradient(70% 70% at 28% 16%,rgba(53,214,201,.20),transparent 70%),
+                   radial-gradient(60% 60% at 82% 88%,rgba(139,123,255,.18),transparent 72%)}
+      #qqrefine-fab:hover{border-color:rgba(53,214,201,.7);
+        box-shadow:0 14px 30px rgba(0,0,0,.5),0 0 18px rgba(53,214,201,.28),inset 0 0 0 1px rgba(139,123,255,.16)}
       #qqrefine-fab.dragging{cursor:grabbing;transition:box-shadow .15s ease;
-        transform:translate3d(var(--x,0px),var(--y,0px),0) scale(1.06);box-shadow:0 16px 34px rgba(0,0,0,.55)}
+        transform:translate3d(var(--x,0px),var(--y,0px),0) scale(1.06);box-shadow:0 20px 40px rgba(0,0,0,.55)}
       #qqrefine-fab:active{cursor:grabbing}
-      #qqrefine-fab[data-open="1"]{background:linear-gradient(160deg,#2b4a7d,#1b2c4a)}
-      #qqrefine-mask{position:fixed;inset:0;z-index:2147482999;background:rgba(6,10,18,.55);
-        backdrop-filter:blur(2px);display:none}
+      #qqrefine-fab[data-open="1"]{background:linear-gradient(150deg,rgba(53,214,201,.32),rgba(139,123,255,.28));
+        border-color:rgba(53,214,201,.75);color:#061018}
+      #qqrefine-mask{position:fixed;inset:0;z-index:2147482999;background:rgba(4,8,14,.58);
+        backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:none}
       #qqrefine-mask[data-open="1"]{display:block}
       #qqrefine-wrap{position:fixed;z-index:2147483001;left:50%;top:50%;transform:translate(-50%,-50%);
-        width:min(1000px,94vw);height:min(86vh,900px);background:#0f1420;border:1px solid #26314a;
-        border-radius:14px;overflow:hidden;display:none;flex-direction:column;
-        box-shadow:0 30px 80px rgba(0,0,0,.6)}
+        width:min(1080px,94vw);height:min(88vh,920px);
+        background:linear-gradient(180deg,rgba(9,14,24,.96),rgba(6,10,17,.98));
+        border:1px solid rgba(53,214,201,.22);border-radius:18px;overflow:hidden;display:none;flex-direction:column;
+        box-shadow:0 30px 90px rgba(0,0,0,.66),inset 0 0 0 1px rgba(139,123,255,.08);
+        backdrop-filter:blur(18px) saturate(1.25);-webkit-backdrop-filter:blur(18px) saturate(1.25)}
       #qqrefine-wrap[data-open="1"]{display:flex}
-      #qqrefine-bar{display:flex;align-items:center;gap:10px;padding:8px 12px;background:#151c2b;
-        border-bottom:1px solid #26314a;color:#dbe5f7;font:13px/1.4 "Segoe UI","Microsoft YaHei",system-ui,sans-serif}
+      #qqrefine-bar{display:flex;align-items:center;gap:10px;padding:11px 14px;
+        background:linear-gradient(180deg,rgba(13,21,35,.94),rgba(9,14,24,.82));
+        border-bottom:1px solid rgba(30,43,68,.9);color:#e6eefc;
+        font:13px/1.4 "Segoe UI","Microsoft YaHei",system-ui,sans-serif}
+      #qqrefine-bar .brand{display:flex;align-items:center;gap:9px;font-weight:650;letter-spacing:.2px}
+      #qqrefine-bar .brand .dot{width:24px;height:24px;border-radius:9px;display:inline-flex;align-items:center;justify-content:center;
+        background:linear-gradient(150deg,rgba(53,214,201,.38),rgba(139,123,255,.32));
+        box-shadow:inset 0 0 0 1px rgba(234,255,251,.18);font-size:13px}
+      #qqrefine-bar .brand .tag{font-size:10px;letter-spacing:.14em;color:#061018;
+        background:linear-gradient(90deg,#35d6c9,#8b7bff);border-radius:999px;padding:1px 8px}
       #qqrefine-bar .grow{flex:1}
-      #qqrefine-bar button{font:12.5px/1 inherit;padding:5px 11px;border-radius:7px;cursor:pointer;
-        border:1px solid #2c3a58;background:#1b2537;color:#cfdcf3}
-      #qqrefine-bar button:hover{background:#243149}
-      #qqrefine-frame{flex:1;width:100%;border:0;background:#0f1420}
+      #qqrefine-bar button{font:12.5px/1 inherit;padding:6px 12px;border-radius:10px;cursor:pointer;
+        border:1px solid #22314c;background:#101a2b;color:#dbe6f7;transition:.15s}
+      #qqrefine-bar button:hover{background:#132239;border-color:#33507a;color:#eafffb}
+      #qqrefine-bar button[data-act="close"]:hover{border-color:rgba(255,123,133,.5);color:#ffb0b8}
+      #qqrefine-frame{flex:1;width:100%;border:0;background:#070b12}
     `
 
     function url() {
@@ -144,7 +163,7 @@ window.__ModuleLoader__.load({
       wrap.id = 'qqrefine-wrap'
       wrap.innerHTML = `
         <div id="qqrefine-bar">
-          <span>🐟 大肥鱼 · 身份系统</span>
+          <span class="brand"><span class="dot">🐟</span><span>大肥鱼 · 身份系统</span><span class="tag">v2</span></span>
           <span class="grow"></span>
           <button data-act="reload">重新加载</button>
           <button data-act="newtab">新窗口打开</button>
