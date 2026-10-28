@@ -117,6 +117,15 @@
 
 ---
 
+## 7.7 P5 记忆双卡（✅ 核心完成）
+
+- 全量卡：`<memory>/<peer>.full.jsonl`，只追加、永不注入（`fullCard()` 按需/面板读）。
+- 衰减卡：进提示词，按 `memory.injectChars`（默认 300 字）截断；超容量按 P 淘汰，但 `pinned` / `stable_profile` 永不裁。
+- 水位：80/90/100%，每 peer 每档每天一次审计（`memory.watermark`），不删 durable。
+- 测试：`test/p5-memory-test.mjs`（10）。
+
+---
+
 ## 8. 停止条件（遇到就停，不硬推）
 
 - 宿主接口行为与方案假设不一致（压缩事件、systemPrompt、agent 创建）
