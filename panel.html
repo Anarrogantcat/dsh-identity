@@ -964,9 +964,15 @@ function identityCardHtml() {
     '</div>'
   return `
     <div class="pcard">
-      <div class="label">内核 <span class="badge">锁定</span></div>
-      <div class="hint" style="white-space:pre-wrap;line-height:1.6">${baseText ? escapeHtml(baseText) : ('默认内核（没单独填）：\n' + kernel)}</div>
-      <div class="hint" style="white-space:pre-wrap;line-height:1.6;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)">${escapeHtml(String(STATE.identityGuards || ''))}</div>
+      <div class="label">内核 <span class="badge">你给的</span></div>
+      <div class="hint">这里写她是谁（名字/性格/说话习惯）。留空用默认内核；底线永远锁死，改不掉。</div>
+      <textarea id="idKernelText" spellcheck="false" placeholder="${escapeHtml(String(STATE.identityKernel || ''))}">${escapeHtml(String(STATE.identityBase || ''))}</textarea>
+      <div class="pbtns" style="margin-top:8px;align-items:center">
+        <button id="idKernelSave" class="primary">保存内核</button>
+        <button id="idKernelReset">恢复默认</button>
+        <span id="idKernelMsg" class="hint"></span>
+      </div>
+      <div class="hint" style="white-space:pre-wrap;line-height:1.6;margin-top:10px;padding-top:8px;border-top:1px dashed var(--line)">${escapeHtml(String(STATE.identityGuards || ''))}</div>
     </div>
     <div class="pcard">
       <div class="label">自我 traits <span class="badge">${stats.durable || 0} durable / ${stats.tentative || 0} tentative</span></div>
@@ -987,6 +993,19 @@ function identityCardHtml() {
 }
 
 function bindIdentityCards(el) {
+  const kt = el.querySelector('#idKernelText')
+  const km = el.querySelector('#idKernelMsg')
+  const ks = el.querySelector('#idKernelSave')
+  const kr = el.querySelector('#idKernelReset')
+  if (ks && kt) ks.onclick = async () => {
+    if (km) km.textContent = '保存中…'
+    try { await saveKey('identity.baseText', String(kt.value || '').trim()); if (km) km.textContent = '已保存，下一轮生效' } catch (e) { if (km) km.textContent = '失败：' + e.message }
+  }
+  if (kr && kt) kr.onclick = async () => {
+    if (!confirm('清掉自定义内核，回到默认？')) return
+    kt.value = ''
+    try { await saveKey('identity.baseText', ''); if (km) km.textContent = '已恢复默认' } catch (e) { if (km) km.textContent = '失败：' + e.message }
+  }
   ;[...el.querySelectorAll("[data-tpromote]")].forEach((b) => { b.onclick = async () => { const j = await mg({ action: "traitPromote", id: b.dataset.tpromote }); if (j && !j.ok) alert("晋升失败：" + (j.error || "")); await load() } })
   ;[...el.querySelectorAll("[data-tretire]")].forEach((b) => { b.onclick = async () => { await mg({ action: "traitRetire", id: b.dataset.tretire }); await load() } })
   ;[...el.querySelectorAll("[data-pclose]")].forEach((b) => { b.onclick = async () => { await mg({ action: "promiseClose", id: b.dataset.pclose, how: "done" }); await load() } })
