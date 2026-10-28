@@ -44,7 +44,14 @@ const ALLOW = {
 }
 
 const read = (p) => readFileSync(join(ROOT, p), 'utf8')
-const list = (dir) => readdirSync(join(ROOT, dir)).filter((f) => /\.(js|mjs)$/.test(f))
+const list = (dir) => {
+  const walk = (rel) => readdirSync(join(ROOT, rel), { withFileTypes: true }).flatMap((d) => {
+    const child = rel + '/' + d.name
+    if (d.isDirectory()) return walk(child)
+    return /\.(js|mjs)$/.test(d.name) ? [child.slice(dir.length + 1)] : []
+  })
+  return walk(dir)
+}
 
 const stripComments = (s) => s
   .replace(/\/\*[\s\S]*?\*\//g, '')
