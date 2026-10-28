@@ -947,12 +947,12 @@ function identityCardHtml() {
   const styles = st.styles || []
   const items = tr.items || []
   const stats = tr.stats || {}
-  const curStyle = (id.style && id.style.id) || st.currentStyle || ""
+  const curStyle = (id.style && (id.style.name || id.style.id)) || st.currentStyle || ""
   const byGroup = st.byGroup || {}
   const byUser = st.byUser || {}
   const groups = (cfg.scope && cfg.scope.groups) || []
   const dms = (cfg.scope && cfg.scope.dmUsers) || []
-  const opt = (selected) => styles.map((s) => `<option value="${s.id}"${s.id === selected ? " selected" : ""}>${escapeHtml(s.name)}${s.enabled === false ? "（停用）" : ""}</option>`).join("")
+  const opt = (selected) => styles.filter((s) => s.enabled !== false || s.id === selected).map((s) => `<option value="${s.id}"${s.id === selected ? " selected" : ""}>${escapeHtml(s.name)}${s.enabled === false ? "（停用）" : ""}</option>`).join("")
   const promiseRows = (Array.isArray(STATE.promises) ? STATE.promises : []).length
     ? STATE.promises.map(function (p) {
         const t = escapeHtml(String(p.text || '')).slice(0, 80)
