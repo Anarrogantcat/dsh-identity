@@ -432,7 +432,7 @@ footer .pbtns{gap:8px}
 </aside>
 <div class="content">
 <header>
-  <h1>🐟 大肥鱼 <span class="tag">身份系统</span> <span class="tag" id="stage">v0.5.0</span></h1>
+  <h1>🐟 身份系统 <span class="tag" id="stage">v0.5.0</span> <span class="tag" style="opacity:.7">UI build 2026-10-29a</span></h1>
   <div class="chips" id="chips"></div>
   <button id="updateBtn" title="检查更新" style="position:absolute;right:128px;top:18px;font-size:12px;padding:4px 10px">⟳ 检查更新</button>
   <button id="glassBtn" style="position:absolute;right:22px;top:18px;font-size:12px;padding:4px 10px">🫧 毛玻璃</button>
@@ -1288,7 +1288,8 @@ function identityCardHtml() {
   const cfg = STATE.config || {}
   const tr = STATE.traits || {}
   const id = STATE.identity || {}
-  const items = tr.items || []
+  const SELF_MARK_PANEL = /(我|本鱼)[^。！？]{0,8}(喜欢|习惯|讨厌|不会|总是|不爱|爱|怕|擅长|受不了|可以|不能|想|要)/
+  const items = (tr.items || []).filter((t) => t.status === 'durable' || t.kind !== 'self-say' || String(t.text || '').length >= 16 || SELF_MARK_PANEL.test(String(t.text || '')))
   const stats = tr.stats || {}
   const baseText = (cfg.identity && cfg.identity.baseText) || ''
   const promises = Array.isArray(STATE.promises) ? STATE.promises : []
