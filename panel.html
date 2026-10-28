@@ -697,6 +697,16 @@ function renderProactivePage() {
   el.innerHTML = behaviorCardHtml() + (flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项）</summary><div class="pcard">' + flds.map((f) => fieldRow(f)).join('') + '</div></details>' : '')
   bindFields(el)
 }
+function settingsHeroHtml(v) {
+  const cfg = STATE.config || {}
+  const hero = (t, m, s) => '<div class="pcard" style="margin-bottom:12px"><div class="label">' + t + '</div><div style="font-size:22px;font-weight:700;color:#eaf2ff;margin:4px 0">' + m + '</div><div class="hint">' + s + '</div></div>'
+  if (v === 'usage') { const t = (STATE.usage && STATE.usage.totals) || {}; return hero('当前用量', '¥' + (Number(t.yuan) || 0).toFixed(2), '累计调用 ' + (Number(t.calls) || 0) + ' 次 · 软预算提醒，不拦聊天') }
+  if (v === 'sticker') { const t = Number((STATE.sticker && STATE.sticker.total) || 0); return hero('表情库', t + ' 张', '她按心情挑；没有合适的不硬发') }
+  if (v === 'draw') { const on = !(cfg.draw && cfg.draw.enabled === false); return hero('生图', on ? '开着' : '关着', on ? '画她自己的样子；确认方式看下面的设置' : '现在不会生图') }
+  if (v === 'voice') { const on = !(cfg.voice && cfg.voice.enabled === false); return hero('语音', on ? '开着' : '关着', on ? '能合成、能发；发不出去会在日志里说' : '只用文字') }
+  if (v === 'privacy') { const rules = (cfg.privacy && Array.isArray(cfg.privacy.defaultRules)) ? cfg.privacy.defaultRules.length : 0; return hero('隐私', (cfg.privacy && cfg.privacy.enabled === false) ? '关了' : '开着', '默认规则 ' + rules + ' 条 · 入站和记忆都按这套脱敏') }
+  return ''
+}
 function renderOverview() {
   const el = $('panel')
   const id = STATE.identity || {}
