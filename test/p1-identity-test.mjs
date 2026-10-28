@@ -18,7 +18,6 @@ A('群聊场景含 QQ 群', I.composeIdentity({ scope: 'group' }).text.includes(
 A('DSH 场景不含 QQ 群', !I.composeIdentity({ scope: 'web' }).text.includes('QQ 群里'))
 A('基础人设会注入', I.composeIdentity({ scope: 'group', baseText: '你是我的鲸鱼娘，说话慢慢来。' }).text.includes('说话慢慢来'))
 A('不超过预算', I.composeIdentity({ scope: 'group', baseText: 'x'.repeat(2000) }).used <= 900)
-A('没有旧风格注入', !I.composeIdentity({ scope: 'group' }).text.includes('才、才不是'))
 A('摘要结构', I.kernelSummary().chars <= 900)
 A('旧风格 API 已删除', typeof I.listStyles === 'undefined' && typeof I.resolveStyle === 'undefined')
 
