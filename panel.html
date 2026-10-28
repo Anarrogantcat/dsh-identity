@@ -464,9 +464,10 @@ const TAB_GROUPS = [
   ['总览', ['overview']],
   ['身份', ['identity']],
   ['认知', ['cognition']],
-  ['治理', ['freq', 'privacy', 'usage', 'order']],
-  ['能力', ['sticker', 'bili', 'voice', 'matches']],
-  ['通道', ['scope', 'channel', 'proactive']],
+  ['自主', ['proactive']],
+  ['治理', ['freq', 'privacy', 'usage']],
+  ['能力', ['sticker', 'draw', 'voice', 'bili', 'matches']],
+  ['通道（QQ）', ['scope', 'channel', 'order']],
 ]
 const TAB_ORDER = TAB_GROUPS.flatMap(([, ks]) => ks)
 function tabLabel(k) { return k === 'overview' ? '总览' : ((STATE.tabs.find((t) => t[0] === k) || [k, k])[1]) }
