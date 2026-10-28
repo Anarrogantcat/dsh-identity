@@ -294,6 +294,24 @@ footer .pbtns{gap:8px}
   .subnav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
   .subtab{border:1px solid var(--line);background:#0c1422;color:#9fb0cf;border-radius:999px;padding:6px 13px;font-size:12.5px}
   .subtab.active{background:rgba(53,214,201,.14);border-color:rgba(53,214,201,.45);color:#eafffb}
+  /* settings v2：字段行改为双栏，标签/提示分层，控件右对齐 */
+  .row, .prow{display:grid;grid-template-columns:minmax(0,1fr) minmax(240px,320px);gap:18px;align-items:start;padding:14px 6px;border-bottom:1px solid rgba(30,43,68,.7)}
+  .row:last-child,.prow:last-child{border-bottom:0}
+  .row:hover,.prow:hover{background:rgba(53,214,201,.03);border-radius:10px}
+  .row .meta,.prow .meta{min-width:0}
+  .row .label,.prow .label{font-weight:600;color:#e4edfb;font-size:13.5px;line-height:1.45}
+  .row .hint,.prow .hint{color:#8296b8;font-size:12px;margin-top:4px;line-height:1.55}
+  .row .ctl,.prow .ctl{display:flex;justify-content:flex-end;align-items:center;width:100%;flex:none}
+  .row .ctl input,.row .ctl select,.row .ctl textarea{width:100%}
+  .row .ctl input[type=number]{width:100%;max-width:180px;text-align:right}
+  .row .ctl textarea{min-height:70px}
+  details.adv{margin-top:14px;border:1px solid var(--line);border-radius:14px;background:rgba(10,16,27,.6)}
+  details.adv>summary{cursor:pointer;padding:12px 16px;color:#9fb0cf;font-size:12.5px;user-select:none}
+  details.adv>summary:hover{color:var(--accent)}
+  details.adv[open]>summary{border-bottom:1px solid var(--line)}
+  details.adv>.pcard{border:0;border-radius:0;background:transparent;margin:0}
+  .searchbar input{height:40px;border-radius:12px}
+  .toolbar button{background:rgba(12,20,34,.8)}
   @media(max-width:860px){
     .app{grid-template-columns:1fr}
     .side{position:sticky;top:0;height:auto;padding:10px 12px;border-right:0;border-bottom:1px solid var(--line);flex-direction:row;align-items:center;gap:12px;overflow:auto}
