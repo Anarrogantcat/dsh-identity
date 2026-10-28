@@ -47,7 +47,7 @@ const log = () => {}
   const long = composeIdentity({ scope: 'group', maxChars: 900, parts: [{ name: 'x', text: 'y'.repeat(3000) }] })
   A('超长动态段被截断', long.used <= 900)
   A('摘要结构完整', kernelSummary().name === KERNEL.name && kernelSummary().chars <= 900)
-  A('身份模型是基础人设+成长', /基础人设|内核/.test(composeIdentity({ scope: 'group' }).text))
+  A('身份模型是基础人设+成长', composeIdentity({ scope: 'group' }).text.includes('大肥鱼'))
 }
 
 // ── 2. 事件流：入站/出站/幂等/政策闸 ──
