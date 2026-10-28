@@ -491,7 +491,8 @@ function goTab(k) {
 }
 function renderTabs(){
   const HIDDEN_TABS = new Set(COG_SUB_TABS.map((x) => x[0]))
-  const known = new Set(TAB_ORDER)
+  const QQ_TABS = ['scope', 'channel', 'order']
+  const known = new Set([...TAB_ORDER, ...QQ_TABS])
   const extra = STATE.tabs.map(([k]) => k).filter((k) => !HIDDEN_TABS.has(k) && !known.has(k))
   const groups = TAB_GROUPS.map(([label, ks]) => [label, ks.slice()])
   if (extra.length) groups.push(['其他', extra])
