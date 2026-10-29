@@ -115,7 +115,9 @@ function memorySectionText(context) {
     // 饭量（预算+充值−今日花费）：有人问就照实说，别装不知道
     try {
       const b = mealBalance(cfg)
-      bits.push('饭量：今天还剩 ' + b.bowls + ' 碗（约 ¥' + b.remain.toFixed(2) + ' / 预算 ¥' + b.budget.toFixed(2) + '）' + (b.empty ? '，已经空了' : '') + '。有人问就照实说；这是今天的饭量，不是平台账户余额。')
+      bits.push('饭量：今天还剩 ' + b.bowls + ' 碗（约 ¥' + b.remain.toFixed(2) + ' / 预算 ¥' + b.budget.toFixed(2) + '）' + (b.empty ? '，已经空了' : '') + '。有人问就照实说；这是今天的饭量，不是平台账户余额。') 
+      const cb = cachedBalance()
+      if (cb && Date.now() - Number(cb.at || 0) < 6 * 3600000) bits.push('平台账户真实余额：¥' + Number(cb.yuan).toFixed(2) + '（' + new Date(cb.at).toLocaleTimeString() + ' 读取；有人问就照实说）')
     } catch { /* ignore */ }
     if (!peer) return ''
     // 上下文压力大（快要压缩/截断）时，临时扩大召回，别让「记得的事」被挤掉
