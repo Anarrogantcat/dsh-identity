@@ -1038,6 +1038,17 @@ function renderSubnav() {
   box.innerHTML = '<div class="subnav">' + QQ_TABS.map(([k, n]) => '<button class="subtab ' + (ACTIVE === k ? 'active' : '') + '" data-subq="' + k + '">' + n + '</button>').join('') + '</div>'
   ;[...box.querySelectorAll('[data-subq]')].forEach((b) => { b.onclick = () => goTab(b.dataset.subq) })
 }
+let __autoTimer = null
+function armAutoRefresh() {
+  try { clearInterval(__autoTimer) } catch { /* ignore */ }
+  // 只有总览/用量需要近实时；设置页自动刷新会打断编辑
+  const tabs = ['overview', 'usage']
+  if (!tabs.includes(ACTIVE)) return
+  __autoTimer = setInterval(() => {
+    try { if (document.visibilityState === 'visible') load() } catch { /* ignore */ }
+  }, 15000)
+}
+
 function renderPanel(){
   renderSubnav()
   if (ACTIVE === "overview") { renderOverview(); return }
