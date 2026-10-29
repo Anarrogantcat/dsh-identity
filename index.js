@@ -317,6 +317,7 @@ function contextSectionText(context) {
       try { bits.push(cognitionText(mods, peer.peerKey, cfg)) } catch { /* ignore */ }
     }
     let body = bits.filter(Boolean).join('\n\n')
+    body += '\n\n# 你能做什么\n你会在群里聊天，也能在私聊里回（对谁开放由主人设置）；会用语音说话，会记事，也会自己开口。别人问起就照实说知道，但别替主人承诺开放范围/权限。'
     // 事实类硬规则：没有检索/数据就不许猜
     body += '\n\n# 人情边界\n别人给过饭钱/赞助：当场谢一次就够了，之后不要反复提、不邀功、不讨要、不拿这个换好感；只有对方主动问起才提。\n\n# 事实边界（比什么都重要）\n涉及比赛比分/赛果、新闻、实时信息，只有检索结果或明确资料时才能说；没有就说“没查到/不知道”，不许编队名、比分、胜负；可以说“被淘汰/回家”，但必须有原文依据；不能从单场输赢自己推断晋级/淘汰/出线。'
     if (cfg.ui?.markers !== false) {
