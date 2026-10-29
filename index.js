@@ -291,6 +291,18 @@ function contextSectionText(context) {
           const b = bondOf(peer.peer ?? '', lastIn.who)
           if (b.bond >= 2) bits.push('跟刚才那个人算熟，可以随意点、损两句别过界。')
           else if (b.bond <= -4) bits.push('跟刚才那个人有点别扭，别主动贴上去。')
+          try {
+            const mb = profile.memberBrief(peer.peer, lastIn.who)
+            if (mb && (mb.tags.length || mb.attitude || mb.topWords.length)) {
+              const bits2 = []
+              if (mb.nick) bits2.push(mb.nick)
+              if (mb.attitude) bits2.push(mb.attitude)
+              if (mb.tags.length) bits2.push(mb.tags.join('、'))
+              if (mb.topWords.length) bits2.push('常聊 ' + mb.topWords.join('/'))
+              if (mb.avgLen) bits2.push(mb.avgLen + ' 字左右')
+              if (bits2.length) bits.push('正在跟你说话的人：' + bits2.join('；') + '。按他的习惯和分寸说话，别套话。')
+            }
+          } catch { /* ignore */ }
         }
       } catch { /* ignore */ }
       try { bits.push(cognitionText(mods, peer.peerKey, cfg)) } catch { /* ignore */ }
