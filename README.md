@@ -40,6 +40,7 @@
 4. 重启 DSH；面板入口：客户端浮标 🐟 或 `/qqbot-refine`
 
 **不依赖第三方人设/心情插件**；数据在 `~/.dsh/storages/dsh-identity`。
+兼容说明：包名/客户端 id 是 `dsh-identity`；bundle 里的内部插件 id 仍为 `qqbot-refine`（历史兼容，别改名以免旧配置失联）。
 
 ## 面板
 
