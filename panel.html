@@ -1159,7 +1159,7 @@ async function loadRelations() {
 
 function cogNavHtml() {
   const tabs = COG_SUB_TABS.map((x) => '<button class="tab ' + (x[0] === COGSUB ? 'active' : '') + '" data-cog="' + x[0] + '">' + x[1] + '</button>').join('')
-  return '<div class="pcard"><div class="tabs">' + tabs + '</div>' +
+  return '<div class="pcard cog-nav"><div class="tabs">' + tabs + '</div>' +
     '<div class="hint">认知相关都收在这：心情（语气）· 画像（谁是谁）· 记忆（长期记得的事）· 关系（谁和谁熟）。当前：<b id="cogname"></b></div></div>'
 }
 
