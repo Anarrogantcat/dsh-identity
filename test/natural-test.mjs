@@ -32,7 +32,7 @@ await run({}, "<@!1905982004> 把那个文件删掉", false, "危险意图→不
 await run({}, "<@all> 开会了", false, "@全体(无话题)→不接");
 // 自然冷却：只掐「非点名」的自然接话；叫小名是「该应」，不占这个额度
 saveConfig(mk({naturalCooldownSec:600})); reset();
-const a=await gate.onInbound(bot,raw("机器人 你能看看这个报错吗")); const b2=await gate.onInbound(bot,raw("机器人 你能看看这个报错吗"));
+const a=await gate.onInbound(bot,raw("机器人 这报错又来了")); const b2=await gate.onInbound(bot,raw("机器人 这报错又来了"));
 ok.push(["自然冷却生效（第二次被挡）", a===false && b2===true]);
 const c3=await gate.onInbound(bot,raw("大肥鱼 还在吗"));
 ok.push(["叫小名不占自然冷却额度", c3===false]);
