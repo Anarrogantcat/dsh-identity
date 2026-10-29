@@ -1752,34 +1752,25 @@ function renderOrderPage() {
 function freqPolicyCardHtml() {
   const cfg = STATE.config || {}
   const f = cfg.frequency || {}
-  const gear = (STATE.gears || {})[String(f.chatGear)] || {}
-  const join = function (a) { return a == null ? '—' : String(a) }
-  const ownerTxt = f.ownerPriority === 'always' ? '最高 · 你说就回' : f.ownerPriority === 'high' ? '高 · 冷却减半' : f.ownerPriority === 'normal' ? '普通' : '—'
-  const quiet = f.quietEnabled ? ((f.quietStart || '?') + '–' + (f.quietEnd || '?')) : '关'
   const cell = function (k, v) { return '<div class="qcell2"><div class="k">' + k + '</div><div class="v">' + escapeHtml(String(v)) + '</div></div>' }
+  const quiet = f.quietEnabled ? ((f.quietStart || '?') + '–' + (f.quietEnd || '?')) : '关'
+  const lp = (STATE.lifeparams && STATE.lifeparams.values) || {}
+  const m = STATE.moodV2 || {}
+  const ownerTxt = f.ownerPriority === 'always' ? '最高 · 你说就回' : f.ownerPriority === 'high' ? '高' : f.ownerPriority === 'normal' ? '普通' : '—'
   return '<div class="pcard"><div class="qhero"><div class="qmain">' +
-      '<div class="qtitle">接话策略 <span class="badge">' + (f.naturalMode ? '自然接话' : '仅 @') + '</span></div>' +
-      '<div class="qmeta">挡位 ' + join(f.chatGear) + (gear.name ? ' · ' + escapeHtml(gear.name) : '') + '；只影响没被点名时的接话意愿；被 @ 或叫小名不受影响。</div>' +
+      '<div class="qtitle">接话：她自己决定 <span class="badge">不再按额度</span></div>' +
+      '<div class="qmeta">没有每分钟/每小时上限，也没有接话冷却。被 @ / 叫名字必应；没点名时看她当下活跃度、主动性和心情。</div>' +
     '</div><div class="qact"><button data-goq="channel">连接设置</button></div></div>' +
     '<div class="qstat">' +
-      cell('仅 @ 才回', f.mentionOnlyGroups ? '是' : '否') +
-      cell('群内冷却', join(f.cooldownGroupSec) + ' 秒 · @ ' + join(f.cooldownMentionSec) + ' 秒') +
-      cell('每群每小时', join(f.naturalPerHour)) +
-      cell('每群每日', join(f.naturalPerDay)) +
-      cell('两次主动间隔', join(f.naturalCooldownSec) + ' 秒') +
+      cell('被 @ / 叫名', '必应') +
+      cell('非点名', '看状态：活跃 ' + (lp.active ?? '—') + ' · 主动 ' + (lp.proactivity ?? '—') + ' · 心情回复 ×' + (m.behavior && m.behavior.reply != null ? Number(m.behavior.reply).toFixed(2) : '—')) +
       cell('免打扰', quiet) +
+      cell('防刷屏', '10 秒内 >15 条才退避') +
       cell('对 Owner', ownerTxt) +
-      cell('接话判定', f.fitJudge ? ('开 · 对她说 ≥' + join(f.directThreshold) + ' / 话题 ≥' + join(f.fitThreshold)) : '关') +
+      cell('接话判定', f.fitJudge ? ('开 · 对她说 ≥' + (f.directThreshold ?? 0.5)) : '关') +
     '</div>' +
-    '<div class="qnote">判定先看她是不是在跟她说话、话题适不适合；阈值和词表在「高级设置」里。</div>' +
+    '<div class="qnote">想让她话多/话少，调「主动」页的生活参数（活跃、主动、耐心），不是调额度。</div>' +
   '</div>'
-}
-function humanizeFreqCard() {
-  const f = (STATE.config && STATE.config.frequency) || {}
-  return '<div class="pcard"><div class="label">接话像不像人</div>' +
-    '<div class="hint">叫名字也回（不只在 @ 时回）；额度和冷却放宽到正常聊天够用，仍防刷屏。现在：' +
-    (f.naturalMode === true ? '自然' : '仅 @') + ' · 每人 ' + (f.perMinuteUser ?? 6) + '/分 · 群 ' + (f.perMinuteGroup ?? 10) + '/分 · 群冷却 ' + (f.cooldownGroupSec ?? 15) + ' 秒</div>' +
-    '<div class="pbtns" style="margin-top:10px;align-items:center"><button id="freqHumanize" class="primary">按“人一点”调</button><span class="hint">只放开接话，不放开刷屏</span></div></div>'
 }
 function renderFreqPage() {
   const el = $('panel')
@@ -1787,7 +1778,7 @@ function renderFreqPage() {
   el.innerHTML = qqStatusCardHtml('接话策略') + freqPolicyCardHtml() + topicsCardHtml()
   bindQqStatus(el)
   try { renderGearCard() } catch (e) {}
-  el.insertAdjacentHTML('beforeend', humanizeFreqCard() + advFieldsHtml('freq', '频率 / 冷却 / 判定阈值 / 拆条'))
+  el.insertAdjacentHTML('beforeend', advFieldsHtml('freq', '判定阈值 / 拆条 / 作息'))
   bindFields(el)
   try { bindTabCards() } catch (e) {}
 }
