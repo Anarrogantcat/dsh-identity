@@ -82,6 +82,16 @@ dsh plugin --profile desktop add file:C:\path\to\dsh-identity
 
 注意：`usage.payQrPath` 指向的是**你本机**的图片，不会随插件分发；别把它提交进仓库。
 
+## B站（可选，她自己的账号）
+
+每个实例用**自己的** B站 账号，仓库里不含任何登录态：
+
+1. 运行 `powershell -ExecutionPolicy Bypass -File scripts\bili-browser.ps1`
+2. 在弹出的专用 Edge 里登录你的 B站 账号（只存到本机 `storages/dsh-identity/bili-browser`）
+3. 群里 `#B站 看 <BV/链接>` 读标题/简介/数据/热评；`#B站 搜 <关键词>` 搜视频
+
+自动发评论没有做：B站评论区懒加载/风控，硬做有账号风险。每个用户各登录各的，不共享。
+
 ## 测试
 
 ```bash
