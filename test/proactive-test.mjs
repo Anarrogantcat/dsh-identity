@@ -12,7 +12,7 @@ ok.push(["时段判断", ["morning","afternoon","evening","night"].includes(P.ti
 const t = P.buildTemplate({}, {});
 ok.push(["模板生成", typeof t.text === "string" && t.text.length > 3 && t.source === "template"]);
 const t2 = P.buildTemplate({}, { memoryHint: "上次说的那件事" });
-ok.push(["记忆槽位", t2.text.includes("顺口问一句") && t2.source === "template+memory"]);
+ok.push(["记忆槽位不泄露提示", !t2.text.includes("顺口问一句") && !t2.text.includes("上次说的那件事") && t2.source === "template+memory"]);
 const hint = P.memoryHintOf([{text:"密码是 123"}, {text:"她说下周要去爬山"}]);
 ok.push(["记忆提示过滤敏感", hint === "她说下周要去爬山"]);
 ok.push(["llm 未配置时返回 null", (await P.buildWithLlm({proactive:{}}, null, {})) === null]);

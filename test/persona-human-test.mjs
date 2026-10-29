@@ -16,8 +16,8 @@ ok.push(["默认人设非空", typeof DEFAULT_PERSONA === 'string' && DEFAULT_PE
 ok.push(["默认人设不长（<= 400 字）", DEFAULT_PERSONA.length <= 400, DEFAULT_PERSONA.length]);
 ok.push(["默认人设不含客服禁语（引号里的反例不算）", BANNED.every((w) => !stripQuotes(DEFAULT_PERSONA).includes(w))]);
 ok.push(["默认人设明确「不是客服」", DEFAULT_PERSONA.includes("不是客服")]);
-ok.push(["默认人设要求短句、不写段落", /短句/.test(DEFAULT_PERSONA) && /段落/.test(DEFAULT_PERSONA)]);
-ok.push(["默认人设要求不复读/不写段落", /复读/.test(DEFAULT_PERSONA) && /段落/.test(DEFAULT_PERSONA)]);
+ok.push(["默认人设要求该短就短、不写报告", /该短就短/.test(DEFAULT_PERSONA) && /报告/.test(DEFAULT_PERSONA)]);
+ok.push(["默认人设要求不复读/不罗列", /复读/.test(DEFAULT_PERSONA) && /不罗列/.test(DEFAULT_PERSONA)]);
 ok.push(["默认人设有不装人/承认 AI 的边界", /AI/.test(DEFAULT_PERSONA) && /承认/.test(DEFAULT_PERSONA)]);
 ok.push(["默认人设有不泄露本机信息的边界", /不透露本机/.test(DEFAULT_PERSONA)]);
 ok.push(["默认人设不假装知道", /不知道就说不知道/.test(DEFAULT_PERSONA)]);
