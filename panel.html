@@ -922,11 +922,13 @@ function relCardHtml(row, max) {
   const bond = Number(row.bond || 0)
   const trust = Number(row.trust || 0)
   const aff = bond >= 6 ? '很熟' : bond >= 2 ? '还行' : bond <= -4 ? '别扭' : (trust <= -4 ? '不太信' : '一般')
-  const affBadge = '<span class="badge' + (bond >= 6 ? ' cur' : bond <= -4 ? ' warn' : '') + '">亲近 ' + aff + (bond ? ' ' + bond.toFixed(1) : '') + '</span>'
+  const affPct = Math.max(3, Math.round(Math.abs(bond) / 10 * 100))
+  const affColor = bond < 0 ? 'var(--bad)' : 'var(--accent)'
+  const affBadge = '<span class="badge' + (bond >= 6 ? ' cur' : bond <= -4 ? ' warn' : '') + '">' + aff + (bond ? ' ' + bond.toFixed(1) : '') + '</span>'
   return '<div class="relcard"><div class="reltop"><div class="relname">' + escapeHtml(name) + ' ' + role + '</div>' +
     '<div class="reln">' + count + '</div></div>' +
     '<div class="relsub">' + affBadge + '</div>' +
-    '<div class="relbar"><i style="width:' + pct + '%"></i></div>' +
+    '<div class="relbar"><i style="width:' + affPct + '%;background:' + affColor + '"></i></div>' +
     '<div class="relsub">' + escapeHtml(relDayLabel(row.lastAt)) + '</div>' +
     (Object.keys(row.kinds || {}).length ? '<div class="memtags">' + relKindsHtml(row.kinds) + '</div>' : '') +
   '</div>'
@@ -948,7 +950,7 @@ function cogRelationsHtml() {
       '<div class="qact"><select id="rgroup" style="min-width:150px">' + gopts + '</select><button id="rreload">重读</button></div></div>' +
       '<div class="qstat">' + cell('聊过的人', r.people || 0) + cell('会话数', r.peers || 0) + cell('互动次数', r.interactions || 0) + cell('最近更新', r.lastAt ? new Date(r.lastAt).toLocaleString() : '—') + '</div>' +
     '</div>' +
-    '<div class="pcard"><div class="qtitle">关系卡</div><div class="qnote">按「互动次数 + 最近活跃」排序；只列这个群里说过话的人。</div><div id="relCards"><div class="hint">加载…</div></div></div>' +
+    '<div class="pcard"><div class="qtitle">关系卡</div><div class="qnote">按好感度排序；条越长越亲近，红色=别扭；只列这个群里说过话的人。</div><div id="relCards"><div class="hint">加载…</div></div></div>' +
     '<div class="pcard"><div class="qtitle">谁和谁熟</div><div class="qnote">同一分钟内都说过话，算一次共现。</div><div id="relGraph"><div class="hint">加载…</div></div></div>' +
     '<div class="pcard"><div class="qtitle">离线摘要</div><div class="qstat">' + cell('会话', d.peers || 0) + cell('摘要条数', d.items || 0) + cell('最近更新', d.lastAt ? new Date(d.lastAt).toLocaleString() : '—') + '</div><div class="qnote">攒够消息后压成几句，注入时只带摘要，不带全文。</div></div>' +
     '<div class="pcard"><div class="qtitle">自我卡</div><div class="qstat">' + cell('条目', s.items || 0) + cell('最近更新', s.lastAt ? new Date(s.lastAt).toLocaleString() : '—') + '</div><div class="qnote">她对自己的认知（自称、偏好、常做的事），会随聊天慢慢长。</div></div>'
@@ -973,18 +975,9 @@ async function loadRelations() {
     const rows = (j && j.ok && Array.isArray(j.rows)) ? j.rows : []
     const max = rows.reduce(function (a, x) { return Math.max(a, Number(x.count || 0)) }, 0)
     const topAff = rows.filter(function (r) { return Number(r.bond || 0) !== 0 }).sort(function (a, b) { return Number(b.bond || 0) - Number(a.bond || 0) }).slice(0, 5)
-    const affMax = topAff.reduce(function (a, r) { return Math.max(a, Math.abs(Number(r.bond || 0))) }, 0) || 1
-    const affHtml = topAff.length
-      ? '<div class="pcard" style="margin-bottom:10px"><div class="label">亲近榜 <span class="badge">按情绪互动 · 好感度</span></div>' + topAff.map(function (r) {
-          const nm = String(r.name || '').trim() || ('成员 ' + String(r.uid || '').slice(-4))
-          const b = Number(r.bond || 0)
-          const pct = Math.max(4, Math.round(Math.abs(b) / affMax * 100))
-          const color = b < 0 ? 'var(--bad)' : 'var(--accent)'
-          return '<div class="mbrow"><span class="mbname">' + escapeHtml(nm) + '</span><div class="track"><i class="fill" style="width:' + pct + '%;background:' + color + '"></i></div><span class="num">' + (b > 0 ? '+' : '') + b.toFixed(1) + '</span></div>'
-        }).join('') + '<div class="qnote">条越长越亲近；红色=别扭；0 还没长出来</div></div>'
-      : ''
+    const affHtml = ''
     cards.innerHTML = affHtml + (rows.length
-      ? '<div class="relgrid">' + rows.slice(0, 12).map(function (row) { return relCardHtml(row, max) }).join('') + '</div>'
+      ? '<div class="relgrid">' + rows.slice().sort(function (a, b) { return (Number(b.bond || 0) - Number(a.bond || 0)) || (Number(b.count || 0) - Number(a.count || 0)) }).slice(0, 12).map(function (row) { return relCardHtml(row, max) }).join('') + '</div>'
       : '<div class="hint">还没有关系数据。群里聊几句再回来看（通过这些群的消息才计入）。</div>')
     const g = (j && j.graph) || { nodes: [], edges: [] }
     const nameOf = new Map()
