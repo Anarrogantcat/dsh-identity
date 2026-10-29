@@ -1,4 +1,4 @@
-# 打开「充值码专用浏览器」
+﻿# 打开「充值码专用浏览器」
 #
 # 为什么要专用浏览器：实时充值码要靠调试端口（CDP）去点「去支付」再截图。
 # 你日常用的 Edge 没开调试端口，硬去抢它的 profile 会把窗口弄坏；
@@ -20,7 +20,7 @@ param(
 $ErrorActionPreference = 'Stop'
 
 if (-not $DataDir) {
-  $DataDir = Join-Path $env:USERPROFILE '.dsh\storages\dsh-qqbot-refine\pay-browser'
+  $DataDir = Join-Path $env:USERPROFILE '.dsh\storages\dsh-identity\pay-browser'
 }
 New-Item -ItemType Directory -Force -Path $DataDir | Out-Null
 
