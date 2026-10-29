@@ -1042,6 +1042,7 @@ function renderPanel(){
     ? [...groupMap.entries()].map(([label, rows]) => '<div class="msection">' + label + '</div>' + rows.map((f) => fieldRow(f, q ? tabName(f.tab) : '')).join('')).join('')
     : ''
   const advanced = fields.filter((f) => !isCommon(f.k))
+  const advancedHtml = advanced.map((f) => fieldRow(f, q ? tabName(f.tab) : '')).join('')
   const PAGE_DESC = {"privacy":"谁能看到、记住什么、怎么脱敏；先看规则再看字段。","usage":"花了多少 token / 钱、限额怎么降级、哪些调用被记了账。","sticker":"表情包从哪来、什么时候发、发多快。","draw":"生图开不开、底子怎么套、要不要先确认。","voice":"语音怎么合成、用哪个声线、发不发得出去。","knowledge":"本地资料命中才注入，按群共享或单群。"}
   const headTitle = tabName(VIEW)
   const headDesc = PAGE_DESC[VIEW] || '这一页的设置项；改完点右下角保存。'
@@ -1051,15 +1052,10 @@ function renderPanel(){
       <div class="phead-main"><div class="phead-title">${escapeHtml(headTitle)}</div><div class="phead-desc">${escapeHtml(headDesc)}</div></div>
       <div class="phead-side"><span class="chip">${fields.length} 项</span></div>
     </div>
+    ${settingsHeroHtml(VIEW)}
     ${q ? '<div class="pcard"><div class="hint">搜索「' + q + '」：共 ' + fields.length + ' 项（跨页签）</div></div>' : ''}
-    <div class="pcard">
-      <div class="label">常用 <span class="badge">${common.length}</span></div>
-      ${commonHtml}
-      ${advanced.length ? `<details class="adv" ${advancedOpen(ACTIVE) ? "open" : ""} data-advtab="${ACTIVE}">
-        <summary>更多设置（${advanced.length} 项）</summary>
-        ${advanced.map((f) => fieldRow(f, q ? tabName(f.tab) : "")).join("")}
-      </details>` : ''}
-    </div>`
+    ${(q || !fields.length) ? '<div class="pcard">' + commonHtml + advancedHtml + '</div>' : `<details class="adv" ${advancedOpen(ACTIVE) ? 'open' : ''} data-advtab="${ACTIVE}"><summary>设置项（${fields.length} 项，默认收起）</summary><div class="pcard">${commonHtml}${advancedHtml}</div></details>`}
+  `
 
   if (ACTIVE === "memory") {
     try { el.insertAdjacentHTML("afterbegin", learnCardHtml()) } catch (e) {}
@@ -1560,7 +1556,8 @@ function renderScopeClaim() {
       <div class="qnote">她收到过消息的来源都会出现在这；点「加白名单」就能开始用。</div>
       ${recentHtml}
     </div>
-    <div class="pcard">
+    <details class="adv"><summary>认领方式② 绑定码（一次性，10 分钟）</summary>
+    <div class="pcard" style="border:0">
       <div class="qtitle">认领方式② 绑定码 <span class="badge">最稳</span></div>
       <div id="claimmsg" class="qnote" style="color:var(--warn);min-height:18px"></div>
       <div class="qnote">${b ? `当前码：<span class="code">${b.code}</span><button class="copy" data-copy="${b.code}">复制码</button><button class="copy" data-copy="#绑定 ${b.code}">复制命令</button>（用途 ${b.purpose}，剩 ${left} 分钟）` : "还没有码：点下面任一按钮生成（一次性、10 分钟有效）。"}</div>
@@ -3166,3 +3163,5 @@ load()
 
 
 
+
+    </div></details>
