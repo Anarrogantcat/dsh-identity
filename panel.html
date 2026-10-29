@@ -973,12 +973,15 @@ async function loadRelations() {
     const rows = (j && j.ok && Array.isArray(j.rows)) ? j.rows : []
     const max = rows.reduce(function (a, x) { return Math.max(a, Number(x.count || 0)) }, 0)
     const topAff = rows.filter(function (r) { return Number(r.bond || 0) !== 0 }).sort(function (a, b) { return Number(b.bond || 0) - Number(a.bond || 0) }).slice(0, 5)
+    const affMax = topAff.reduce(function (a, r) { return Math.max(a, Math.abs(Number(r.bond || 0))) }, 0) || 1
     const affHtml = topAff.length
-      ? '<div class="pcard" style="margin-bottom:10px"><div class="label">亲近榜 <span class="badge">按情绪互动</span></div><div class="qact">' + topAff.map(function (r) {
+      ? '<div class="pcard" style="margin-bottom:10px"><div class="label">亲近榜 <span class="badge">按情绪互动 · 好感度</span></div>' + topAff.map(function (r) {
           const nm = String(r.name || '').trim() || ('成员 ' + String(r.uid || '').slice(-4))
           const b = Number(r.bond || 0)
-          return '<span class="chip" style="margin:2px 6px 2px 0">' + escapeHtml(nm) + ' ' + (b > 0 ? '+' : '') + b.toFixed(1) + '</span>'
-        }).join('') + '</div><div class="qnote">负数=别扭；0 还没长出来</div></div>'
+          const pct = Math.max(4, Math.round(Math.abs(b) / affMax * 100))
+          const color = b < 0 ? 'var(--bad)' : 'var(--accent)'
+          return '<div class="mbrow"><span class="mbname">' + escapeHtml(nm) + '</span><div class="track"><i class="fill" style="width:' + pct + '%;background:' + color + '"></i></div><span class="num">' + (b > 0 ? '+' : '') + b.toFixed(1) + '</span></div>'
+        }).join('') + '<div class="qnote">条越长越亲近；红色=别扭；0 还没长出来</div></div>'
       : ''
     cards.innerHTML = affHtml + (rows.length
       ? '<div class="relgrid">' + rows.slice(0, 12).map(function (row) { return relCardHtml(row, max) }).join('') + '</div>'
