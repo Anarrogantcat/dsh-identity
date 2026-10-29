@@ -909,8 +909,13 @@ function relCardHtml(row, max) {
   const count = Number(row.count || 0)
   const pct = max > 0 ? Math.max(4, Math.round((count / max) * 100)) : 4
   const role = row.role === 'owner' ? '<span class="badge cur">群主</span>' : row.role === 'admin' ? '<span class="badge">管理</span>' : ''
+  const bond = Number(row.bond || 0)
+  const trust = Number(row.trust || 0)
+  const aff = bond >= 6 ? '很熟' : bond >= 2 ? '还行' : bond <= -4 ? '别扭' : (trust <= -4 ? '不太信' : '一般')
+  const affBadge = '<span class="badge' + (bond >= 6 ? ' cur' : bond <= -4 ? ' warn' : '') + '">亲近 ' + aff + (bond ? ' ' + bond.toFixed(1) : '') + '</span>'
   return '<div class="relcard"><div class="reltop"><div class="relname">' + escapeHtml(name) + ' ' + role + '</div>' +
     '<div class="reln">' + count + '</div></div>' +
+    '<div class="relsub">' + affBadge + '</div>' +
     '<div class="relbar"><i style="width:' + pct + '%"></i></div>' +
     '<div class="relsub">' + escapeHtml(relDayLabel(row.lastAt)) + '</div>' +
     (Object.keys(row.kinds || {}).length ? '<div class="memtags">' + relKindsHtml(row.kinds) + '</div>' : '') +

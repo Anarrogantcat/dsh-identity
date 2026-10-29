@@ -31,7 +31,7 @@ import { resolveSession, listChannels } from './lib/channel.js'
 import './lib/channel-qq.js'
 import { readMood, moodToneOf, moodSummary, moodBlock } from './lib/mood.js'
 import { readLocalMood } from './lib/moodlocal.js'
-import { bondAvg } from './lib/bond.js'
+import { bondAvg, bondOf } from './lib/bond.js'
 import { sessionTotals, sidForOneBot, sessionFile, pressureRatioOf } from './lib/usage.js'
 import { llmStats } from './lib/moodllm.js'
 import { knowledgeBlock, lastQueryOf, kbStats, listKbFiles, readKbFile, saveKbFile, deleteKbFile, kbNameForPeer, importKbFromPath } from './lib/knowledge.js'
@@ -712,7 +712,7 @@ export async function apply(ctx, config = {}) {
             const group = String(body.group ?? "")
             const pk = group ? peerKey("group", group) : ""
             const rel = modsRef?.relations
-            const rows = pk && rel?.relationsOf ? rel.relationsOf(pk, 50) : []
+            const rows = (pk && rel?.relationsOf ? rel.relationsOf(pk, 50) : []).map((r) => { const b = bondOf(pk, r.uid); return { ...r, bond: b.bond, trust: b.trust } })
             const graph = pk && rel?.relationGraph ? rel.relationGraph(pk, 12) : { nodes: [], edges: [] }
             return sendJson(res, 200, { ok: true, group, rows, graph })
           }
