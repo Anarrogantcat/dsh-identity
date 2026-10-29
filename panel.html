@@ -656,6 +656,12 @@ function renderSystemPage() {
       ${caps.length ? caps.map((c) => '<div class="row"><div class="meta"><div class="label">' + escapeHtml(c.id) + '</div><div class="hint">provider ' + escapeHtml(c.provider) + ' · 策略键 ' + escapeHtml(c.policyKey) + ' · 超时 ' + c.timeoutMs + 'ms</div></div></div>').join('') : '<div class="hint">暂无注册能力</div>'}
     </div>
     <div class="pcard">
+      <div class="label">可选能力（可见、可关）</div>
+      <div class="row"><div class="meta"><div class="label">群知识库</div><div class="hint">本地 markdown，命中才注入；关掉就不读</div></div><div class="ctl"><label class="switch"><input type="checkbox" id="optKnowledge" ${((STATE.config||{}).knowledge||{}).enabled !== false ? "checked" : ""}><i></i></label></div></div>
+      <div class="row"><div class="meta"><div class="label">B站推送</div><div class="hint">动态轮询与群推送；关掉定时器就不动</div></div><div class="ctl"><label class="switch"><input type="checkbox" id="optBili" ${(((STATE.config||{}).bili||{}).pushEnabled) ? "checked" : ""}><i></i></label></div></div>
+      <div class="row"><div class="meta"><div class="label">赛程查询</div><div class="hint">LPL/LCK 等赛程拉取；关掉不查</div></div><div class="ctl"><label class="switch"><input type="checkbox" id="optEsports" ${((STATE.config||{}).esports||{}).enabled !== false ? "checked" : ""}><i></i></label></div></div>
+    </div>
+    <div class="pcard">
       <div class="label">MCP 服务器（默认关）</div>
       <div class="hint">只连你显式列出的 HTTP 服务器；工具输出当不可信文本。一行一个 JSON：{"id":"phone","url":"http://127.0.0.1:9000/mcp","token":"","enabled":true}</div>
       <label class="switch" style="margin:8px 0"><input type="checkbox" id="mcpEnabled" ${mcp.enabled ? 'checked' : ''}><i></i></label>
@@ -676,6 +682,10 @@ function renderSystemPage() {
       if (msg) msg.textContent = '已保存'
     } catch (e) { if (msg) msg.textContent = '失败：' + e.message }
   }
+  ;[['optKnowledge','knowledge.enabled'],['optBili','bili.pushEnabled'],['optEsports','esports.enabled']].forEach(([id, key]) => {
+    const cb = el.querySelector('#' + id)
+    if (cb) cb.onchange = async () => { try { await saveKey(key, !!cb.checked) } catch (e) { cb.checked = !cb.checked } }
+  })
 }
 
 function behaviorCardHtml() {
