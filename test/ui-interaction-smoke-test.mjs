@@ -28,7 +28,7 @@ const base = {
   memoryPage: { diary: [], reflections: [], memory: [] }, roles: {}, recentPeers: [],
 }
 
-const tabs = [['overview', null], ['identity', null], ['memory', null], ['proactive', null], ['privacy', null], ['usage', null], ['sticker', null], ['draw', null], ['voice', null], ['qq', null], ['scope', null], ['channel', null], ['order', null], ['freq', null], ['system', null], ['cognition', 'mood'], ['cognition', 'profile'], ['cognition', 'memory'], ['cognition', 'relations']]
+const tabs = [['overview', null], ['identity', null], ['memory', null], ['proactive', null], ['privacy', null], ['usage', null], ['sticker', null], ['draw', null], ['voice', null], ['bili', null], ['qq', null], ['scope', null], ['channel', null], ['order', null], ['freq', null], ['system', null], ['cognition', 'mood'], ['cognition', 'profile'], ['cognition', 'memory'], ['cognition', 'relations']]
 
 window.confirm = () => true
 window.alert = () => {}

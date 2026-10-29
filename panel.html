@@ -608,7 +608,7 @@ const TAB_GROUPS = [
   ['认知', ['cognition']],
   ['自主', ['proactive']],
   ['治理', ['privacy', 'usage']],
-  ['能力', ['sticker', 'draw', 'voice']],
+  ['能力', ['sticker', 'draw', 'voice', 'bili']],
   ['通道', ['qq']],
   ['系统', ['system']],
 ]
@@ -1131,7 +1131,7 @@ function renderPanel(){
     : ''
   const advanced = fields.filter((f) => !isCommon(f.k))
   const advancedHtml = advanced.map((f) => fieldRow(f, q ? tabName(f.tab) : '')).join('')
-  const PAGE_DESC = {"privacy":"谁能看到、记住什么、怎么脱敏；先看规则再看字段。","usage":"花了多少 token / 钱、限额怎么降级、哪些调用被记了账。","sticker":"表情包从哪来、什么时候发、发多快。","draw":"生图开不开、底子怎么套、要不要先确认。","voice":"语音怎么合成、用哪个声线、发不发得出去。","knowledge":"本地资料命中才注入，按群共享或单群。"}
+  const PAGE_DESC = {"privacy":"谁能看到、记住什么、怎么脱敏；先看规则再看字段。","usage":"花了多少 token / 钱、限额怎么降级、哪些调用被记了账。","sticker":"表情包从哪来、什么时候发、发多快。","draw":"生图开不开、底子怎么套、要不要先确认。","voice":"语音怎么合成、用哪个声线、发不发得出去。","bili":"B站链接解析、UP 订阅推送、视频体积预算；浏览/搜索用聊天里的 #B站 命令。","knowledge":"本地资料命中才注入，按群共享或单群。"}
   const headTitle = tabName(VIEW)
   const headDesc = PAGE_DESC[VIEW] || '这一页的设置项；改完点右下角保存。'
 
