@@ -535,7 +535,7 @@ main > .panel,main > .pcard{animation:rise .22s ease-out both}
 </aside>
 <div class="content">
 <header>
-  <h1>🐟 身份系统 <span class="tag" id="stage">v0.5.0</span> <span class="tag" style="opacity:.7">UI build 2026-10-29b</span></h1>
+  <h1>🐟 身份系统 <span class="tag" id="stage">v?</span> <span class="tag" style="opacity:.7">UI build 2026-10-29b</span></h1>
   <div class="chips" id="chips"></div>
   <button id="updateBtn" title="检查更新" style="position:absolute;right:128px;top:18px;font-size:12px;padding:4px 10px">⟳ 检查更新</button>
   <button id="glassBtn" style="position:absolute;right:22px;top:18px;font-size:12px;padding:4px 10px">🫧 毛玻璃</button>
@@ -1412,6 +1412,12 @@ function fieldRow(f, tabLabel) {
 }
 
 async function load(){
+  try { return await loadImpl() } catch (e) {
+    try { document.getElementById('msg').textContent = '读取失败：' + String((e && e.message) || e) + '（3 秒后重试）' } catch (_) {}
+    setTimeout(function () { try { void load() } catch (_) {} }, 3000)
+  }
+}
+async function loadImpl(){
 
   const r = await fetch('/api/qqbot-refine/state')
   STATE = await r.json()
