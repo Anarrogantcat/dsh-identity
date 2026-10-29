@@ -940,6 +940,7 @@ function renderMoodPage(){
     (flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项：心情开关 / 注入 / 模型评估）</summary><div class="pcard">' + flds.map(function (f) { return fieldRow(f) }).join('') + '</div></details>' : '')
   bindFields(el)
   bindMoodCard()
+  attachCogNav()
 }
 function attachCogNav() {
   if (ACTIVE !== "cognition") return
@@ -2131,6 +2132,7 @@ function renderProfilePanel() {
       await loadProfile()
     }
   })
+  attachCogNav()
 }
 
 // ── 权限档位卡片（隐私页）──
