@@ -1755,13 +1755,20 @@ function freqPolicyCardHtml() {
     '<div class="qnote">判定先看她是不是在跟她说话、话题适不适合；阈值和词表在「高级设置」里。</div>' +
   '</div>'
 }
+function humanizeFreqCard() {
+  const f = (STATE.config && STATE.config.frequency) || {}
+  return '<div class="pcard"><div class="label">接话像不像人</div>' +
+    '<div class="hint">叫名字也回（不只在 @ 时回）；额度和冷却放宽到正常聊天够用，仍防刷屏。现在：' +
+    (f.naturalMode === true ? '自然' : '仅 @') + ' · 每人 ' + (f.perMinuteUser ?? 6) + '/分 · 群 ' + (f.perMinuteGroup ?? 10) + '/分 · 群冷却 ' + (f.cooldownGroupSec ?? 15) + ' 秒</div>' +
+    '<div class="pbtns" style="margin-top:10px;align-items:center"><button id="freqHumanize" class="primary">按“人一点”调</button><span class="hint">只放开接话，不放开刷屏</span></div></div>'
+}
 function renderFreqPage() {
   const el = $('panel')
   if (!el) return
   el.innerHTML = qqStatusCardHtml('接话策略') + freqPolicyCardHtml() + topicsCardHtml()
   bindQqStatus(el)
   try { renderGearCard() } catch (e) {}
-  el.insertAdjacentHTML('beforeend', advFieldsHtml('freq', '频率 / 冷却 / 判定阈值 / 拆条'))
+  el.insertAdjacentHTML('beforeend', humanizeFreqCard() + advFieldsHtml('freq', '频率 / 冷却 / 判定阈值 / 拆条'))
   bindFields(el)
   try { bindTabCards() } catch (e) {}
 }
