@@ -8,19 +8,33 @@ ENV = dict(os.environ, PYTHONPATH=str(ROOT) + ":/root/svs_deps:/root/rvc_deps")
 OUT = Path("/mnt/d/AI/DeepSeek Harness Workspace/dsh-qqbot-refine/_demo")
 OUT.mkdir(parents=True, exist_ok=True)
 
-def write_midi(path, lyrics, bpm=96):
+def write_midi(path, lyrics, bpm=120):
     import mido
-    melody=[60,62,64,65,67,65,64,62,60,64,67,72,71,67,64,60]
-    chars=[c for c in lyrics if c.strip()]
-    if not chars: raise SystemExit("empty lyrics")
-    mid=mido.MidiFile(ticks_per_beat=480)
-    tr=mido.MidiTrack(); mid.tracks.append(tr)
-    tr.append(mido.MetaMessage("set_tempo", tempo=int(60_000_000/bpm), time=0))
-    for i,ch in enumerate(chars):
-        n=melody[i%len(melody)]
-        tr.append(mido.MetaMessage("lyrics", text=ch.encode("utf8").decode("latin1"), time=0))
-        tr.append(mido.Message("note_on", note=n, velocity=90, time=0))
-        tr.append(mido.Message("note_off", note=n, velocity=0, time=480))
+    # 原创旋律：按短句分组，句内起承转合，句尾拉长，句间留气口
+    phrase_melodies = [
+        [60, 62, 64, 67, 65, 64, 62],
+        [60, 64, 67, 69, 67, 64, 60],
+        [62, 65, 69, 67, 65, 62, 60],
+        [60, 62, 64, 65, 67, 64, 60],
+    ]
+    phrases = [x for x in lyrics.replace("，", " ").replace("。", " ").replace("、", " ").split() if x.strip()]
+    if not phrases:
+        phrases = [lyrics]
+    mid = mido.MidiFile(ticks_per_beat=480)
+    tr = mido.MidiTrack(); mid.tracks.append(tr)
+    tr.append(mido.MetaMessage("set_tempo", tempo=int(60_000_000 / bpm), time=0))
+    tick = 0
+    for pi, ph in enumerate(phrases):
+        chars = [c for c in ph if c.strip()]
+        mel = phrase_melodies[pi % len(phrase_melodies)]
+        for i, ch in enumerate(chars):
+            n = mel[min(i, len(mel)-1)]
+            dur = 360 if i == len(chars)-1 else 240
+            tr.append(mido.MetaMessage("lyrics", text=ch.encode("utf8").decode("latin1"), time=0))
+            tr.append(mido.Message("note_on", note=n, velocity=88, time=0))
+            tr.append(mido.Message("note_off", note=n, velocity=0, time=dur))
+            tick += dur
+        tick += 240  # 句间气口
     mid.save(path)
 
 def main():
