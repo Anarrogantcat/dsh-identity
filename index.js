@@ -313,6 +313,7 @@ function contextSectionText(context) {
       try { const atm = atmosphereOf(peer.peerKey, (u) => { try { return profile.memberBrief(peer.peer, u)?.nick || u } catch { return u } }); if (atm) bits.push('现在的群：' + atm) } catch { /* ignore */ }
       try { const since = sinceLastSpoke(peer.peerKey); if (since) bits.push('你上次开口之后，群里又说：' + since) } catch { /* ignore */ }
       try { const sp = sponsorsText(8); if (sp) bits.push('赞助记录（只在被问起时照实说，别主动提）：' + sp) } catch { /* ignore */ }
+      try { const gm = listMemory('__global__').slice(0, 3); if (gm.length) bits.push('你私下记下的事（跨群也知道，但别在群里复述）：' + gm.map((x) => String(x.text || '').slice(0, 50)).join('；')) } catch { /* ignore */ }
       try { bits.push(cognitionText(mods, peer.peerKey, cfg)) } catch { /* ignore */ }
     }
     let body = bits.filter(Boolean).join('\n\n')
