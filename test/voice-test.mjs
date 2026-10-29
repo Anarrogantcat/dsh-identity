@@ -40,9 +40,10 @@ const srv = http.createServer((req, res) => {
   if (req.url === "/v1/jobs/j1/audio") { res.writeHead(200,{"content-type":"audio/wav"}); return res.end(wav) }
   res.writeHead(404); res.end("nope");
 });
-await new Promise((r) => srv.listen(9881, "127.0.0.1", r));
+await new Promise((r) => srv.listen(0, "127.0.0.1", r));
+const port = srv.address().port;
 
-const cfg = { baseUrl: "http://127.0.0.1:9881", apiKey: "test-key", voiceId:"feiyu", style:"cute", maxChars:120, pollTimeoutSec:15 };
+const cfg = { baseUrl: "http://127.0.0.1:" + port, apiKey: "test-key", voiceId:"feiyu", style:"cute", maxChars:120, pollTimeoutSec:15 };
 const out = await V.speakToFile(cfg, "你好呀，今天也要开心。", "voicetest");
 const ok = [];
 ok.push(["整条链路成功", out.ok === true]);
