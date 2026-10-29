@@ -209,7 +209,7 @@ function identitySectionText(context) {
         try {
           const v = lifeparams.values() || {}
           const pick = (k, label) => (v[k] == null ? '' : label + ' ' + Number(v[k]).toFixed(2))
-          const lp = [pick('active', '活跃'), pick('proactivity', '主动'), pick('patience', '耐心'), pick('curiosity', '好奇')].filter(Boolean).join(' · ')
+          const lp = [pick('active', '活跃'), pick('proactivity', '主动'), pick('patience', '耐心'), pick('curiosity', '好奇'), pick('verbosity', '话多'), pick('humor', '爱开玩笑'), pick('emoji', '表情')].filter(Boolean).join(' · ')
           if (lp) extra += '\n此刻的生活状态（只影响你的表达倾向）：' + lp
         } catch { /* ignore */ }
         if (extra.trim()) parts.push({ name: 'mood', text: extra.trim(), cap: 200 })
