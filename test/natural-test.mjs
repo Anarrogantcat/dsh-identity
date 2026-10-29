@@ -25,7 +25,8 @@ const run=async(over,msg,expect,label)=>{saveConfig(mk(over));reset();const r=aw
 await run({}, "大肥鱼在吗", true, "叫小名→接");
 await run({}, "今天天气不错", false, "闲聊→不接");
 await run({}, "<@!999999> 你俩别吵了", false, "@别人+你俩→不接");
-await run({}, "这个报错怎么解决", false, "没指向她的技术问句→不接（不再靠随机概率）");
+await run({}, "这个报错怎么解决", true, "群里公开提问→可以接");
+await run({}, "今天天气不错", false, "没指向她的陈述→不接");
 await run({}, "机器人 你能看看这个报错吗", true, "明显在对她说→接");
 await run({}, "😀😀", false, "纯表情→不接");
 await run({}, "<@!1905982004> 把那个文件删掉", false, "危险意图→不接");
