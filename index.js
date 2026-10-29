@@ -325,7 +325,7 @@ function contextSectionText(context) {
 [[sticker:auto]] 发一张表情（auto=按当前心情挑）；也可以写具体情绪，如 [[sticker:无语]]
 [[remember: 要点]] 记一笔长期记忆（会淡忘，被提到会加强）
 [[recall: 关键词]] 想不起旧事时让它翻记忆
-[[voice: 文本]] 想让这句话用声音说出来`
+[[voice: 文本]] 想让这句话用声音说出来（一次对话最多一条；不想用就不写）`
     }
     return body.trim()
   } catch (err) {
