@@ -564,7 +564,7 @@ export async function apply(ctx, config = {}) {
         text: contextSectionText,
         interpolate: false,
       }), 'qqbot-refine: context section')
-      try { audit('identity.inject', kernelSummary()) } catch { /* 审计失败不影响注入 */ }
+      try { audit('identity.inject', kernelSummary(Number(loadConfig().identity?.maxChars ?? 1400))) } catch { /* 审计失败不影响注入 */ }
     })
   }
 
