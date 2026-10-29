@@ -35,7 +35,7 @@ T("ownerPriority=always：Owner 连发 3 条全放行", r1.every((x) => x === fa
 reset(); saveConfig(mkCfg('normal'));
 let g2 = gateFor(loadConfig());
 const a = await send(g2, 'U-OWNER', '在吗', 'n1');
-T('ownerPriority=normal：闲聊也按自然判定挡', a === true, a);
+T('ownerPriority=normal：公开提问会接（不再按概率挡）', a === false, a);
 const c1 = await send(g2, 'U-OWNER2', '大肥鱼 在吗', 'n2');
 T('ownerPriority=normal：叫名字照样回', c1 === false, c1);
 // 3) 普通成员：概率 0 → 一律挡

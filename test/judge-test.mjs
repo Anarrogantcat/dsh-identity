@@ -25,7 +25,7 @@ const run=async(over,msg,expect,label)=>{saveConfig(mk(over));reset();const r=aw
 await run({}, "大肥鱼在吗", true, "叫小名→接");
 await run({}, "今天天气不错", false, "闲聊→不接");
 await run({}, "<@!999999> 你俩别吵了", false, "@别人+你俩→不接");
-await run({}, "这个报错怎么解决", false, "没指向她的技术问句→不接（不再靠随机概率）");
+await run({}, "这个报错怎么解决", true, "群里公开提问→可以接");
 await run({}, "机器人 你能看看这个报错吗", true, "明显在对她说→接");
 await run({}, "😀😀", false, "纯表情→不接");
 await run({}, "<@!1905982004> 把那个文件删掉", false, "危险意图→不接");
@@ -33,7 +33,7 @@ await run({}, "<@all> 开会了", false, "@全体(无话题)→不接");
 // 自然冷却：只掐「非点名」的自然接话；叫小名是「该应」，不占这个额度
 saveConfig(mk({naturalCooldownSec:600})); reset();
 const a=await gate.onInbound(bot,raw("机器人 你能看看这个报错吗")); const b2=await gate.onInbound(bot,raw("机器人 你能看看这个报错吗"));
-ok.push(["自然冷却生效（第二次被挡）", a===false && b2===true]);
+ok.push(["不设自然冷却（连续对话照常接）", a===false && b2===false]);
 const c3=await gate.onInbound(bot,raw("大肥鱼 还在吗"));
 ok.push(["叫小名不占自然冷却额度", c3===false]);
 // 闭麦

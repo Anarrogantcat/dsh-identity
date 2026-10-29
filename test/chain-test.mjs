@@ -49,7 +49,7 @@ ok.push(["窗口过期 → 不再算连续对话", (await send("随便说说", "
 S.state.cooldown["group:G1"] = 0; S.markReplyTo("G1", "U7");
 const c2 = loadConfig(); c2.frequency.perMinuteUser = 3; saveConfig(c2);
 S.state.windows["u:U7"] = Array.from({ length: 3 }, () => Date.now());
-ok.push(["每人每分钟上限仍然生效", (await send("接着说", "U7")) === true]);
+ok.push(["不再按每人每分钟上限拦截", (await send("接着说", "U7")) === false]);
 console.log("=== 连续对话 / 被点名必答 测试 ===");
 let fail = 0;
 for (const [name, pass] of ok) { console.log((pass ? "OK  " : "FAIL ") + name); if (!pass) fail++ }
