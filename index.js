@@ -65,6 +65,7 @@ import * as reflection from './lib/reflection.js'
 import { reflectDay as reflectDayOf, reflectDayLlm } from './lib/reflection.js'
 import { think as innerThink, innerHint } from './lib/inner.js'
 import { recentRaw } from './lib/timeline.js'
+import { atmosphereOf, sinceLastSpoke } from './lib/presence.js'
 import { PERM_LEVELS, levelOf } from './lib/permgear.js'
 import { currentVersion, latestCached, checkLatest, applyUpdate, pluginDirOf, isPnpmManaged, compareVersions, readCache } from './lib/update.js'
 
@@ -308,6 +309,8 @@ function contextSectionText(context) {
           } catch { /* ignore */ }
         }
       } catch { /* ignore */ }
+      try { const atm = atmosphereOf(peer.peerKey, (u) => { try { return profile.memberBrief(peer.peer, u)?.nick || u } catch { return u } }); if (atm) bits.push('现在的群：' + atm) } catch { /* ignore */ }
+      try { const since = sinceLastSpoke(peer.peerKey); if (since) bits.push('你上次开口之后，群里又说：' + since) } catch { /* ignore */ }
       try { bits.push(cognitionText(mods, peer.peerKey, cfg)) } catch { /* ignore */ }
     }
     let body = bits.filter(Boolean).join('\n\n')
