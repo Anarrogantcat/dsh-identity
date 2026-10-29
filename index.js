@@ -833,6 +833,7 @@ export async function apply(ctx, config = {}) {
           if (action === "recentEvents") {
             const g = String(body.group ?? "")
             if (!g) return sendJson(res, 200, { ok: false, error: "缺 group" })
+            if (!(loadConfig().scope?.groups ?? []).map(String).includes(g)) return sendJson(res, 200, { ok: false, error: "群不在白名单" })
             const pk = peerKey("group", g)
             const items = readEvents(pk).slice(-8).map((e) => ({ at: e.at, origin: e.origin, who: String(e.who ?? "").slice(0, 12), text: String(e.text ?? "").slice(0, 80), kind: e.kind }))
             return sendJson(res, 200, { ok: true, items })
