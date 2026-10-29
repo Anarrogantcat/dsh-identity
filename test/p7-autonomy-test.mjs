@@ -22,6 +22,7 @@ const ok = []
 const Aa = (n, p, d) => ok.push([n, !!p, d])
 const PK = peerKey('group', 'G1')
 const cfg = clone(DEFAULTS)
+cfg.autonomy = { ...cfg.autonomy, autoInternal: false }
 
 // 好奇：找没接住的问句
 {
@@ -71,6 +72,15 @@ const cfg = clone(DEFAULTS)
   Aa('已有目标后再提议不重复', r.created.length === 0 || A.listGoals({}).length <= 2, { before, after: A.listGoals({}).length })
 }
 
+// 内部动作自动批准
+{
+  const PK2 = peerKey('group', 'G2')
+  E.appendEvent(PK2, { kind: 'talk', origin: 'inbound', who: '小蓝', text: '那个报错到底怎么修？' })
+  const cfgAuto = clone(DEFAULTS)
+  cfgAuto.autonomy = { ...cfgAuto.autonomy, autoInternal: true }
+  const r = A.propose(PK2, { cfg: cfgAuto, limit: 2 })
+  Aa('内部动作可自动批准', r.created.length >= 1 && r.created.every((g) => g.status === 'approved' && g.auto === true), r.created)
+}
 console.log('=== P7 自主循环测试 ===')
 let fail = 0
 for (const [n, p, d] of ok) { console.log((p ? 'OK  ' : 'FAIL ') + n + (p ? '' : '   ' + JSON.stringify(d))); if (!p) fail++ }
