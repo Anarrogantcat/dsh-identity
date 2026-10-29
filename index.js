@@ -776,6 +776,21 @@ export async function apply(ctx, config = {}) {
             const r = await syncEsports(cfg, logger)
             return sendJson(res, 200, { ok: !!r.ok, result: { got: r.got || 0, kept: r.kept || 0, added: r.added || 0, source: r.source || "", errors: r.errors || [] }, error: r.ok ? "" : r.error })
           }
+          if (action === "biliLogin") {
+            try { const b = await import('./lib/bili-browser.js'); return sendJson(res, 200, await b.probeLogin()) } catch (e) { return sendJson(res, 200, { ok: false, error: String(e?.message ?? e).slice(0, 80) }) }
+          }
+          if (action === "voiceTest") {
+            try {
+              const V = await import('./lib/voice.js')
+              const vc = V.voiceConfig(loadConfig())
+              if (!vc.enabled) return sendJson(res, 200, { ok: false, error: '语音没开' })
+              const r = await V.synthesize(vc, String(body.text ?? '你好呀，我是大肥鱼。').slice(0, 60))
+              return sendJson(res, 200, { ok: true, wav: r.wav.toString('base64') })
+            } catch (e) { return sendJson(res, 200, { ok: false, error: String(e?.message ?? e).slice(0, 100) }) }
+          }
+          if (action === "drawPing") {
+            try { const D = await import('./lib/draw.js'); return sendJson(res, 200, await D.pingComfy(loadConfig())) } catch (e) { return sendJson(res, 200, { ok: false, error: String(e?.message ?? e).slice(0, 80) }) }
+          }
           if (action === "voiceStatus") {
             const probe = await probeVoice(cfg)
             globalThis.__qqrefineVoiceProbe = probe

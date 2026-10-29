@@ -31,7 +31,7 @@ const base = {
 const tabs = [
   ['overview', null], ['identity', null], ['memory', null], ['proactive', null],
   ['privacy', null], ['usage', null], ['sticker', null], ['draw', null], ['voice', null], ['bili', null],
-  ['qq', null], ['scope', null], ['channel', null], ['order', null], ['freq', null],
+  ['about', null], ['cognition', 'knowledge'], ['qq', null], ['scope', null], ['channel', null], ['order', null], ['freq', null],
   ['system', null],
   ['cognition', 'mood'], ['cognition', 'profile'], ['cognition', 'memory'], ['cognition', 'relations'],
 ]
