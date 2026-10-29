@@ -62,6 +62,7 @@ import * as lifeparams from './lib/lifeparams.js'
 import * as growth from './lib/growth.js'
 import { listPromises, closePromise } from './lib/promises.js'
 import * as reflection from './lib/reflection.js'
+import { reflectDay as reflectDayOf } from './lib/reflection.js'
 import { PERM_LEVELS, levelOf } from './lib/permgear.js'
 import { currentVersion, latestCached, checkLatest, applyUpdate, pluginDirOf, isPnpmManaged, compareVersions, readCache } from './lib/update.js'
 
@@ -934,6 +935,7 @@ export async function apply(ctx, config = {}) {
             const pk = peerKey('group', String(g))
             const d = diaryGenerate(pk)
             if (d?.ok && !d.skipped) audit('diary.generate', { peer: String(g).slice(0, 8), lines: (d.lines || []).length })
+            try { reflectDayOf(pk) } catch { /* ignore */ }
           } catch { /* ignore */ }
         }
       } catch { /* ignore */ }
