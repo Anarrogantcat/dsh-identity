@@ -272,6 +272,8 @@ function contextSectionText(context) {
       try { bits.push(cognitionText(mods, peer.peerKey, cfg)) } catch { /* ignore */ }
     }
     let body = bits.filter(Boolean).join('\n\n')
+    // 事实类硬规则：没有检索/数据就不许猜
+    body += '\n\n# 事实边界（比什么都重要）\n涉及比赛比分/赛果、新闻、实时信息，只有检索结果或明确资料时才能说；没有就说“没查到/不知道”，不许编队名、比分、胜负。'
     if (cfg.ui?.markers !== false) {
       body += `
 # 可用标记（只写标记，不要解释）
