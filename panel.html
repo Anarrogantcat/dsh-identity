@@ -765,6 +765,31 @@ function settingsHeroHtml(v) {
   if (v === 'privacy') { const rules = (cfg.privacy && Array.isArray(cfg.privacy.defaultRules)) ? cfg.privacy.defaultRules.length : 0; return hero('隐私', (cfg.privacy && cfg.privacy.enabled === false) ? '关了' : '开着', '默认规则 ' + rules + ' 条 · 入站和记忆都按这套脱敏') }
   return ''
 }
+let __chatTimer = null
+async function loadRecentChat() {
+  const box = document.getElementById('recentChat')
+  if (!box) return
+  const groups = ((STATE.config && STATE.config.scope && STATE.config.scope.groups) || [])
+  const g = groups[0] || ''
+  if (!g) { box.innerHTML = '<div class="hint">还没有白名单群</div>'; return }
+  try {
+    const j = await pfetch({ action: 'recentEvents', group: String(g) })
+    const items = (j && j.ok && Array.isArray(j.items)) ? j.items : []
+    box.innerHTML = items.length ? items.slice(-6).map((e) => {
+      const t = e.at ? new Date(e.at).toLocaleTimeString() : ''
+      const who = e.origin === 'bot' ? '她' : (e.who ? ('群友 ' + String(e.who).slice(-6)) : '群友')
+      return '<div class="wlrow"><div class="qmeta" style="flex:none;min-width:92px">' + escapeHtml(t + ' ' + who) + '</div><div style="min-width:0">' + escapeHtml(String(e.text || '').slice(0, 80)) + '</div></div>'
+    }).join('') : '<div class="hint">今天还没有对话</div>'
+  } catch (e) { box.innerHTML = '<div class="hint">读取失败：' + escapeHtml(String(e.message || e)) + '</div>' }
+}
+function armChatPoll() {
+  try { clearInterval(__chatTimer) } catch (e) {}
+  const groups = ((STATE.config && STATE.config.scope && STATE.config.scope.groups) || [])
+  if (!groups.length) return
+  void loadRecentChat()
+  __chatTimer = setInterval(() => { try { if (document.visibilityState === 'visible') void loadRecentChat() } catch (e) {} }, 5000)
+}
+
 function renderOverview() {
   const el = $('panel')
   const id = STATE.identity || {}
@@ -807,7 +832,9 @@ function renderOverview() {
       ${card('最近复盘', (rf.week ? ('群 ' + rf.week.inbound + ' / 我 ' + rf.week.mine + ' 句') : '暂无'), '只吃事件、不读日记', 'identity')}
       ${card('成长指标', growthTxt, '观察期：≥3 次证据 + 跨 ≥2 天', 'identity')}
     </div>`
+  el.insertAdjacentHTML('beforeend', '<div class="pcard"><div class="label">最近对话 <span class="badge">实时 · 5 秒</span></div><div id="recentChat"><div class="hint">读取中…</div></div></div>')
   ;[...el.querySelectorAll('[data-goto]')].forEach((b) => { b.onclick = () => goTab(b.dataset.goto) })
+  armChatPoll()
 }
 
 function learnCardHtml(){

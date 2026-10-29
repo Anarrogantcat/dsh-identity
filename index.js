@@ -830,6 +830,13 @@ export async function apply(ctx, config = {}) {
           }
           if (action === "traitRetire") return sendJson(res, 200, traits.retireTrait(String(body.id ?? ""), "owner"))
           if (action === "traitPromote") return sendJson(res, 200, traits.promoteTrait(String(body.id ?? "")))
+          if (action === "recentEvents") {
+            const g = String(body.group ?? "")
+            if (!g) return sendJson(res, 200, { ok: false, error: "缺 group" })
+            const pk = peerKey("group", g)
+            const items = readEvents(pk).slice(-8).map((e) => ({ at: e.at, origin: e.origin, who: String(e.who ?? "").slice(0, 12), text: String(e.text ?? "").slice(0, 80), kind: e.kind }))
+            return sendJson(res, 200, { ok: true, items })
+          }
           if (action === "promiseClose") return sendJson(res, 200, closePromise(String(body.id ?? ""), String(body.how ?? "done")))
           if (action === "promiseList") return sendJson(res, 200, { ok: true, items: listPromises({ status: String(body.status ?? "") }).slice(0, 50) })
           if (action === "reflectionDays") return sendJson(res, 200, { ok: true, days: reflection.listReflections(String(body.peerKey ?? ""), 7), week: reflection.weekSummary(String(body.peerKey ?? "")) })
