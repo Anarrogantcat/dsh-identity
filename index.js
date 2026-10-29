@@ -54,7 +54,7 @@ import { resumeStats } from './lib/resume.js'
 import { installSessionGrowth } from './lib/webgrowth.js'
 import { listCapabilities } from './lib/caprun.js'
 import './lib/caps-default.js'
-import { diaryHint, listDiary, generate as diaryGenerate } from './lib/diary.js'
+import { diaryHint, listDiary, generate as diaryGenerate, generateLlm as diaryGenerateLlm } from './lib/diary.js'
 import * as moodv2 from './lib/moodv2.js'
 import * as autonomy from './lib/autonomy.js'
 import * as anti8gu from './lib/anti8gu.js'
@@ -62,7 +62,9 @@ import * as lifeparams from './lib/lifeparams.js'
 import * as growth from './lib/growth.js'
 import { listPromises, closePromise } from './lib/promises.js'
 import * as reflection from './lib/reflection.js'
-import { reflectDay as reflectDayOf } from './lib/reflection.js'
+import { reflectDay as reflectDayOf, reflectDayLlm } from './lib/reflection.js'
+import { think as innerThink, innerHint } from './lib/inner.js'
+import { recentRaw } from './lib/timeline.js'
 import { PERM_LEVELS, levelOf } from './lib/permgear.js'
 import { currentVersion, latestCached, checkLatest, applyUpdate, pluginDirOf, isPnpmManaged, compareVersions, readCache } from './lib/update.js'
 
@@ -398,6 +400,7 @@ function snapshot() {
     resume: (() => { try { return resumeStats() } catch { return null } })(),
     channels: (() => { try { return listChannels() } catch { return null } })(),
     capabilitiesList: (() => { try { return listCapabilities() } catch { return null } })(),
+    inner: (() => { try { const g = (loadConfig()?.scope?.groups ?? [])[0]; return g ? innerHint(peerKey('group', String(g))) : '' } catch { return '' } })(),
     promises: (() => { try { return listPromises({ status: 'open' }).slice(0, 20) } catch { return [] } })(),
     reflection: (() => {
       try {
@@ -927,15 +930,15 @@ export async function apply(ctx, config = {}) {
 
   // 每日日记：22:00 给每个白名单群写一份（本地规则，0 token；22 点后重启会补当天）
   {
-    const writeDiaries = () => {
+    const writeDiaries = async () => {
       try {
         const cfg = loadConfig()
         for (const g of cfg?.scope?.groups ?? []) {
           try {
             const pk = peerKey('group', String(g))
-            const d = diaryGenerate(pk)
+            const d = await diaryGenerateLlm(pk, cfg, llmRef)
             if (d?.ok && !d.skipped) audit('diary.generate', { peer: String(g).slice(0, 8), lines: (d.lines || []).length })
-            try { reflectDayOf(pk) } catch { /* ignore */ }
+            try { await reflectDayLlm(pk, cfg, llmRef) } catch { /* ignore */ }
           } catch { /* ignore */ }
         }
       } catch { /* ignore */ }
@@ -953,8 +956,30 @@ export async function apply(ctx, config = {}) {
     }
     const tD = setInterval(diaryTick, 60 * 1000)
     tD.unref?.()
-    setTimeout(() => { try { if (new Date().getHours() >= 22) writeDiaries() } catch { /* ignore */ } }, 30000).unref?.()
+    setTimeout(() => { try { if (new Date().getHours() >= 22) void writeDiaries() } catch { /* ignore */ } }, 30000).unref?.()
     ctx.effect?.(() => () => { clearInterval(tD) }, 'qqbot-refine: diary')
+
+  // 内心活动：每 90 分钟，对最近 3 小时有活动的群，写一句不发出去的念头
+  {
+    const tickInner = async () => {
+      try {
+        const cfg = loadConfig()
+        for (const g of cfg?.scope?.groups ?? []) {
+          try {
+            const pk = peerKey('group', String(g))
+            const evs = readEvents(pk)
+            const last = evs[evs.length - 1]
+            if (!last || Date.now() - Date.parse(last.at || 0) > 3 * 3600 * 1000) continue
+            await innerThink(pk, cfg, llmRef)
+          } catch { /* ignore */ }
+        }
+      } catch { /* ignore */ }
+    }
+    const tI = setInterval(() => { void tickInner() }, 90 * 60 * 1000)
+    tI.unref?.()
+    setTimeout(() => { void tickInner() }, 5 * 60 * 1000).unref?.()
+    ctx.effect?.(() => () => { clearInterval(tI) }, 'qqbot-refine: inner')
+  }
   }
 
   // 用量采样：每 5 分钟把增量记进「峰/谷」桶（历史无法回溯，从现在开始准）
