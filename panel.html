@@ -951,8 +951,8 @@ function relCardHtml(row, max) {
   const affColor = bond < 0 ? 'linear-gradient(90deg,#ff6b6b,#f0b34a)' : 'linear-gradient(90deg,#35d6c9,#8b7bff)'
   const affBadge = '<span class="badge' + (bond >= 6 ? ' cur' : bond <= -4 ? ' warn' : '') + '">' + aff + (bond ? ' ' + bond.toFixed(1) : '') + '</span>'
   return '<div class="relcard"><div class="reltop"><div class="relname">' + escapeHtml(name) + ' ' + role + '</div>' +
-    '<div class="reln">' + count + '</div></div>' +
-    '<div class="relsub">' + affBadge + '</div>' +
+    '<div class="reln" style="color:' + (bond < 0 ? 'var(--bad)' : bond >= 2 ? 'var(--ok)' : 'var(--fg)') + '">' + (bond > 0 ? '+' : '') + bond.toFixed(1) + '</div></div>' +
+    '<div class="relsub">' + affBadge + ' <span class="hint">' + count + ' 条 · ' + escapeHtml(relDayLabel(row.lastAt)) + '</span></div>' +
     '<div class="relbar"><i style="width:' + affPct + '%;background:' + affColor + '"></i></div>' +
     '<div class="relsub">' + escapeHtml(relDayLabel(row.lastAt)) + '</div>' +
     (Object.keys(row.kinds || {}).length ? '<div class="memtags">' + relKindsHtml(row.kinds) + '</div>' : '') +
