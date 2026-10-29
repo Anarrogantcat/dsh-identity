@@ -16,7 +16,7 @@ const hook = ';window.__ui = { setState: (s) => { STATE = s }, setActive: (a) =>
 window.eval(script + hook)
 
 const base = {
-  ok: true, version: '1.1.0', configPath: 'x', configPathExists: true,
+  ok: true, version: '1.2.0', configPath: 'x', configPathExists: true,
   config: { identity: {}, roles: { owners: [], admins: [] }, scope: { groups: [], dmUsers: [] }, tools: {}, mcp: { enabled: false, servers: [] }, frequency: {}, integration: {}, ui: {} },
   tabs: [['overview', '总览']],
   fields: [{ k: 'frequency.x', t: 'bool', l: '测试开关', tab: 'privacy' }],
