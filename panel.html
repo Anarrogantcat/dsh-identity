@@ -3083,7 +3083,7 @@ function voiceStatusCardHtml() {
       chip('唱歌', singOk === null ? '未探测' : (singOk ? '可用' : '未装好'), '') +
       chip('转写', stt.enabled === true ? (String(stt.command || '').trim() ? '开' : '开但没命令') : '关', '') +
     '</div>' +
-    '<div class="hint">' + escapeHtml(lastTxt) + (pr && pr.error ? (' · 探测：' + escapeHtml(pr.error)) : '') + '</div>' +
+    '<div class="hint">' + escapeHtml(lastTxt) + (pr && pr.error ? (' · 探测：' + escapeHtml(pr.error)) : '') + (pr && pr.ok === false ? ' · 服务空闲 10 分钟会自动退出，发 #语音 会重新拉起' : '') + '</div>' +
     (caps ? '<details class="adv" style="margin-top:6px"><summary>能力原文</summary><div class="pv" style="max-height:180px">' + escapeHtml(JSON.stringify(caps)) + '</div></details>' : '') +
   '</div>'
 }
