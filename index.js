@@ -943,6 +943,7 @@ export async function apply(ctx, config = {}) {
           try {
             const pk = peerKey('group', String(g))
             const d = await diaryGenerateLlm(pk, cfg, llmRef)
+            try { if (d?.ok && !d.skipped) moodv2.event('diary', (d.lines || []).join(' ')) } catch { /* ignore */ }
             if (d?.ok && !d.skipped) audit('diary.generate', { peer: String(g).slice(0, 8), lines: (d.lines || []).length })
             try { await reflectDayLlm(pk, cfg, llmRef) } catch { /* ignore */ }
           } catch { /* ignore */ }
