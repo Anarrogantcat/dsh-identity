@@ -32,6 +32,7 @@ import './lib/channel-qq.js'
 import { readMood, moodToneOf, moodSummary, moodBlock } from './lib/mood.js'
 import { readLocalMood } from './lib/moodlocal.js'
 import { bondAvg, bondOf } from './lib/bond.js'
+import { readEvents } from './lib/events.js'
 import { sessionTotals, sidForOneBot, sessionFile, pressureRatioOf } from './lib/usage.js'
 import { llmStats } from './lib/moodllm.js'
 import { knowledgeBlock, lastQueryOf, kbStats, listKbFiles, readKbFile, saveKbFile, deleteKbFile, kbNameForPeer, importKbFromPath } from './lib/knowledge.js'
@@ -269,6 +270,22 @@ function contextSectionText(context) {
         try { const q = lastQueryOf(peer.peerKey); if (q) bits.push(knowledgeBlock(q, peer.peerKey, { top: 2 })) } catch { /* ignore */ }
       }
       try { bits.push(topicBlock(peer.peerKey)) } catch { /* ignore */ }
+      // 具体回调：从旧记忆里挑一件，允许她顺口提一句（不强制）
+      try {
+        const mems = listMemory(peer.peerKey).filter((m) => m && String(m.text || '').trim().length >= 6)
+        const old = mems.filter((m) => { const t = Date.parse(m.at || m.lastAt || 0); return t && Date.now() - t > 86400000 })
+        if (old.length) bits.push('（上次聊到过：' + String(old[0].text).slice(0, 40) + '；合适就顺口提一句，不合适别提。）')
+      } catch { /* ignore */ }
+      // 关系差异：对刚才说话的人，熟就随意点，别扭就别贴
+      try {
+        const evs = readEvents(peer.peerKey)
+        const lastIn = [...evs].reverse().find((e) => e && e.origin === 'inbound' && e.who)
+        if (lastIn && lastIn.who) {
+          const b = bondOf(peer.peer ?? '', lastIn.who)
+          if (b.bond >= 2) bits.push('跟刚才那个人算熟，可以随意点、损两句别过界。')
+          else if (b.bond <= -4) bits.push('跟刚才那个人有点别扭，别主动贴上去。')
+        }
+      } catch { /* ignore */ }
       try { bits.push(cognitionText(mods, peer.peerKey, cfg)) } catch { /* ignore */ }
     }
     let body = bits.filter(Boolean).join('\n\n')
