@@ -65,10 +65,12 @@ window.__ModuleLoader__.load({
     function mount() {
       if (document.getElementById('qqrefine-fab')) return
 
-      const style = document.createElement('style')
-      style.id = 'qqrefine-style'
-      style.textContent = CSS
-      document.head.appendChild(style)
+      if (!document.getElementById('qqrefine-style')) {
+        const style = document.createElement('style')
+        style.id = 'qqrefine-style'
+        style.textContent = CSS
+        document.head.appendChild(style)
+      }
 
       const fab = document.createElement('button')
       fab.id = 'qqrefine-fab'
@@ -221,6 +223,10 @@ window.__ModuleLoader__.load({
         }
         if (document.readyState === 'complete' || document.readyState === 'interactive') setTimeout(start, 300)
         else window.addEventListener('DOMContentLoaded', () => setTimeout(start, 300), { once: true })
+        // DSH 会重渲染壳层：按钮被冲掉就补回来
+        const watch = () => { try { if (!document.getElementById('qqrefine-fab')) mount() } catch { /* ignore */ } }
+        setInterval(watch, 4000)
+        try { new MutationObserver(watch).observe(document.body, { childList: true }) } catch { /* ignore */ }
       },
     }
   },
