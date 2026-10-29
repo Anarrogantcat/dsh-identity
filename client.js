@@ -11,7 +11,7 @@ window.__ModuleLoader__.load({
     const CSS = `
       /* v2：深海玻璃 + 青/紫点缀，和面板同一套语言 */
       #qqrefine-fab{position:fixed;left:0;top:0;z-index:2147483000;
-        width:46px;height:46px;border-radius:16px;border:1px solid rgba(53,214,201,.38);
+        width:46px;height:46px;border-radius:16px;border:1px solid rgba(53,214,201,.38);display:flex;align-items:center;justify-content:center;
         background:linear-gradient(150deg,rgba(17,27,43,.96),rgba(9,15,26,.96));color:#eafffb;cursor:grab;
         box-shadow:0 10px 28px rgba(0,0,0,.45),inset 0 0 0 1px rgba(139,123,255,.12);
         font-size:21px;line-height:44px;text-align:center;
@@ -73,7 +73,15 @@ window.__ModuleLoader__.load({
       const fab = document.createElement('button')
       fab.id = 'qqrefine-fab'
       fab.title = '大肥鱼 · 身份系统（控制面板）\n拖动可以挪位置，双击标题栏没用的那种（笑）'
-      fab.textContent = '🐟'
+      fab.innerHTML = `<svg viewBox="0 0 48 48" width="30" height="30" aria-hidden="true" fill="none">
+        <defs><linearGradient id="qwg" x1="8" y1="8" x2="40" y2="42"><stop stop-color="#8fe0ff"/><stop offset="1" stop-color="#3d7dff"/></linearGradient></defs>
+        <path d="M9 27c0-8 6-13 15-13 6 0 10 3 12 7l7-5v10c0 9-8 14-18 14S9 36 9 27z" fill="url(#qwg)"/>
+        <path d="M33 19c2-5 7-7 11-5" stroke="#c9ecff" stroke-width="2.4" stroke-linecap="round"/>
+        <path d="M11 24c-4 0-6 2-7 5" stroke="#c9ecff" stroke-width="2.2" stroke-linecap="round"/>
+        <circle cx="19" cy="26" r="1.9" fill="#0b1626"/>
+        <circle cx="18.3" cy="25.4" r=".6" fill="#eaf7ff"/>
+        <path d="M27 34c2 2 5 3 8 2" stroke="#e6f6ff" stroke-opacity=".75" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>`
       fab.addEventListener('dragstart', (e) => e.preventDefault())
       document.body.appendChild(fab)
 
