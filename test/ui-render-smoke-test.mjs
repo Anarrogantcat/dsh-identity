@@ -44,6 +44,8 @@ for (const [tab, cog] of tabs) {
     if (cog) window.__ui.setCog(cog)
     window.__ui.renderPanel()
     const panel = window.document.getElementById('panel')
+  const cogNavs = panel ? panel.querySelectorAll('.cog-nav').length : 0
+  if (cogNavs > 1) fails.push('cog-nav 重复 ' + tab + ' x' + cogNavs)
     const out = panel ? String(panel.innerHTML || '') : ''
     if (!out.trim()) throw new Error('空白')
     if (/undefined|NaN/.test(out)) throw new Error('输出含 undefined/NaN')
