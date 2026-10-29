@@ -686,7 +686,12 @@ function behaviorCardHtml() {
   const goals = Array.isArray(au.goals) ? au.goals : []
   const vals = lp.values || {}
   const keys = ['active', 'proactivity', 'curiosity', 'patience', 'tease', 'shy', 'grumpy']
-  return `<div class="pcard"><div class="label">此刻状态</div><div class="hint">心情：${escapeHtml(blends)} · 目标：${goals.length} 个（待批 ${(au.by && au.by.proposed) || 0} / 已批 ${(au.by && au.by.approved) || 0}）</div></div>
+  const pc = (STATE.config && STATE.config.proactive) || {}
+  return `<div class="pcard"><div class="label">她什么时候会开口</div>
+    <div class="hint">只在这三种情况：答应的事逾期没做完 · 你批准过的目标要推进 · 刚才的话题她还没接完。没理由就不说话，心情差会否决。</div>
+    <div class="pbtns" style="margin-top:10px;align-items:center"><button id="proHumanize" class="primary">按“人一点”调</button><span class="hint">现在：安静 ${escapeHtml(String(pc.silentMinutes ?? 12))} 分 / 间隔 ${escapeHtml(String(pc.minGapMinutes ?? 45))} 分</span></div>
+  </div>
+  <div class="pcard"><div class="label">此刻状态</div><div class="hint">心情：${escapeHtml(blends)} · 目标：${goals.length} 个（待批 ${(au.by && au.by.proposed) || 0} / 已批 ${(au.by && au.by.approved) || 0}）</div></div>
   <div class="pcard"><div class="label">生活参数</div>${keys.filter((k) => k in vals).map((k) => '<div class="row"><div class="meta"><div class="label">' + k + '</div></div><div class="ctl"><span class="hint">' + vals[k] + '</span></div></div>').join('')}</div>`
 }
 function renderMemoryPage() {
