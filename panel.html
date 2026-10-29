@@ -1966,8 +1966,8 @@ function usageCardHtml() {
       '<div class="kcell"><span class="k">图库</span><span class="v">' + stickerN + ' 张</span></div>' +
     '</div>' +
     (rows ? '<div class="muted" style="margin-top:10px;font-size:12px">峰谷分两套价：高峰（工作日 9-12、14-18）按上面的「高峰单价」；其余时段按「空闲单价」（没填就按谷时系数折算，默认半价）。搜索 ¥0.005/次（11-01 前免费）。峰谷明细从本次采样开始累计，与后台账单不符就调「校准系数」</div>' + (u.buckets ? '<div class="muted" style="font-size:12px">峰 ¥' + u.buckets.peakCost + '（' + Math.round((u.buckets.peak.input + u.buckets.peak.hit) / 1000) + 'k）· 谷 ¥' + u.buckets.offpeakCost + '（' + Math.round((u.buckets.offpeak.input + u.buckets.offpeak.hit) / 1000) + 'k，按空闲价）· 搜索 ' + u.buckets.search + ' 次 ¥' + u.buckets.searchCost + '</div>' : '') + '<div class="label" style="margin:12px 0 4px">按会话</div><div class="kgrid" style="grid-template-columns:1fr">' + rows + '</div>' : '') +
-    '<div class="label" style="margin:12px 0 4px">计数器（' + (t.mode === 'onebot' ? '自建通道' : '官方通道') + (ch.countsSince ? ' · 自 ' + new Date(ch.countsSince).toLocaleDateString() + ' 累计' : '') + '）</div>' +
-    '<div class="kgrid">' + counterHtml + '</div>' +
+    '<div class="label" style="margin:12px 0 4px">计数器（' + ((t.mode === 'onebot' ? '自建通道' : '官方通道') + ' · 自本次启动') + (ch.countsSince ? ' · 自 ' + new Date(ch.countsSince).toLocaleDateString() + ' 累计' : '') + '）</div>' +
+    '<div class="kgrid">' + counterHtml + '</div>' + '<div class="hint">只在内存里计数，重启后从 0 开始；历史看审计日志</div>' +
     '<div class="pbtns" style="margin-top:12px"><button id="uReset">重置计数</button><button id="uResetCost">重置花费闸</button><button id="uRoles">清角色缓存</button><span class="hint">花费闸开启后：超限会降级回模板 / 静默</span></div>' +
     '<div class="hint" id="uMsg" style="min-height:16px"></div>' +
   '</div>'
