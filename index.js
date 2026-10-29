@@ -206,6 +206,12 @@ function identitySectionText(context) {
             extra += '\n（刚才那句是「' + String(ml.lastBy).slice(0, 12) + '」说的——只影响你这一下的情绪，别把原话学出去。）'
           }
         } catch { /* ignore */ }
+        try {
+          const v = lifeparams.values() || {}
+          const pick = (k, label) => (v[k] == null ? '' : label + ' ' + Number(v[k]).toFixed(2))
+          const lp = [pick('active', '活跃'), pick('proactivity', '主动'), pick('patience', '耐心'), pick('curiosity', '好奇')].filter(Boolean).join(' · ')
+          if (lp) extra += '\n此刻的生活状态（只影响你的表达倾向）：' + lp
+        } catch { /* ignore */ }
         if (extra.trim()) parts.push({ name: 'mood', text: extra.trim(), cap: 200 })
       } catch { /* ignore */ }
     }
