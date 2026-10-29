@@ -54,7 +54,7 @@ import { resumeStats } from './lib/resume.js'
 import { installSessionGrowth } from './lib/webgrowth.js'
 import { listCapabilities } from './lib/caprun.js'
 import './lib/caps-default.js'
-import { diaryHint, listDiary } from './lib/diary.js'
+import { diaryHint, listDiary, generate as diaryGenerate } from './lib/diary.js'
 import * as moodv2 from './lib/moodv2.js'
 import * as autonomy from './lib/autonomy.js'
 import * as anti8gu from './lib/anti8gu.js'
@@ -907,6 +907,37 @@ export async function apply(ctx, config = {}) {
     t3.unref?.()
     setTimeout(() => { void daily() }, 30 * 1000).unref?.()
   ctx.effect?.(() => () => { clearInterval(t3) }, 'qqbot-refine: profile-daily')
+
+  // 每日日记：22:00 给每个白名单群写一份（本地规则，0 token；22 点后重启会补当天）
+  {
+    const writeDiaries = () => {
+      try {
+        const cfg = loadConfig()
+        for (const g of cfg?.scope?.groups ?? []) {
+          try {
+            const pk = peerKey('group', String(g))
+            const d = diaryGenerate(pk)
+            if (d?.ok && !d.skipped) audit('diary.generate', { peer: String(g).slice(0, 8), lines: (d.lines || []).length })
+          } catch { /* ignore */ }
+        }
+      } catch { /* ignore */ }
+    }
+    const diaryTick = () => {
+      try {
+        const now = new Date()
+        const hhmm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0')
+        if (hhmm !== '22:00') return
+        const day = now.toISOString().slice(0, 10)
+        if ((state['diary-day'] ?? '') === day) return
+        state['diary-day'] = day
+        writeDiaries()
+      } catch { /* ignore */ }
+    }
+    const tD = setInterval(diaryTick, 60 * 1000)
+    tD.unref?.()
+    setTimeout(() => { try { if (new Date().getHours() >= 22) writeDiaries() } catch { /* ignore */ } }, 30000).unref?.()
+    ctx.effect?.(() => () => { clearInterval(tD) }, 'qqbot-refine: diary')
+  }
 
   // 用量采样：每 5 分钟把增量记进「峰/谷」桶（历史无法回溯，从现在开始准）
   {
