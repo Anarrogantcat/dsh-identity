@@ -610,6 +610,7 @@ function renderChips(){
   const qqOk = !!(tp.channel && tp.channel.selfHosted) || tp.connected === true
   const base = (STATE.config && STATE.config.identity && STATE.config.identity.baseText) ? '自定义' : '内置内核';
   const durableN = Number((STATE.traits && STATE.traits.stats && STATE.traits.stats.durable) || 0)
+  const tentativeN = Number((STATE.traits && STATE.traits.stats && STATE.traits.stats.tentative) || 0)
   const blends = (mv.blends || []).join(' / ') || '平稳'
   const overdue = pr.filter((p) => p.overdue).length
   const chips = []
