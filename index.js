@@ -397,7 +397,7 @@ function snapshot() {
     resume: (() => { try { return resumeStats() } catch { return null } })(),
     channels: (() => { try { return listChannels() } catch { return null } })(),
     capabilitiesList: (() => { try { return listCapabilities() } catch { return null } })(),
-    promises: (() => { try { return listPromises({}).slice(0, 20) } catch { return [] } })(),
+    promises: (() => { try { return listPromises({ status: 'open' }).slice(0, 20) } catch { return [] } })(),
     reflection: (() => {
       try {
         const g = (loadConfig()?.scope?.groups ?? [])[0]
