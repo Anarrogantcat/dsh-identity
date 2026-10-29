@@ -712,7 +712,7 @@ export async function apply(ctx, config = {}) {
             const group = String(body.group ?? "")
             const pk = group ? peerKey("group", group) : ""
             const rel = modsRef?.relations
-            const rows = (pk && rel?.relationsOf ? rel.relationsOf(pk, 50) : []).map((r) => { const b = bondOf(pk, r.uid); return { ...r, bond: b.bond, trust: b.trust } })
+            const rows = (pk && rel?.relationsOf ? rel.relationsOf(pk, 50) : []).map((r) => { const b = bondOf(group, r.uid); return { ...r, bond: b.bond, trust: b.trust } })
             const graph = pk && rel?.relationGraph ? rel.relationGraph(pk, 12) : { nodes: [], edges: [] }
             return sendJson(res, 200, { ok: true, group, rows, graph })
           }
