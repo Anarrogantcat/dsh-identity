@@ -487,7 +487,7 @@ function snapshot() {
         const g = (loadConfig()?.scope?.groups ?? [])[0]
         if (!g) return null
         const pk = peerKey('group', String(g))
-        return { diary: listDiary(pk, 7), reflections: reflection.listReflections(pk, 7), memory: listMemory(pk).slice(0, 20) }
+        return { peerKey: pk, diary: listDiary(pk, 7), reflections: reflection.listReflections(pk, 7), memory: listMemory(pk).slice(0, 20) }
       } catch { return null }
     })(),
     growth: (() => { try { const g = (loadConfig()?.scope?.groups ?? [])[0]; return growth.growthMetrics(g ? peerKey('group', String(g)) : '') } catch { return null } })(),

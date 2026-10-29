@@ -832,7 +832,8 @@ function behaviorCardHtml() {
     <div class="pbtns" style="margin-top:10px;align-items:center"><button id="proHumanize" class="primary">按“人一点”调</button><span class="hint">现在：安静 ${escapeHtml(String(pc.silentMinutes ?? 12))} 分 / 间隔 ${escapeHtml(String(pc.minGapMinutes ?? 45))} 分</span></div>
   </div>
   <div class="pcard"><div class="label">此刻状态</div><div class="hint">心情：${escapeHtml(blends)} · 目标：${goals.length} 个（待批 ${(au.by && au.by.proposed) || 0} / 已批 ${(au.by && au.by.approved) || 0}）</div></div>
-  <div class="pcard"><div class="label">生活参数</div>${keys.filter((k) => k in vals).map((k) => '<div class="row"><div class="meta"><div class="label">' + k + '</div></div><div class="ctl"><span class="hint">' + vals[k] + '</span></div></div>').join('')}</div>`
+  <div class="pcard"><div class="label">生活参数</div>${keys.filter((k) => k in vals).map((k) => '<div class="row"><div class="meta"><div class="label">' + k + '</div></div><div class="ctl"><span class="hint">' + vals[k] + '</span></div></div>').join('')}</div>
+  <div class="pcard"><div class="label">目标 <span class="badge">${goals.length}</span></div>${goals.length ? goals.slice(0, 6).map((g) => '<div class="row"><div class="meta"><div class="label">' + escapeHtml(String(g.text || g.title || '').slice(0, 60)) + ' <span class="badge">' + escapeHtml(String(g.status || '')) + '</span></div><div class="hint">' + escapeHtml(String(g.why || g.reason || '').slice(0, 80)) + '</div></div></div>').join('') : '<div class="hint">还没有目标；她自己觉得该做的事会先提议。</div>'}</div>`
 }
 function renderMemoryPage() {
   const el = $('panel')
@@ -1237,16 +1238,24 @@ function renderAboutPage() {
     '<div class="pcard"><div class="label">安装 / 更新</div><div class="hint">dsh plugin --profile desktop add github:Anarrogantcat/dsh-identity</div><div class="hint">升级后重启 DSH；版本号按功能/修复递增。</div></div>'
 }
 
+function addPageHead(title, desc, chips) {
+  try {
+    const el = document.getElementById('panel')
+    if (!el || el.querySelector('.phead')) return
+    const side = (chips || []).filter(Boolean).map((c) => '<span class="chip">' + escapeHtml(String(c)) + '</span>').join('')
+    el.insertAdjacentHTML('afterbegin', '<div class="phead"><div class="phead-main"><div class="phead-title">' + escapeHtml(title) + '</div><div class="phead-desc">' + escapeHtml(desc || '') + '</div></div><div class="phead-side">' + side + '</div></div>')
+  } catch (e) {}
+}
 function renderPanel(){
   renderSubnav()
-  if (ACTIVE === "overview") { renderOverview(); return }
-  if (ACTIVE === "system") { renderSystemPage(); return }
+  if (ACTIVE === "overview") { renderOverview(); addPageHead('总览','她今天怎么样、在跟谁说话',[((STATE.traits&&STATE.traits.stats&&STATE.traits.stats.durable)||0)+' durable', ((STATE.traits&&STATE.traits.stats&&STATE.traits.stats.tentative)||0)+' 观察']); return }
+  if (ACTIVE === "system") { renderSystemPage(); addPageHead('系统','MCP 与可选能力；默认都关着',['v'+(STATE.version||'?')]); return }
   if (ACTIVE === "about") { renderAboutPage(); return }
   // §clear§ 每次渲染前先清空，避免自定义页用 append 时越切越长
   try { const _el = $("panel"); if (_el) _el.innerHTML = "" } catch {}
   const VIEW = ACTIVE === "cognition" ? COGSUB : ACTIVE
-  if (VIEW === "memory") { renderMemoryPage(); attachCogNav(); return }
-  if (VIEW === "proactive") { renderProactivePage(); return }
+  if (VIEW === "memory") { renderMemoryPage(); attachCogNav(); addPageHead('记忆','她记得的事、谁说的、什么时候',[((STATE.cognition&&STATE.cognition.memory&&STATE.cognition.memory.length)||0)+' 条']); return }
+  if (VIEW === "proactive") { renderProactivePage(); addPageHead('自主','她自己想做的事、卡在哪一步',[((STATE.goals&&STATE.goals.length)||0)+' 个目标']); return }
   if (VIEW === "identity") {
     const el = $("panel")
     const flds = (STATE.fields || []).filter((f) => f.tab === "identity")
@@ -1255,15 +1264,15 @@ function renderPanel(){
     bindIdentityCards(el)
     return
   }
-  if (VIEW === "mood") { renderMoodPage(); attachCogNav(); return }
-  if (VIEW === "profile") { renderProfilePanel(); attachCogNav(); return }
-  if (VIEW === "knowledge") { renderKbPanel(); attachCogNav(); return }
-  if (VIEW === "relations") { $("panel").innerHTML = cogRelationsHtml(); attachCogNav(); try { loadRelations() } catch (e) {} ; return }
-  if (ACTIVE === "scope") { renderScopeClaim(); return }
-  if (ACTIVE === "channel") { renderChannelPage(); return }
-  if (ACTIVE === "order") { renderOrderPage(); return }
-  if (ACTIVE === "freq") { renderFreqPage(); return }
-  if (ACTIVE === "matches") { renderMatchesPanel(); return }
+  if (VIEW === "mood") { renderMoodPage(); attachCogNav(); addPageHead('心情','七情六欲 + 复合情绪，只影响语气和主动性',[String((STATE.mood&&STATE.mood.label)||'平稳')]); return }
+  if (VIEW === "profile") { renderProfilePanel(); attachCogNav(); addPageHead('画像','群里谁是谁、怎么说话、对她什么态度',[((STATE.config&&STATE.config.scope&&STATE.config.scope.groups)||[]).length+' 个群']); return }
+  if (VIEW === "knowledge") { renderKbPanel(); attachCogNav(); addPageHead('知识','本地资料命中才注入；按群共享或单群',[]); return }
+  if (VIEW === "relations") { $("panel").innerHTML = cogRelationsHtml(); attachCogNav(); try { loadRelations() } catch (e) {} ; addPageHead('关系','谁跟她熟、谁让她别扭',[]); return }
+  if (ACTIVE === "scope") { renderScopeClaim(); addPageHead('白名单 / 名册','只在名单里的群和私聊才回；名册用于认人',[((STATE.config&&STATE.config.scope&&STATE.config.scope.groups)||[]).length+' 个群']); return }
+  if (ACTIVE === "channel") { renderChannelPage(); addPageHead('连接设置','OneBot / 官方通道、账号和回调',[]); return }
+  if (ACTIVE === "order") { renderOrderPage(); addPageHead('群管','闭麦、禁言、撤回、角色权限',[]); return }
+  if (ACTIVE === "freq") { renderFreqPage(); addPageHead('接话策略','她什么时候接、什么时候不接',[]); return }
+  if (ACTIVE === "matches") { renderMatchesPanel(); addPageHead('对局','电竞信息；只展示有来源的内容',[]); return }
 
   const el = $("panel")
   const q = (SEARCH || "").trim().toLowerCase()
