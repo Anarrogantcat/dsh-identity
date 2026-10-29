@@ -92,6 +92,24 @@ dsh plugin --profile desktop add file:C:\path\to\dsh-identity
 
 自动发评论没有做：B站评论区懒加载/风控，硬做有账号风险。每个用户各登录各的，不共享。
 
+## 语音（可选，小肥鱼声库）
+
+语音**不包含在本插件里**：音色和推理都在独立的「小肥鱼声音服务」，本插件只负责调它。
+
+1. 部署声音服务（任选一种）
+   - 仓库：`github.com/Esmerubphire/astrbot_plugin_feiyu_voice`
+   - 按 `server/INSTALL_AGENT.md` 安装；推荐 Windows + WSL2，NVIDIA 走 CUDA
+   - 首次安装会下载引擎、依赖和模型（体积大，需要显卡/磁盘）
+2. 启动服务，记下端口（默认 9880，本机当前是 9881）和它生成的 API Key
+3. 面板「语音」填：
+   - `baseUrl`：`http://127.0.0.1:9881`
+   - `apiKey`：服务端生成的 key
+   - `voiceId`：`feiyu`；`style`：`cute` / `gentle`
+4. 测试：群里 `#语音 你好呀`（或 `#说话 你好呀`）；成功会发语音
+5. 资源：服务常驻约数 GB 显存/内存，空闲 10 分钟自动退出；和本地生图共用显卡时，建议开 `draw.freeAfter`，别同时跑
+
+注意：每个用户各自部署、各自的 key 和模型；仓库不提供声库文件，也不要共享别人的服务地址。
+
 ## 测试
 
 ```bash
