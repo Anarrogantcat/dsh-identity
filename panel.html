@@ -1052,6 +1052,7 @@ function attachCogNav() {
   if (ACTIVE !== "cognition") return
   try {
     const el = $("panel")
+    ;[...el.querySelectorAll(".cog-nav")].forEach((n) => n.remove())
     el.insertAdjacentHTML("afterbegin", cogNavHtml())
     const cur = COG_SUB_TABS.find((x) => x[0] === COGSUB)
     const nom = $("cogname"); if (nom) nom.textContent = cur ? cur[1] : ""
