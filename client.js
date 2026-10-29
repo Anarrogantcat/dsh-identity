@@ -6,7 +6,7 @@
  * 面板本身仍是 loopback 页面，也可直接用浏览器打开同一路径。
  */
 window.__ModuleLoader__.load({
-  id: 'qqbot-refine',
+  id: 'dsh-identity',
   factory: () => {
     const CSS = `
       /* v2：深海玻璃 + 青/紫点缀，和面板同一套语言 */
