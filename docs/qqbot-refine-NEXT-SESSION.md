@@ -42,9 +42,9 @@
 | 角色 | 路径 |
 |---|---|
 | **项目目录（唯一开发处）** | `D:\AI\DeepSeek Harness Workspace\dsh-qqbot-refine`（git 仓库，最新 `6eb1be7`） |
-| 部署目录（DSH 加载） | `C:\Users\Ranmi\.dsh\plugins\dsh-qqbot-refine` |
+| 部署目录（DSH 加载） | `~\.dsh\plugins\dsh-qqbot-refine` |
 | 加载入口 | `profiles/desktop/node_modules/dsh-qqbot-refine`（junction → 部署目录） |
-| 数据 | `C:\Users\Ranmi\.dsh\storages\dsh-qqbot-refine`（settings.json / roster.json / usage*.json / bond.json / topics.json …） |
+| 数据 | `~\.dsh\storages\dsh-qqbot-refine`（settings.json / roster.json / usage*.json / bond.json / topics.json …） |
 | 充值码专用浏览器 | `storages\dsh-qqbot-refine\pay-browser`（登录态，别删）+ `scripts/pay-browser.ps1`（CDP 9333） |
 | 蓝图 | `docs/qqbot-refine-PLAN-FINAL.md` |
 | NapCat 开服方案 | `docs/napcat-ws-server-plan.md` |

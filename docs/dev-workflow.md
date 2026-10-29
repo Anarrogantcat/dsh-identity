@@ -8,7 +8,7 @@
 ## 0. 硬边界（先立规矩）
 
 1. **仓库是唯一开发处**：`D:\AI\DeepSeek Harness Workspace\dsh-qqbot-refine`
-2. **不实装到 DSH**：不跑 `scripts/sync-to-deploy.ps1`、不重启 DSH、不碰 `C:\Users\Ranmi\.dsh\plugins\dsh-qqbot-refine`
+2. **不实装到 DSH**：不跑 `scripts/sync-to-deploy.ps1`、不重启 DSH、不碰 `~\.dsh\plugins\dsh-qqbot-refine`
 3. 线上保持 0.11.2 不动；部署是**最后一步**，必须你明确说"可以上线"才做
 4. 方案文档（设计稿）不提交；代码/测试/流程文档可以提交
 5. 每轮只做一条竖切，**打通再下一条**
