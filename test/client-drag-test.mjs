@@ -69,7 +69,7 @@ const tick = () => new Promise((r) => setTimeout(r, 5))
 await new Promise((r) => setTimeout(r, 400))
 const fab = els.get('qqrefine-fab')
 const wrap = els.get('qqrefine-wrap')
-T("挂上了悬浮按钮", !!fab && fab.textContent === '🐟', !!fab)
+T("挂上了悬浮按钮", !!fab && /<svg/i.test(String(fab.innerHTML || '')), !!fab)
 T("默认位置在右下", fab.style['--x'] === (1200 - 46 - 18) + 'px' && fab.style['--y'] === (800 - 46 - 18) + 'px', [fab.style['--x'], fab.style['--y']])
 T("提示里写了可以拖", /拖/.test(fab.title), fab.title)
 
