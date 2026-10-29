@@ -12,7 +12,7 @@ window.fetch = () => new Promise(() => {})
 window.scrollTo = () => {}
 window.matchMedia = window.matchMedia || (() => ({ matches: false, addEventListener() {}, removeEventListener() {} }))
 const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)][0][1]
-const hook = ';window.__ui = { setState: (s) => { STATE = s }, setActive: (a) => { ACTIVE = a }, setCog: (c) => { COGSUB = c }, renderPanel, renderTabs, renderChips };'
+const hook = ';window.__ui = { setState: (s) => { STATE = s }, setActive: (a) => { ACTIVE = a }, setCog: (c) => { COGSUB = c }, renderPanel, renderTabs, renderChips, renderTopbar };'
 window.eval(script + hook)
 
 const base = {
@@ -40,6 +40,7 @@ for (const [tab, cog] of tabs) {
   try {
     window.__ui.setState(JSON.parse(JSON.stringify(base)))
     window.__ui.setActive(tab)
+  try { window.__ui.renderChips() } catch (e) { fails.push('renderChips 抛错 ' + tab + ': ' + e.message); continue }
     if (cog) window.__ui.setCog(cog)
     window.__ui.renderPanel()
     const panel = window.document.getElementById('panel')
