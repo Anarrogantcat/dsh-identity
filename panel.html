@@ -1290,7 +1290,8 @@ function identityCardHtml() {
   const tr = STATE.traits || {}
   const id = STATE.identity || {}
   const SELF_MARK_PANEL = /(我|本鱼)[^。！？]{0,8}(喜欢|习惯|讨厌|不会|总是|不爱|爱|怕|擅长|受不了|可以|不能|想|要)/
-  const items = (tr.items || []).filter((t) => t.status === 'durable' || t.kind !== 'self-say' || String(t.text || '').length >= 16 || SELF_MARK_PANEL.test(String(t.text || '')))
+  const isRealTrait = (t) => t.status === 'durable' || t.kind !== 'self-say' || (SELF_MARK_PANEL.test(String(t.text || '')) && !/[?？]\s*$/.test(String(t.text || '')) && !/(你|您|问|帮|需要|要不要|吗|呢)/.test(String(t.text || '')))
+  const items = (tr.items || []).filter(isRealTrait)
   const stats = tr.stats || {}
   const baseText = (cfg.identity && cfg.identity.baseText) || ''
   const promises = Array.isArray(STATE.promises) ? STATE.promises : []
@@ -1336,9 +1337,9 @@ function identityCardHtml() {
       </div>
     </div>
     <div class="pcard">
-      <div class="label">自我 traits <span class="badge">${stats.durable || 0} durable / ${stats.tentative || 0} tentative</span></div>
+      <div class="label">自我 traits <span class="badge">${items.filter((t) => t.status === "durable").length} durable / ${items.filter((t) => t.status !== "durable").length} tentative</span></div>
       <div class="hint">只有「≥3 次证据 + 跨 ≥2 天 + 不是纯情绪」才会进 durable 并注入语气；tentative 只是观察，不许装成人格。</div>
-      ${items.length ? items.map(traitRow).join("") : '<div class="hint">还没有 traits。她在群里说过的话、答应过的事，会先以 tentative 记着。</div>'}
+      ${(() => { const dur = items.filter((t) => t.status === 'durable'); const tent = items.filter((t) => t.status !== 'durable'); return (dur.length ? dur.map(traitRow).join('') : '<div class="hint">还没有稳定的 traits。</div>') + (tent.length ? '<details class="adv"><summary>观察中 ' + tent.length + ' 条（默认收起）</summary><div>' + tent.map(traitRow).join('') + '</div></details>' : ''); })()}
     </div>
     <div class="pcard">
       <div class="label">没做完的承诺 <span class="badge">${promises.length}</span></div>
