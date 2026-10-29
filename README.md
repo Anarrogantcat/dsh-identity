@@ -26,6 +26,25 @@
 
 ## 安装（DSH 插件）
 
+### 方式一：命令从 GitHub 装（推荐）
+
+```powershell
+# 桌面 profile；web 把 desktop 换成 web
+dsh plugin --profile desktop add github:Anarrogantcat/dsh-identity
+```
+
+装完确认 profile 的 `bundles` 里有 `dsh-identity`（没有就手动加一行），然后重启 DSH。
+面板入口：客户端浮标 🐟 或 `/qqbot-refine`。
+
+### 方式二：本地目录 / npm
+
+```powershell
+dsh plugin --profile desktop add file:C:\path\to\dsh-identity
+# 发布 npm 后：dsh plugin --profile desktop add dsh-identity
+```
+
+### 方式三：手动放插件并改 profile
+
 1. 把仓库放进 `~/.dsh/plugins/dsh-identity`
 2. 在 profile 的 `package.json` 加依赖：`"dsh-identity": "file:../../plugins/dsh-identity"`
 3. bundles 里加入 `dsh-identity`；或使用 bundle patch：
@@ -38,6 +57,8 @@
    ```
 
 4. 重启 DSH；面板入口：客户端浮标 🐟 或 `/qqbot-refine`
+
+**注意**：仓库目前**没有发布到 npm**，裸包名装不了；用 `github:` 或本地 `file:` 路径。
 
 **不依赖第三方人设/心情插件**；数据在 `~/.dsh/storages/dsh-identity`。
 兼容说明：包名/客户端 id 是 `dsh-identity`；bundle 里的内部插件 id 仍为 `qqbot-refine`（历史兼容，别改名以免旧配置失联）。

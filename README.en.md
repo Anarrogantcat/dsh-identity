@@ -6,10 +6,22 @@ A **DSH (DeepSeek Harness) identity plugin**: one editable kernel, evidence-base
 
 ## Install (DSH plugin)
 
-1. Place the repo at `~/.dsh/plugins/dsh-identity`
-2. Add `"dsh-identity": "file:../../plugins/dsh-identity"` to the profile
-3. Add `dsh-identity` to bundles (or use the bundle patch in `cordis.patch.yml`)
-4. Restart DSH; open the panel via the 🐟 floater or `/qqbot-refine`
+### From GitHub (recommended)
+
+```powershell
+dsh plugin --profile desktop add github:Anarrogantcat/dsh-identity
+```
+
+Then make sure `dsh-identity` is in the profile bundles and restart DSH.
+
+### Local / npm
+
+```powershell
+dsh plugin --profile desktop add file:C:\path\to\dsh-identity
+# after publishing: dsh plugin --profile desktop add dsh-identity
+```
+
+The package is **not published to npm** yet; use `github:` or a local `file:` path.
 
 No third-party persona/mood plugin required. Data lives in `~/.dsh/storages/dsh-identity`.
 
