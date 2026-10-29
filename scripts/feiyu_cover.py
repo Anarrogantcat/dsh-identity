@@ -21,6 +21,11 @@ vc.convert_audio(audio_input_path={str(voc)!r}, audio_output_path={str(feiyu)!r}
 """
 r=subprocess.run([PY,"-c",code],cwd="/root/.local/share/feiyu-voice/cuda/rvc/source",env=ENV)
 if r.returncode: raise SystemExit("rvc failed")
+if "--vocal-only" in sys.argv:
+    final=OUT/("feiyu-clean-%d.mp3"%int(time.time()))
+    r=subprocess.run(["ffmpeg","-y","-i",str(feiyu),"-codec:a","libmp3lame","-q:a","4",str(final)],env=ENV)
+    if r.returncode: raise SystemExit("vocal export failed")
+    print(final); raise SystemExit(0)
 final=OUT/("feiyu-cover-%d.mp3"%int(time.time()))
 r=subprocess.run(["ffmpeg","-y","-i",str(inst),"-i",str(feiyu),"-filter_complex","[0:a][1:a]amix=inputs=2:duration=first:dropout_transition=2,alimiter=limit=0.95,loudnorm=I=-14:TP=-1.5:LRA=11","-ar","44100","-b:a","192k",str(final)],env=ENV)
 if r.returncode: raise SystemExit("mix failed")
