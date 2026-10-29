@@ -608,11 +608,12 @@ function renderChips(){
   const tp = STATE.transport || {}
   const tpMode = tp.mode || '未就绪'
   const qqOk = !!(tp.channel && tp.channel.selfHosted) || tp.connected === true
-  const base = (STATE.config && STATE.config.identity && STATE.config.identity.baseText) ? '自定义' : '内置内核'
+  const base = (STATE.config && STATE.config.identity && STATE.config.identity.baseText) ? '自定义' : '内置内核';
+  const durableN = Number((STATE.traits && STATE.traits.stats && STATE.traits.stats.durable) || 0)
   const blends = (mv.blends || []).join(' / ') || '平稳'
   const overdue = pr.filter((p) => p.overdue).length
   const chips = []
-  chips.push(['身份', 'ok', '基础人设 · ' + base])
+  chips.push(['身份', 'ok', '基础人设 · ' + base + (durableN > 0 ? (' · 已长 ' + durableN + ' 条') : '')])
   chips.push(['成长', (tr.stats && tr.stats.durable) ? 'ok' : 'warn', String((tr.stats && tr.stats.durable) || 0) + ' durable / ' + String((tr.stats && tr.stats.tentative) || 0) + ' tentative'])
   chips.push(['承诺', overdue ? 'warn' : 'ok', pr.length + ' 待办' + (overdue ? (' · ' + overdue + ' 逾期') : '')])
   chips.push(['心情', 'ok', blends])
