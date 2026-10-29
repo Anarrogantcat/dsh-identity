@@ -1,7 +1,7 @@
 # dsh-identity —— DSH 身份系统（大肥鱼）插件
 # 通过 bundle 安装时自动插入；也可在 profile 的 cordis.patch.yml 里手动插同一行。
 - insert:
-    - id: dsh-identity
+    - id: qqbot-refine
       name: dsh-identity
       config:
         enabled: true
