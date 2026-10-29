@@ -923,7 +923,7 @@ function relCardHtml(row, max) {
   const trust = Number(row.trust || 0)
   const aff = bond >= 6 ? '很熟' : bond >= 2 ? '还行' : bond <= -4 ? '别扭' : (trust <= -4 ? '不太信' : '一般')
   const affPct = Math.max(3, Math.round(Math.abs(bond) / 10 * 100))
-  const affColor = bond < 0 ? 'var(--bad)' : 'var(--accent)'
+  const affColor = bond < 0 ? 'linear-gradient(90deg,#ff6b6b,#f0b34a)' : 'linear-gradient(90deg,#35d6c9,#8b7bff)'
   const affBadge = '<span class="badge' + (bond >= 6 ? ' cur' : bond <= -4 ? ' warn' : '') + '">' + aff + (bond ? ' ' + bond.toFixed(1) : '') + '</span>'
   return '<div class="relcard"><div class="reltop"><div class="relname">' + escapeHtml(name) + ' ' + role + '</div>' +
     '<div class="reln">' + count + '</div></div>' +
