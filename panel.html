@@ -972,9 +972,17 @@ async function loadRelations() {
     const j = await pfetch({ action: 'relationsList', group: group })
     const rows = (j && j.ok && Array.isArray(j.rows)) ? j.rows : []
     const max = rows.reduce(function (a, x) { return Math.max(a, Number(x.count || 0)) }, 0)
-    cards.innerHTML = rows.length
+    const topAff = rows.filter(function (r) { return Number(r.bond || 0) !== 0 }).sort(function (a, b) { return Number(b.bond || 0) - Number(a.bond || 0) }).slice(0, 5)
+    const affHtml = topAff.length
+      ? '<div class="pcard" style="margin-bottom:10px"><div class="label">亲近榜 <span class="badge">按情绪互动</span></div><div class="qact">' + topAff.map(function (r) {
+          const nm = String(r.name || '').trim() || ('成员 ' + String(r.uid || '').slice(-4))
+          const b = Number(r.bond || 0)
+          return '<span class="chip" style="margin:2px 6px 2px 0">' + escapeHtml(nm) + ' ' + (b > 0 ? '+' : '') + b.toFixed(1) + '</span>'
+        }).join('') + '</div><div class="qnote">负数=别扭；0 还没长出来</div></div>'
+      : ''
+    cards.innerHTML = affHtml + (rows.length
       ? '<div class="relgrid">' + rows.slice(0, 12).map(function (row) { return relCardHtml(row, max) }).join('') + '</div>'
-      : '<div class="hint">还没有关系数据。群里聊几句再回来看（通过这些群的消息才计入）。</div>'
+      : '<div class="hint">还没有关系数据。群里聊几句再回来看（通过这些群的消息才计入）。</div>')
     const g = (j && j.graph) || { nodes: [], edges: [] }
     const nameOf = new Map()
     ;(g.nodes || []).forEach(function (n) { nameOf.set(String(n.uid), String(n.name || '').trim() || ('成员 ' + String(n.uid).slice(-4))) })
