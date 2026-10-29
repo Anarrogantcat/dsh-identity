@@ -774,7 +774,7 @@ function renderOverview() {
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start"><button class="primary" data-goto="identity">进身份页</button><button data-goto="usage">看用量</button></div>
     </div>
     <div class="ovgrid">
-      ${card('心情', escapeHtml(blends), '七情六欲 · 只改语气', 'cognition')}
+      ${card('心情', escapeHtml(blends), '七情六欲 · 改语气、内容、行为', 'cognition')}
       ${card('自我 traits', String((tr.stats && tr.stats.durable) || 0) + ' durable / ' + String((tr.stats && tr.stats.tentative) || 0) + ' tentative', '有证据才进人格', 'identity')}
       ${card('承诺', String(pr.length) + ' 件没做完' + (overdue ? (' · ' + overdue + ' 件逾期') : ''), '她自己说的才算', 'identity')}
       ${card('自主目标', String((au.by && au.by.proposed) || 0) + ' 待批 / ' + String((au.by && au.by.approved) || 0) + ' 已批', '只提议，你批了才动', 'identity')}
@@ -839,7 +839,7 @@ function moodCardHtml(){
     '</div>' +
     '<div class="msection">七情</div><div class="moodbars">' + sevenHtml + '</div>' +
     '<div class="msection">六欲</div><div class="moodbars">' + needHtml + '</div>' +
-    '<div class="qnote">心情只改「怎么说」和「想不想接」，不改事实、边界、收费与安全规则。</div>' +
+    '<div class="qnote">心情会改「怎么说、想说什么、想不想接」，也会影响主动和表情；但不改事实、边界、收费与安全规则。</div>' +
   '</div>'
 }
 function moodStanceCardHtml(){
@@ -1759,7 +1759,7 @@ function freqPolicyCardHtml() {
   const cell = function (k, v) { return '<div class="qcell2"><div class="k">' + k + '</div><div class="v">' + escapeHtml(String(v)) + '</div></div>' }
   return '<div class="pcard"><div class="qhero"><div class="qmain">' +
       '<div class="qtitle">接话策略 <span class="badge">' + (f.naturalMode ? '自然接话' : '仅 @') + '</span></div>' +
-      '<div class="qmeta">挡位 ' + join(f.chatGear) + (gear.name ? ' · ' + escapeHtml(gear.name) : '') + '；只影响没点名时的随机接话，被 @ 或叫小名不受影响。</div>' +
+      '<div class="qmeta">挡位 ' + join(f.chatGear) + (gear.name ? ' · ' + escapeHtml(gear.name) : '') + '；只影响没被点名时的接话意愿；被 @ 或叫小名不受影响。</div>' +
     '</div><div class="qact"><button data-goq="channel">连接设置</button></div></div>' +
     '<div class="qstat">' +
       cell('仅 @ 才回', f.mentionOnlyGroups ? '是' : '否') +
