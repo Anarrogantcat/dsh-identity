@@ -1,7 +1,7 @@
 {
   "name": "dsh-identity",
   "version": "0.12.0",
-  "description": "DSH 身份系统（大肥鱼）：内核/风格/证据 traits + 事件流 + 记忆双卡 + 心情 v2 + 自主循环（提议/批准）+ 反八股 + 能力运行时 + 支付网关；NapCat/OneBot 主线，聊天与命令 0 token 优先。",
+  "description": "DSH 身份系统插件（大肥鱼）：可编辑内核 + 证据制 traits + 事件流/记忆双卡/日记复盘 + 心情 v2（语气·内容·行为）+ 自主提议 + 治理与能力运行时；QQ 是第一个通道，核心不依赖它。",
   "type": "module",
   "scripts": {
     "test": "node test/run-all.mjs"
@@ -36,28 +36,33 @@
     "dsh",
     "dsh-plugin",
     "deepseek-harness",
-    "qq",
-    "qqbot",
+    "identity",
+    "persona",
+    "personality",
+    "memory",
+    "mood",
+    "agent",
     "cordis",
-    "plugin",
-    "moderation",
-    "memory"
+    "plugin"
   ],
   "engines": {
     "node": ">=20",
     "dsh": ">=0.2.0"
   },
-  "author": "鲸鱼娘和染喵",
+  "author": "鲸鱼娘 & 染喵",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Anarrogantcat/dsh-qqbot-refine.git"
+    "url": "https://github.com/Anarrogantcat/dsh-identity.git"
   },
-  "homepage": "https://github.com/Anarrogantcat/dsh-qqbot-refine",
+  "homepage": "https://github.com/Anarrogantcat/dsh-identity",
   "publishConfig": {
     "access": "public"
   },
   "devDependencies": {
     "jsdom": "^27.0.0"
+  },
+  "bugs": {
+    "url": "https://github.com/Anarrogantcat/dsh-identity/issues"
   }
 }
