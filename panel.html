@@ -662,21 +662,46 @@ function renderSystemPage() {
       <div class="row"><div class="meta"><div class="label">赛程查询</div><div class="hint">LPL/LCK 等赛程拉取；关掉不查</div></div><div class="ctl"><label class="switch"><input type="checkbox" id="optEsports" ${((STATE.config||{}).esports||{}).enabled !== false ? "checked" : ""}><i></i></label></div></div>
     </div>
     <div class="pcard">
-      <div class="label">MCP 服务器（默认关）</div>
-      <div class="hint">只连你显式列出的 HTTP 服务器；工具输出当不可信文本。一行一个 JSON：{"id":"phone","url":"http://127.0.0.1:9000/mcp","token":"","enabled":true}</div>
-      <label class="switch" style="margin:8px 0"><input type="checkbox" id="mcpEnabled" ${mcp.enabled ? 'checked' : ''}><i></i></label>
-      <span class="hint">启用 MCP</span>
-      <textarea id="mcpServers" spellcheck="false" style="min-height:120px">${escapeHtml(servers.map((s) => JSON.stringify(s)).join('\n'))}</textarea>
-      <div class="pbtns" style="margin-top:8px"><button id="mcpSave" class="primary">保存 MCP</button><span id="mcpMsg" class="hint"></span></div>
+          <div class="label">MCP 服务器（默认关）</div>
+      <div class="hint">只连你显式列出的 HTTP 服务器；工具输出当不可信文本。可加多个。</div>
+      <div style="display:flex;align-items:center;gap:10px;margin:8px 0"><label class="switch"><input type="checkbox" id="mcpEnabled" ${mcp.enabled ? 'checked' : ''}><i></i></label><span class="hint">启用 MCP</span></div>
+      <div id="mcpList"></div>
+      <div class="pbtns" style="margin-top:8px"><button id="mcpAdd">+ 添加服务器</button><button id="mcpSave" class="primary">保存 MCP</button><span id="mcpMsg" class="hint"></span></div>
     </div>`
+  // MCP 多服务器编辑：每行 id / url / token / 启用 / 删除
+  let mcpDraft = servers.map((s) => ({ id: String(s.id || ''), url: String(s.url || ''), token: String(s.token || ''), enabled: s.enabled !== false }))
+  const renderMcpList = () => {
+    const box = el.querySelector('#mcpList')
+    if (!box) return
+    box.innerHTML = mcpDraft.length ? mcpDraft.map((s, i) =>
+      '<div class="wlrow" data-mrow="' + i + '"><div style="min-width:0;flex:1;display:grid;gap:6px">' +
+      '<input data-mf="id" data-i="' + i + '" placeholder="id（如 phone）" value="' + escapeHtml(s.id) + '">' +
+      '<input data-mf="url" data-i="' + i + '" placeholder="http://127.0.0.1:9000/mcp" value="' + escapeHtml(s.url) + '">' +
+      '<input data-mf="token" data-i="' + i + '" placeholder="token（可空）" value="' + escapeHtml(s.token) + '">' +
+      '</div><label class="switch" style="flex:none"><input type="checkbox" data-mf="enabled" data-i="' + i + '" ' + (s.enabled ? 'checked' : '') + '><i></i></label>' +
+      '<button data-mdel="' + i + '" style="flex:none">删除</button></div>'
+    ).join('') : '<div class="hint">还没有服务器。点「添加服务器」。</div>'
+    ;[...box.querySelectorAll('[data-mf]')].forEach((inp) => {
+      inp.oninput = inp.onchange = () => {
+        const i = Number(inp.dataset.i)
+        if (!mcpDraft[i]) return
+        if (inp.dataset.mf === 'enabled') mcpDraft[i].enabled = !!inp.checked
+        else mcpDraft[i][inp.dataset.mf] = String(inp.value || '')
+      }
+    })
+    ;[...box.querySelectorAll('[data-mdel]')].forEach((bd) => {
+      bd.onclick = () => { mcpDraft.splice(Number(bd.dataset.mdel), 1); renderMcpList() }
+    })
+  }
+  renderMcpList()
+  const addB = el.querySelector('#mcpAdd')
+  if (addB) addB.onclick = () => { mcpDraft.push({ id: '', url: '', token: '', enabled: true }); renderMcpList() }
   const btn = el.querySelector('#mcpSave')
   if (btn) btn.onclick = async () => {
     const msg = el.querySelector('#mcpMsg')
-    const raw = String((el.querySelector('#mcpServers') || {}).value || '').split('\n').map((x) => x.trim()).filter(Boolean)
-    let list = []
-    try { list = raw.map((x) => JSON.parse(x)) } catch (e) { if (msg) msg.textContent = 'JSON 有问题：' + e.message; return }
     if (msg) msg.textContent = '保存中…'
     try {
+      const list = mcpDraft.filter((s) => String(s.url || '').trim()).map((s) => ({ ...s, id: String(s.id || '').trim() || ('mcp' + Math.random().toString(36).slice(2, 6)), url: String(s.url).trim() }))
       await saveKey('mcp.enabled', !!(el.querySelector('#mcpEnabled') || {}).checked)
       await saveKey('mcp.servers', list)
       if (msg) msg.textContent = '已保存'
