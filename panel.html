@@ -1302,7 +1302,7 @@ function renderPanel(){
   if (VIEW === "identity") {
     const el = $("panel")
     const addr = (STATE.fields || []).find((f) => f.k === "identity.addressName")
-    const flds = (STATE.fields || []).filter((f) => f.tab === "identity" && f.k !== "identity.addressName")
+    const flds = (STATE.fields || []).filter((f) => f.tab === "identity" && f.k !== "identity.addressName" && f.k !== "identity.baseText")
     el.innerHTML = '<div class="phead"><div class="phead-main"><div class="phead-title">身份</div><div class="phead-desc">内核是底座，traits 是长出来的；承诺和复盘是她自己的账。</div></div><div class="phead-side"><span class="chip">' + (STATE.traits && STATE.traits.stats ? (STATE.traits.stats.durable + ' durable / ' + STATE.traits.stats.tentative + ' tentative') : '') + '</span></div></div>' + (addr ? '<div class="pcard"><div class="qtitle">称呼 <span class="badge">她怎么叫你</span></div><div class="qnote">留空=用名册里的群名片/昵称；填了就按这个叫，QQ 群聊和 DSH 会话都生效。</div>' + fieldRow(addr) + '<div class="pbtns" style="margin-top:8px"><button id="addrSave">保存称呼</button></div></div>' : '') + identityCardHtml() + '<div class="pcard"><details class="adv"><summary>自我模型（展开看当前状态）</summary><div class="hint" style="white-space:pre-wrap;line-height:1.55;margin-top:8px">' + escapeHtml(String((STATE.selfModel && STATE.selfModel.text) || '还没有自我模型')) + '</div></details></div>' + (flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项：注入开关/预算/尺度）</summary><div class="pcard">' + flds.map((f) => fieldRow(f)).join("") + '</div></details>' : '')
     bindFields(el)
     bindIdentityCards(el)
