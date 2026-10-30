@@ -75,6 +75,7 @@ import { atmosphereOf, sinceLastSpoke } from './lib/presence.js'
 import { PERM_LEVELS, levelOf } from './lib/permgear.js'
 import { currentVersion, latestCached, checkLatest, applyUpdate, pluginDirOf, isPnpmManaged, compareVersions, readCache } from './lib/update.js'
 import { compatReport } from './lib/compat.js'
+import { scheduleBrowserSweep } from './lib/cleanup.js'
 
 export const name = 'qqbot-refine'
 export const inject = ['webServer']
@@ -570,6 +571,8 @@ export async function apply(ctx, config = {}) {
   ensureStore()
   ensureDirs()
   loadState()
+  // 清掉我们测试留下的孤儿浏览器（payqr-edge-*），历史事故：泄漏 700+ 个 msedge
+  try { scheduleBrowserSweep({ logger }) } catch { /* ignore */ }
   // 策略存储：没有就落一份默认（动作模式/限额/确认码都在这里，与模型隔离）
   try {
     const p0 = ensurePolicy()

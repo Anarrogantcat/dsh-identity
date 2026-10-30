@@ -91,6 +91,12 @@ if (process.platform === 'win32') {
   A('execute 在开关关着时拒绝执行', /还没打开/.test(out) && !out.includes('should-not-run'), out)
 }
 
+if (process.platform === 'win32') {
+  const c = await T.runShellCommand('Write-Output "中文输出正常"', { timeoutMs: 15000 })
+  A('中文输出不乱码', c.ok === true && c.out.includes('中文输出正常'), c.out)
+  const col = await T.runShellCommand('Write-Host "红的" -ForegroundColor Red', { timeoutMs: 15000 })
+  A('颜色转义被清掉', !/\x1b\[/.test(col.out) && col.out.includes('红的'), JSON.stringify(col.out))
+}
 console.log('=== QQ 主人 pwsh 工具测试 ===')
 let fail = 0
 for (const [n, p, d] of ok) { console.log((p ? 'OK  ' : 'FAIL ') + n + (p ? '' : '   ' + JSON.stringify(d))); if (!p) fail++ }

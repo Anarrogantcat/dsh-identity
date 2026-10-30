@@ -45,9 +45,26 @@ const edge = candidates.find((p) => existsSync(p));
 if (!edge) {
   A('真跑一遍（无 Edge，跳过）', true);
 } else {
-  const { spawn } = await import('node:child_process');
+  const { spawn, spawnSync } = await import('node:child_process');
   const port = 9334 + Math.floor(Math.random() * 40);
   const prof = join(process.env.TEMP || HOME, 'payqr-edge-' + Date.now());
+  /** 连子进程一起杀：Windows 上 child.kill() 只杀主进程，gpu/renderer 会变孤儿（历史事故：泄漏 700+ 个）。
+   *  注意 Edge 会「换身」：spawn 出来的 launcher 很快退出，真正的浏览器是另一个 PID，
+   *  所以按 pid 杀经常 ERROR: process not found → 主要靠 profile 唯一后缀兜底。 */
+  const profileTag = prof.split('payqr-edge-')[1] || ''
+  const killTree = async () => {
+    try { spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true }) } catch { /* ignore */ }
+    if (!profileTag) return
+    // 扫多轮：Edge 会「换身」，第一轮杀完可能又冒出来一个
+    for (let i = 0; i < 4; i++) {
+      try {
+        spawnSync('powershell', ['-NoProfile', '-NonInteractive', '-Command',
+          `Get-CimInstance Win32_Process -Filter "name='msedge.exe'" | Where-Object { $_.CommandLine -like '*payqr-edge-${profileTag}*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`],
+        { stdio: 'ignore', windowsHide: true, timeout: 20000 })
+      } catch { /* ignore */ }
+      await new Promise((r) => setTimeout(r, 400))
+    }
+  };
   // 尽量照着真实页面来：金额/方式都是 radio，按钮是 span.ds-button__content，码在 .ds-qr-code
   const html = '<!doctype html><meta charset=utf-8><body>' +
     '<label><input type=radio name=amt value=10>¥10</label>' +
@@ -84,7 +101,7 @@ if (!edge) {
       A('体检返回 ok 且带地址', pr.ok === true && !!pr.url, pr);
     }
   } finally {
-    try { child.kill() } catch { /* ignore */ }
+    await killTree();
     try { rmSync(prof, { recursive: true, force: true }) } catch { /* ignore */ }
   }
 }
