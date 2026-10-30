@@ -45,6 +45,16 @@ A('空查询直接回提示，不联网', empty === '（空查询）', empty)
 const n2 = T.ensureSearchTool(agent, () => cfg)
 A('第二次不重复注册', n2 === 0 && registered === 1, { n2, registered })
 
+// 注册要留痕（重启后能查"到底挂上没有"）
+{
+  const { readFileSync, existsSync } = await import('node:fs')
+  const { join } = await import('node:path')
+  const { dirs } = await import(base + 'lib/store.js')
+  const ap = join(dirs.logs, 'audit.jsonl')
+  const txt = existsSync(ap) ? readFileSync(ap, 'utf8') : ''
+  A('注册写了审计', /"kind":"tools\.register"|"kind": "tools\.register"/.test(txt) || txt.includes('tools.register'), txt.slice(-200))
+}
+
 // 拿不到 tools.register 时返回 0 并留痕
 const badAgent = { ctx: { tools: {} } }
 const n3 = T.ensureSearchTool(badAgent, () => cfg)
