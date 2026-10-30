@@ -55,6 +55,38 @@ A('纯字符串内容也能记', listMemory(pk).some((x) => x.text.includes('看
 fire({ header: { id: 'web-abc' } }, { type: 'user/message', seq: 4, data: { role: 'user', content: '我的密钥是 sk-abcdef1234567890abcdef' } })
 A('敏感串被脱敏', listMemory(pk).every((x) => !/sk-abcdef1234567890/.test(x.text)), listMemory(pk).map((x) => x.text))
 
+// 宿主注入的伪用户消息不能记（真实事故：运行环境快照和技能目录提醒被当成
+// "你说的话"存进记忆，300 字一条，以后还会被注回提示词）
+{
+  const before = listMemory(pk).length
+  fire({ header: { id: 'web-abc' } }, {
+    type: 'user/message',
+    seq: 5,
+    data: {
+      role: 'user',
+      content: [{ type: 'text', text: 'Current runtime context. This snapshot supersedes earlier runtime-context snapshots. Current working directory: "D:\\AI\\x". Current DSH file policy: danger-full-access.' }],
+    },
+  })
+  A('运行环境快照不记记忆', listMemory(pk).length === before, listMemory(pk).length - before)
+  A('运行环境快照不记事件', !readEvents(pk).some((e) => /runtime context/i.test(e.text ?? '')), readEvents(pk).length)
+
+  fire({ header: { id: 'web-abc' } }, {
+    type: 'user/message',
+    seq: 6,
+    data: { role: 'user', content: [{ type: 'text', text: '<system-reminder> The available skill catalog changed. This complete catalog replaces every earlier available-skills list in this session: office, office-docx </system-reminder>' }] },
+  })
+  A('技能目录提醒不记记忆', listMemory(pk).length === before, listMemory(pk).length - before)
+
+  fire({ header: { id: 'web-abc' } }, {
+    type: 'user/message',
+    seq: 7,
+    data: { role: 'user', content: [{ type: 'text', text: '帮我把面板字体调大 <system-reminder>catalog changed</system-reminder>' }] },
+  })
+  const last = listMemory(pk).at(-1)
+  A('夹在真话后面的提醒被剥掉', /面板字体调大/.test(last?.text ?? '') && !/catalog changed|system-reminder/i.test(last?.text ?? ''), last?.text)
+  A('剥完还留真话就不丢这条', listMemory(pk).length === before + 1, listMemory(pk).length - before)
+}
+
 // 审计里能看到 inbound（以前全是 bot）
 {
   const ap = join(dirs.logs, 'audit.jsonl')
