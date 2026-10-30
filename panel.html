@@ -3002,7 +3002,7 @@ async function renderKbPanel() {
       kbEditorCard() +
       '<div class="pcard">' +
         '<div class="label" style="margin-bottom:6px">自动抓热梗</div>' +
-        '<div class="hint">定时抓微博文娱 + B 站热门，按日期写进 memes.md；命中才注入，过期段自动清。默认关。</div>' +
+        '<div class="hint">定时抓梗Wiki + 微博文娱 + B 站热门，按日期写进 memes.md；命中才注入，过期段自动清。默认关。</div>' +
         '<div class="pbtns" style="margin-top:8px;align-items:center;gap:10px">' +
           '<label class="switch"><input type="checkbox" id="memesAuto"' + (kcfg.memesAuto ? ' checked' : '') + '><i></i></label>' +
           '<span class="hint">间隔</span><input type="number" id="memesHours" min="6" max="168" step="6" value="' + Number(kcfg.memesHours ?? 24) + '" style="width:76px">' +
