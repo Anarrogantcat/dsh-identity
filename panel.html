@@ -565,6 +565,8 @@ main > .panel,main > .pcard{animation:rise .22s ease-out both}
 <script>
 const $ = (id) => document.getElementById(id)
 let STATE = null
+// 绑定码折叠块的重绘记忆：点按钮会整页重绘，不记住就会自己合上
+let CLAIM_OPEN = (() => { try { return localStorage.getItem('qqrefine:claimopen') === '1' } catch { return false } })()
 let ACTIVE = 'overview'
 let SEARCH = ""
 const draft = {}
@@ -1864,7 +1866,7 @@ function renderScopeClaim() {
       <div class="qnote">她收到过消息的来源都会出现在这；点「加白名单」就能开始用。</div>
       ${recentHtml}
     </div>
-    <details class="adv"><summary>认领方式② 绑定码（一次性，10 分钟）</summary>
+    <details class="adv" id="claimDetails"${(CLAIM_OPEN || b) ? ' open' : ''}><summary>认领方式② 绑定码（一次性，10 分钟）</summary>
     <div class="pcard" style="border:0">
       <div class="qtitle">认领方式② 绑定码 <span class="badge">最稳</span></div>
       <div id="claimmsg" class="qnote" style="color:var(--warn);min-height:18px"></div>
@@ -1898,6 +1900,11 @@ function renderScopeClaim() {
     ${advFieldsHtml("scope", "openid 列表")}
   `)
   bindFields(el)
+  const cd = $("claimDetails")
+  if (cd) cd.addEventListener("toggle", () => {
+    CLAIM_OPEN = cd.open
+    try { localStorage.setItem("qqrefine:claimopen", cd.open ? "1" : "0") } catch (e) {}
+  })
 
   ;[...el.querySelectorAll("[data-copy]")].forEach((btn) => { btn.onclick = (e) => { e.stopPropagation(); copyText(btn.dataset.copy, btn) } })
   ;[...el.querySelectorAll("[data-addgroup]")].forEach((btn) => {
@@ -1911,6 +1918,7 @@ function renderScopeClaim() {
   })
   ;[...el.querySelectorAll("[data-bind]")].forEach((btn) => {
     btn.onclick = async () => {
+      CLAIM_OPEN = true
       const j = await scopeOp({ action: "bindNew", purpose: btn.dataset.bind, ttlMin: 10 })
       const msg = $("claimmsg")
       if (j.ok) { await load(); try { const m = $("msg"); if (m) m.textContent = "已生成绑定码，10 分钟内有效" } catch (e) {} }
@@ -1918,7 +1926,7 @@ function renderScopeClaim() {
     }
   })
   const bc = el.querySelector("[data-bindcancel]")
-  if (bc) bc.onclick = async () => { await scopeOp({ action: "bindCancel" }); await load(); try { const m = $("msg"); if (m) m.textContent = "绑定码已作废" } catch (e) {} }
+  if (bc) bc.onclick = async () => { CLAIM_OPEN = true; await scopeOp({ action: "bindCancel" }); await load(); try { const m = $("msg"); if (m) m.textContent = "绑定码已作废" } catch (e) {} }
   const addBtn = $("claimadd")
   if (addBtn) addBtn.onclick = async () => {
     const kind = $("claimkind").value

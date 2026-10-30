@@ -178,19 +178,21 @@ function profileSectionText(context) {
 }
 /** 身份段（单一注入）：内核 + 场景 + 风格 + durable traits + 关系/情绪 + 群规，总预算硬上限 */
 function ownerLineOf(cfg) {
+  const custom = String(cfg?.identity?.addressName ?? '').trim().slice(0, 24)
+  const fallback = custom ? `你叫他「${custom}」；钱、账号、权限只向他提议，别替别人做主。` : ''
   try {
     const ids = Array.isArray(cfg?.roles?.owners) ? cfg.roles.owners : []
-    if (!ids.length) return ''
+    if (!ids.length) return fallback
     const r = loadRoster() || {}
     const all = [...(r.friends || []), ...(r.members || [])]
     const id = String(ids[0])
     const hit = all.find((x) => String(x?.id ?? x?.user_id ?? '') === id)
-    const name = hit?.nickname || hit?.card || hit?.remark || id
-    return `养你的人是「${name}」；钱、账号、权限只向他提议，别替别人做主。`
-  } catch { return '' }
+    const name = custom || hit?.nickname || hit?.card || hit?.remark || id
+    return `养你的人是「${name}」，你叫他「${name}」；钱、账号、权限只向他提议，别替别人做主。`
+  } catch { return fallback }
 }
 
-function identitySectionText(context) {
+export function identitySectionText(context) {
   try {
     const cfg = loadConfig()
     if (cfg.identity?.enabled === false || cfg.identity?.takeover === false) return ''
@@ -204,6 +206,8 @@ function identitySectionText(context) {
       const ol = ownerLineOf(cfg)
       return composeIdentity({ scope, peer: peer?.peer ?? '', baseText: cfg.identity?.baseText ?? '', parts: ol ? [{ name: 'owner', text: ol, cap: 80 }] : [], maxChars: Number(cfg.identity?.maxChars ?? 900), traitsMax: Number(cfg.identity?.traitsMax ?? 5) }).text
     }
+    // 主人称呼：QQ 群聊/私聊也带上，不只在 DSH 里
+    try { const ol = ownerLineOf(cfg); if (ol) parts.push({ name: 'owner', text: ol, cap: 80 }) } catch { /* ignore */ }
     // traits 由 composeIdentity 内部注入（只取 durable）
     // 关系/情绪/尺度：只改"怎么说"，不改事实与边界
     if (peer) {
