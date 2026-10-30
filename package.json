@@ -1,6 +1,6 @@
 {
   "name": "dsh-identity",
-  "version": "1.9.59",
+  "version": "1.9.60",
   "description": "DSH 身份系统插件（大肥鱼）：可编辑内核 + 证据制 traits + 事件流/记忆双卡/日记复盘 + 心情 v2（语气·内容·行为）+ 自主提议 + 治理与能力运行时；QQ 是第一个通道，核心不依赖它。",
   "type": "module",
   "scripts": {
