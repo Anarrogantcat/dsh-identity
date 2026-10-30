@@ -54,6 +54,19 @@ writeFileSync(join(dirs.root, 'usage.json'), JSON.stringify({
 const d4 = todayDelta(SID, big)
 A('跨天后从当天零点起算，不重复算历史', d4.uncachedInputTokens === 0 && d4.cacheReadTokens === 0, d4)
 
+// 旧版 bug 留下的零基线（累计几千万、基线却全是 0）要当场作废重钉
+{
+  const uPath = join(dirs.root, 'usage.json')
+  const todayStr2 = (() => { const d = new Date(); const p = (n) => String(n).padStart(2, '0'); return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}` })()
+  writeFileSync(uPath, JSON.stringify({
+    date: todayStr2,
+    peers: { [SID]: { uncachedInputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 } },
+    latest: {},
+  }), 'utf8')
+  const d5 = todayDelta(SID, big)
+  A('脏零基线被作废（历史不再算今天）', d5.cacheReadTokens === 0 && d5.uncachedInputTokens === 0, d5)
+}
+
 console.log('=== 今日用量基线测试 ===')
 let fail = 0
 for (const [n, p, d] of ok) { console.log((p ? 'OK  ' : 'FAIL ') + n + (p ? '' : '   ' + JSON.stringify(d))); if (!p) fail++ }
