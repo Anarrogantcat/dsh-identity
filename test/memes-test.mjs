@@ -16,33 +16,46 @@ ensureStore(); ensureDirs()
 const ok = []
 const T = (n, p, d) => ok.push([n, !!p, d])
 
-const stub = (titles) => async () => ({
-  ok: true,
-  json: async () => ({ data: { band_list: titles.map((t, i) => ({ word: t, category: '综艺', rank: i + 1 })) } }),
-})
+const stub = (weibo, bili) => async (u) => {
+  if (u.includes('weibo.com/ajax/statuses/hot_band')) {
+    return { ok: true, json: async () => ({ data: { band_list: weibo.map((t, i) => (typeof t === 'string' ? { word: t, category: '综艺', rank: i + 1 } : t)) } }) }
+  }
+  if (u.includes('web-interface/popular')) {
+    return { ok: true, json: async () => ({ data: { list: bili.map((t, i) => ({ title: t, bvid: 'BV1xx411c7m' + i })) } }) }
+  }
+  return { ok: false, json: async () => ({}) }
+}
 
-const r1 = await M.refreshMemes({ fetchImpl: stub([' 第一条梗\n换行 ', '第二条']), now: Date.now() })
-T('抓取成功', r1.ok && r1.count === 2, r1)
+const r1 = await M.refreshMemes({ fetchImpl: stub([' 第一条梗\n换行 ', '第二条'], ['B站一条']), now: Date.now() })
+T('抓取成功（微博+B站）', r1.ok && r1.count === 3, r1)
 const text1 = readFileSync(M.MEMES_FILE, 'utf8')
 T('标题清洗换行', text1.includes('第一条梗 换行'), text1)
 T('带微博搜索链接', text1.includes('s.weibo.com/weibo?q='), text1)
+T('带 B 站链接', text1.includes('bilibili.com/video/BV1xx411c7m0'), text1)
+T('标了来源', text1.includes('[微博]') && text1.includes('[B站]'), text1)
 T('同一天只有一段', (text1.match(/^## /gm) || []).length === 1, text1)
 
 // 时政/民生类要被跳过
-const pol = await M.fetchHot({ fetchImpl: async () => ({
-  ok: true,
-  json: async () => ({ data: { band_list: [
-    { word: '某时政新闻', category: '国内时政' },
-    { word: '某艺人新歌', category: '艺人' },
-    { word: '社会新闻一条', category: '民生新闻' },
-  ] } }),
-}) })
-T('时政民生被过滤', pol.length === 1 && pol[0].title === '某艺人新歌', pol)
+const pol = await M.fetchHot({ fetchImpl: stub([
+  { word: '某时政新闻', category: '国内时政' },
+  { word: '某艺人新歌', category: '艺人' },
+  { word: '社会新闻一条', category: '民生新闻' },
+], ['央视新闻：某会议', '某游戏新版本']) })
+T('微博时政民生被过滤', pol.some((x) => x.title === '某艺人新歌') && !pol.some((x) => x.title.includes('时政') || x.title.includes('社会新闻')), pol)
+T('B站新闻类被过滤', pol.some((x) => x.title === '某游戏新版本') && !pol.some((x) => x.title.includes('央视')), pol)
+
+// 热门接口被风控时退回热搜词
+const fallback = await M.fetchBili({ fetchImpl: async (u) => {
+  if (u.includes('web-interface/popular')) return { ok: false, json: async () => ({}) }
+  if (u.includes('hotword')) return { ok: true, json: async () => ({ list: [{ keyword: '某站内梗' }] }) }
+  return { ok: false, json: async () => ({}) }
+} })
+T('热门失败退热搜词', fallback.length === 1 && fallback[0].title === '某站内梗', fallback)
 
 // 同一天再抓一次：覆盖，不叠加
-await M.refreshMemes({ fetchImpl: stub(['新的一条']), now: Date.now() })
+await M.refreshMemes({ fetchImpl: stub(['新的一条'], []), now: Date.now() })
 const text2 = readFileSync(M.MEMES_FILE, 'utf8')
-T('同日覆盖不叠加', (text2.match(/^## /gm) || []).length === 1 && text2.includes('新的一条') && !text2.includes('第二条'), text2)
+T('同日覆盖不叠加', (text2.match(/^## /gm) || []).length === 1 && text2.includes('新的一条') && !text2.includes('第二条') && !text2.includes('B站一条'), text2)
 
 // 过期段清理
 const old = '## 2000-01-01\n- 上古梗\n'
