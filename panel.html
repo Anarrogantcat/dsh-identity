@@ -936,7 +936,7 @@ function renderOverview() {
       ${card('自主目标', String((au.by && au.by.proposed) || 0) + ' 待批 / ' + String((au.by && au.by.approved) || 0) + ' 已批', '只提议，你批了才动', 'identity')}
       ${card('今日花费', '¥' + Number(todayYuan).toFixed(2), '软预算提醒，不拦聊天', 'usage')}
       ${card('最近复盘', (rf.week ? ('群 ' + rf.week.inbound + ' / 我 ' + rf.week.mine + ' 句') : '暂无'), '只吃事件、不读日记', 'identity')}
-      ${card('接话决策', String((STATE.decision && STATE.decision.total) || 0) + ' 次 · 接 ' + String((STATE.decision && STATE.decision.directed) || 0), '被接 ' + String((STATE.decision && STATE.decision.engaged) || 0) + ' · 没接又被找 ' + String((STATE.decision && STATE.decision.missed) || 0), 'identity')}
+      ${card('接话决策', String((STATE.decision && STATE.decision.total) || 0) + ' 次 · 接 ' + String((STATE.decision && STATE.decision.directed) || 0), '不接 ' + String(((STATE.decision && STATE.decision.total) || 0) - ((STATE.decision && STATE.decision.directed) || 0)) + ' · 被接 ' + String((STATE.decision && STATE.decision.engaged) || 0) + ' · 没接又被找 ' + String((STATE.decision && STATE.decision.missed) || 0), 'identity')}
       ${card('成长指标', growthTxt, '观察期：≥3 次证据 + 跨 ≥2 天', 'identity')}
     </div>`
   el.insertAdjacentHTML('beforeend', '<div class="pcard"><div class="label">最近对话 <span class="badge">实时 · 5 秒</span></div><div id="recentChat"><div class="hint">读取中…</div></div></div>')
