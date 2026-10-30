@@ -87,6 +87,50 @@ A('敏感串被脱敏', listMemory(pk).every((x) => !/sk-abcdef1234567890/.test(
   A('剥完还留真话就不丢这条', listMemory(pk).length === before + 1, listMemory(pk).length - before)
 }
 
+// 助手消息里的 reasoning / tool-call 不是"她说的话"（真实事故：每条消息都把
+// 英文内部草稿当发言记进事件，5627 条里 4664 条根本没有正文）
+{
+  const botsBefore = readEvents(pk).filter((e) => e.origin === 'bot').length
+  fire({ header: { id: 'web-abc' } }, {
+    type: 'assistant/message',
+    seq: 8,
+    data: {
+      message: {
+        role: 'assistant',
+        content: [
+          { type: 'reasoning', text: 'Let me check the workspace for something related.' },
+          { type: 'tool-call', id: 'c1', name: 'pwsh', arguments: '{}' },
+        ],
+      },
+    },
+  })
+  A('只有草稿和工具调用的消息不算发言', readEvents(pk).filter((e) => e.origin === 'bot').length === botsBefore, readEvents(pk).filter((e) => e.origin === 'bot').length - botsBefore)
+
+  fire({ header: { id: 'web-abc' } }, {
+    type: 'assistant/message',
+    seq: 9,
+    data: {
+      message: {
+        role: 'assistant',
+        content: [
+          { type: 'reasoning', text: 'The user wants the font bigger. I should answer in Chinese.' },
+          { type: 'text', text: '行，本鱼这就调大。' },
+        ],
+      },
+    },
+  })
+  const lastBot = readEvents(pk).filter((e) => e.origin === 'bot').at(-1)
+  A('草稿+正文的消息只记正文', lastBot?.text === '行，本鱼这就调大。', lastBot?.text)
+
+  const inBefore = readEvents(pk).filter((e) => e.origin === 'inbound').length
+  fire({ header: { id: 'web-abc' } }, {
+    type: 'user/message',
+    seq: 10,
+    data: { role: 'user', content: [{ type: 'image', source: { type: 'base64', data: 'xx' } }] },
+  })
+  A('纯图片消息不记文字', readEvents(pk).filter((e) => e.origin === 'inbound').length === inBefore, readEvents(pk).filter((e) => e.origin === 'inbound').length - inBefore)
+}
+
 // 审计里能看到 inbound（以前全是 bot）
 {
   const ap = join(dirs.logs, 'audit.jsonl')
