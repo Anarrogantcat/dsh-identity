@@ -52,6 +52,7 @@ import { composeIdentity, kernelSummary, kernelText, kernelGuardsText } from './
 import * as traits from './lib/traits.js'
 import { resumeStats } from './lib/resume.js'
 import { installSessionGrowth } from './lib/webgrowth.js'
+import { refreshMemes, memesDue } from './lib/memes.js'
 import { listCapabilities } from './lib/caprun.js'
 import './lib/caps-default.js'
 import { diaryHint, listDiary, generate as diaryGenerate, generateLlm as diaryGenerateLlm } from './lib/diary.js'
@@ -619,6 +620,23 @@ export async function apply(ctx, config = {}) {
     logger.warn?.('[qqbot-refine] 通道启动失败：' + (err?.message ?? err))
   }
 
+  // 1.5) 网络热梗：知识库的自动写入端；每 30 分钟看一眼是否到点
+  try {
+    const memeTick = async () => {
+      try {
+        const c = loadConfig()
+        if (c.knowledge?.memesAuto !== true) return
+        if (!memesDue(Number(c.knowledge?.memesHours ?? 24))) return
+        const r = await refreshMemes({ top: 15, keepDays: Number(c.knowledge?.memesKeepDays ?? 14) })
+        if (r.ok) logger.info?.('[memes] 热梗已更新：' + r.count + ' 条 → memes.md')
+        else logger.warn?.('[memes] 抓取失败：' + r.error)
+      } catch { /* ignore */ }
+    }
+    const mt = setInterval(memeTick, 30 * 60 * 1000); mt.unref?.()
+    const mt0 = setTimeout(memeTick, 20 * 1000); mt0.unref?.()
+    timers.push(mt, mt0)
+  } catch { /* ignore */ }
+
   // 2) 系统提示：人格 + 记忆
   if (typeof ctx.inject === 'function') {
     ctx.inject(['systemPrompt'], (scope) => {
@@ -774,6 +792,10 @@ export async function apply(ctx, config = {}) {
           }
           if (action === "mgmtOp") {
             return sendJson(res, 200, mgmt.op(body.kind, body.op, body))
+          }
+          if (action === "memesRefresh") {
+            const c = loadConfig()
+            return sendJson(res, 200, await refreshMemes({ top: 15, keepDays: Number(c.knowledge?.memesKeepDays ?? 14) }))
           }
           if (action === "profileList") {
             return sendJson(res, 200, { ok: true, group: body.group, stats: profile.stats(body.group), members: profile.listMembers(body.group) })

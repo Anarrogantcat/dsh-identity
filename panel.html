@@ -3001,6 +3001,16 @@ async function renderKbPanel() {
     el.innerHTML =
       kbEditorCard() +
       '<div class="pcard">' +
+        '<div class="label" style="margin-bottom:6px">自动抓热梗</div>' +
+        '<div class="hint">定时抓 B 站热榜，按日期写进 memes.md；命中才注入，过期段自动清。默认关。</div>' +
+        '<div class="pbtns" style="margin-top:8px;align-items:center;gap:10px">' +
+          '<label class="switch"><input type="checkbox" id="memesAuto"' + (kcfg.memesAuto ? ' checked' : '') + '><i></i></label>' +
+          '<span class="hint">间隔</span><input type="number" id="memesHours" min="6" max="168" step="6" value="' + Number(kcfg.memesHours ?? 24) + '" style="width:76px">' +
+          '<span class="hint">小时</span><button id="memesSave">保存</button><button id="memesNow">立即抓取</button>' +
+          '<span class="hint" id="memesMsg"></span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="pcard">' +
         '<div class="label" style="margin-bottom:6px">知识库</div>' +
         '<div class="hint">目录：<span class="kv">' + escapeHtml(kb.dir || "（未配置）") + '</span></div>' +
         '<div class="hint">文件 ' + (kb.files == null ? "—" : kb.files) + ' · 段 ' + (kb.chunks == null ? "—" : kb.chunks) +
@@ -3030,6 +3040,30 @@ async function renderKbPanel() {
       '</div>'
 
     try { await bindKbEditor() } catch (e) {}
+    const memeSave = $("memesSave")
+    if (memeSave) memeSave.onclick = async function () {
+      const on = !!($("memesAuto") && $("memesAuto").checked)
+      const h = Math.max(6, Math.min(168, Number($("memesHours") && $("memesHours").value) || 24))
+      const msg = $("memesMsg")
+      try {
+        const r = await fetch('/api/qqbot-refine/config', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ patch: { 'knowledge.memesAuto': on, 'knowledge.memesHours': h } }) })
+        const j = await r.json()
+        if (msg) msg.textContent = j.ok ? ('已保存：' + (on ? ('每 ' + h + ' 小时') : '关闭')) : ('保存失败：' + (j.error || ''))
+        if (j.ok) try { await load() } catch (e) {}
+      } catch (e) { if (msg) msg.textContent = '保存失败：' + e.message }
+    }
+    const memeNow = $("memesNow")
+    if (memeNow) memeNow.onclick = async function () {
+      const msg = $("memesMsg")
+      memeNow.disabled = true
+      if (msg) msg.textContent = '抓取中…'
+      try {
+        const j = await mg({ action: 'memesRefresh' })
+        if (msg) msg.textContent = j && j.ok ? ('已抓 ' + j.count + ' 条 → memes.md（' + j.day + '）') : ('失败：' + ((j && j.error) || '未知'))
+        if (j && j.ok) try { await load() } catch (e) {}
+      } catch (e) { if (msg) msg.textContent = '失败：' + e.message }
+      memeNow.disabled = false
+    }
     const gsel = $("kbGroup")
     if (gsel) gsel.onchange = function () {
       const gid = gsel.value
