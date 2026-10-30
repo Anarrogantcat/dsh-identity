@@ -1,6 +1,6 @@
 {
   "name": "dsh-identity",
-  "version": "1.9.175",
+  "version": "1.9.176",
   "description": "DSH 身份系统：给「大肥鱼」一套持续运行的身份状态——可编辑内核、证据制 traits、跨群记忆、情绪与调节、关系/好感、精力控频、自主目标、共情事件与学习闭环。QQ（NapCat/OneBot 11）是第一个通道，核心不依赖 QQ；数据在本机，安全/支付/权限由代码闸门硬拦。当前处于观察期：durable 需要跨天证据。",
   "type": "module",
   "scripts": {
@@ -26,7 +26,7 @@
   "dsh": {
     "id": "dsh-identity",
     "name": "大肥鱼 · 身份系统",
-    "version": "1.9.175",
+    "version": "1.9.176",
     "repo": "Anarrogantcat/dsh-identity",
     "permissions": "QQ 通道、记忆/情绪/成长数据、联网搜索、语音调用、面板扩展",
     "bundle": {
