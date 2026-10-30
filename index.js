@@ -550,6 +550,12 @@ function snapshot() {
     autonomy: (() => { try { return { ...autonomy.autonomyStats(), goals: autonomy.listGoals({}).slice(0, 10) } } catch { return null } })(),
     toolGate,
     compat: (() => { try { return compatReport({ version: currentVersion(), ctxVersion: hostVersionOf(), transport: tp }) } catch (e) { return { error: String(e?.message ?? e) } } })(),
+    mem: (() => {
+      try {
+        const m = process.memoryUsage()
+        return { rss: Math.round(m.rss / 1048576), heap: Math.round(m.heapUsed / 1048576), external: Math.round(m.external / 1048576), at: Date.now() }
+      } catch { return null }
+    })(),
     gateExisting: loadConfig().tools?.gateExisting === true,
     recentPeers: state.seen ?? [],
     bind: getBind(),
@@ -660,6 +666,19 @@ export async function apply(ctx, config = {}) {
     const mt = setInterval(memeTick, 30 * 60 * 1000); mt.unref?.()
     const mt0 = setTimeout(memeTick, 20 * 1000); mt0.unref?.()
     timers.push(mt, mt0)
+  } catch { /* ignore */ }
+
+  // 1.6) 内存遥测：每 10 分钟记一笔 RSS/heap，卡的时候能对着审计看曲线（只读，不改行为）
+  try {
+    const memSample = () => {
+      try {
+        const m = process.memoryUsage()
+        audit('mem.rss', { rss: Math.round(m.rss / 1048576), heap: Math.round(m.heapUsed / 1048576), ext: Math.round(m.external / 1048576) })
+      } catch { /* ignore */ }
+    }
+    memSample()
+    const tm = setInterval(memSample, 10 * 60 * 1000); tm.unref?.()
+    timers.push(tm)
   } catch { /* ignore */ }
 
   // 2) 系统提示：人格 + 记忆

@@ -922,7 +922,8 @@ function armChatPoll() {
   const groups = ((STATE.config && STATE.config.scope && STATE.config.scope.groups) || [])
   if (!groups.length) return
   void loadRecentChat()
-  __chatTimer = setInterval(() => { try { if (document.visibilityState === 'visible') void loadRecentChat() } catch (e) {} }, 5000)
+  // 5 秒一次太密：每次都要服务端现读事件文件、拼状态。15 秒够用，页面不显示就完全不拉
+  __chatTimer = setInterval(() => { try { if (document.visibilityState === 'visible') void loadRecentChat() } catch (e) {} }, 15000)
 }
 
 function renderOverview() {
@@ -1225,7 +1226,7 @@ function armAutoRefresh() {
   if (!tabs.includes(ACTIVE)) return
   __autoTimer = setInterval(() => {
     try { if (document.visibilityState === 'visible') load() } catch { /* ignore */ }
-  }, 15000)
+  }, 30000)
 }
 
 function biliCardHtml() {
@@ -1312,6 +1313,7 @@ function compatCardHtml() {
   return '<div class="pcard"><div class="label">兼容自检 <span class="badge">' + (bad ? ('✗ ' + bad + ' 项') : '✓ 通过') + '</span></div>' +
     '<div class="hint">宿主 DSH ' + escapeHtml((c.host && c.host.version) || '未知') + ' · 插件 v' + escapeHtml(c.plugin || STATE.version || '?') + ' · Electron ' + escapeHtml((c.host && c.host.electron) || env.electron || '?') + '</div>' +
     '<div class="hint" style="margin-top:4px">实测范围：DSH ' + escapeHtml((c.verified && c.verified.dsh) || '?') + '（' + escapeHtml((c.verified && c.verified.at) || '') + '）</div>' +
+    ((STATE.mem && STATE.mem.rss) ? '<div class="hint">进程内存 RSS ' + escapeHtml(String(STATE.mem.rss)) + ' MB · heap ' + escapeHtml(String(STATE.mem.heap)) + ' MB</div>' : '') +
     why + rows +
     '<div class="pbtns" style="margin-top:8px"><button id="compatBtn">重新自检</button><span id="compatMsg" class="hint"></span></div></div>'
 }
