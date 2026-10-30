@@ -26,7 +26,7 @@
   "dsh": {
     "id": "dsh-identity",
     "name": "大肥鱼 · 身份系统",
-    "version": "1.9.174",
+    "version": "1.9.175",
     "repo": "Anarrogantcat/dsh-identity",
     "permissions": "QQ 通道、记忆/情绪/成长数据、联网搜索、语音调用、面板扩展",
     "bundle": {
