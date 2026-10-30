@@ -29,7 +29,9 @@ const fakeTools = {
 const agent = { ctx: { tools: fakeTools } }
 const n1 = T.ensureSearchTool(agent, () => cfg)
 A('第一次注册成功', n1 === 1 && registered === 1, { n1, registered })
-A('定义了 output.schema', captured?.output?.schema?.type === 'json', captured?.output?.schema)
+A('定义了 output.schema', captured?.output?.schema?.type === 'string', captured?.output?.schema)
+// 宿主 0.2.1 真实白名单（不含 json）——以后再改成 json 这条会立刻炸
+A('schema.type 在宿主白名单里', ['object', 'array', 'string', 'number', 'integer', 'boolean', 'null'].includes(captured?.output?.schema?.type), captured?.output?.schema?.type)
 A('定义了 output.render', typeof captured?.output?.render === 'function', typeof captured?.output?.render)
 A('参数要求 query', captured?.parameters?.required?.includes('query'), captured?.parameters)
 
