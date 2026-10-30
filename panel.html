@@ -943,6 +943,8 @@ function renderOverview() {
       ${card('自主目标', String((au.by && au.by.proposed) || 0) + ' 待批 / ' + String((au.by && au.by.approved) || 0) + ' 已批', '只提议，你批了才动', 'proactive')}
       ${card('今日花费', '¥' + Number(todayYuan).toFixed(2), '软预算提醒，不拦聊天', 'usage')}
       ${card('最近复盘', (rf.week ? ('群 ' + rf.week.inbound + ' / 我 ' + rf.week.mine + ' 句') : '暂无'), '只吃事件、不读日记', 'identity')}
+      ${card('精力', String(Math.round(Number((STATE.pace && STATE.pace.energy) || 1) * 100)) + '%', '最近 10 分钟说了 ' + String((STATE.pace && STATE.pace.last10) || 0) + ' 句 · Owner 不受限', 'identity')}
+      ${card('接续', String((STATE.resume && STATE.resume.peers) || 0) + ' 个会话', '压缩后带最近 8 条 + 摘要 + 承诺', 'system')}
       ${card('会话压力', String(Math.round(Number((tp.sessionPressure || 0)) * 100)) + '%', '到 ' + String(Math.round(Number(tp.compactAt || 0.85) * 100)) + '% 自动压缩 · 接续带最近对话', 'system')}
       ${card('自我模型', escapeHtml(String((STATE.selfModel && STATE.selfModel.mood) || '平稳')), escapeHtml(String((STATE.selfModel && STATE.selfModel.regulation) || '按平常说话')) + ' · 目标 ' + String(((STATE.selfModel && STATE.selfModel.goals) || []).length), 'identity')}
       ${card('接话决策', String((STATE.decision && STATE.decision.total) || 0) + ' 次 · 接 ' + String((STATE.decision && STATE.decision.directed) || 0), '不接 ' + String(((STATE.decision && STATE.decision.total) || 0) - ((STATE.decision && STATE.decision.directed) || 0)) + ' · 规则 ' + String((STATE.decision && STATE.decision.sources && STATE.decision.sources.rule) || 0) + ' · 模型 ' + String((STATE.decision && STATE.decision.sources && STATE.decision.sources.model) || 0) + ' · 提到 ' + String((STATE.decision && STATE.decision.sources && STATE.decision.sources.mention) || 0) + ' · 主动 ' + String((STATE.decision && STATE.decision.sources && STATE.decision.sources.proactive) || 0), 'identity')}
@@ -1274,7 +1276,7 @@ function renderPanel(){
   if (VIEW === "identity") {
     const el = $("panel")
     const flds = (STATE.fields || []).filter((f) => f.tab === "identity")
-    el.innerHTML = '<div class="phead"><div class="phead-main"><div class="phead-title">身份</div><div class="phead-desc">内核是底座，traits 是长出来的；承诺和复盘是她自己的账。</div></div><div class="phead-side"><span class="chip">' + (STATE.traits && STATE.traits.stats ? (STATE.traits.stats.durable + ' durable / ' + STATE.traits.stats.tentative + ' tentative') : '') + '</span></div></div>' + identityCardHtml() + '<div class="pcard"><div class="label">自我模型 <span class="badge">runtime</span></div><div class="hint" style="white-space:pre-wrap;line-height:1.55">' + escapeHtml(String((STATE.selfModel && STATE.selfModel.text) || '还没有自我模型')) + '</div></div>' + (flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项：注入开关/预算/尺度）</summary><div class="pcard">' + flds.map((f) => fieldRow(f)).join("") + '</div></details>' : '')
+    el.innerHTML = '<div class="phead"><div class="phead-main"><div class="phead-title">身份</div><div class="phead-desc">内核是底座，traits 是长出来的；承诺和复盘是她自己的账。</div></div><div class="phead-side"><span class="chip">' + (STATE.traits && STATE.traits.stats ? (STATE.traits.stats.durable + ' durable / ' + STATE.traits.stats.tentative + ' tentative') : '') + '</span></div></div>' + identityCardHtml() + '<div class="pcard"><details class="adv"><summary>自我模型（展开看当前状态）</summary><div class="hint" style="white-space:pre-wrap;line-height:1.55;margin-top:8px">' + escapeHtml(String((STATE.selfModel && STATE.selfModel.text) || '还没有自我模型')) + '</div></details></div>' + (flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项：注入开关/预算/尺度）</summary><div class="pcard">' + flds.map((f) => fieldRow(f)).join("") + '</div></details>' : '')
     bindFields(el)
     bindIdentityCards(el)
     return
@@ -1603,6 +1605,8 @@ function identityCardHtml() {
     '</div>'
   }
   return `
+    <div class="pcard"><details class="adv"><summary>自我历史 · ${(STATE.selfHistory || []).length} 条（展开）</summary><div class="hint" style="margin-top:8px">${(STATE.selfHistory || []).map((h) => '<div style="margin:4px 0">' + escapeHtml(String(h.at || '').slice(0, 16)) + ' · ' + escapeHtml(String(h.summary || h.mood || '').slice(0, 120)) + '</div>').join('') || '还没有历史快照'}</div></details></div>
+<div class="pcard"><div class="label">精力 / 频率</div><div class="hint">精力 ${Math.round(Number((STATE.pace && STATE.pace.energy) || 1) * 100)}% · 最近 10 分钟说了 ${String((STATE.pace && STATE.pace.last10) || 0)} 句 · 累了会少回，Owner 不受限</div></div>
     <div class="pcard">
       <div class="label">内核 <span class="badge">你说了算</span></div>
       <div class="hint">这里写她是谁，连底线一起写。留空 = 用默认内核（已内置）。改完记得保存。真正的安全（隐私、支付、工具）在代码闸门里，不靠这段话保证。</div>
@@ -1623,11 +1627,7 @@ function identityCardHtml() {
       <div class="hint">只从她自己说出口的话里抓；逾期标「逾期」；这里点「兑现 / 不做了」，或群里发 #兑现 编号。</div>
       ${promiseRows}
     </div>
-    <div class="pcard">
-      <div class="label">最近复盘 <span class="badge">${refl && refl.week ? ('7天 群 ' + refl.week.inbound + ' 句 / 我 ' + refl.week.mine + ' 句') : '暂无'}</span></div>
-      <div class="hint">只吃事件与承诺、不读日记；这里只读，不改任何状态。${refl && refl.month ? ('　近 30 天：群 ' + refl.month.inbound + ' / 我 ' + refl.month.mine + ' 句') : ''}</div>
-      ${reflRows}
-    </div>
+    <div class="pcard"><details class="adv"><summary>最近复盘 · ${refl && refl.week ? ('7天 群 ' + refl.week.inbound + ' / 我 ' + refl.week.mine) : '暂无'}（展开）</summary><div class="hint" style="margin-top:8px">只吃事件与承诺、不读日记；这里只读，不改任何状态。${refl && refl.month ? ('　近 30 天：群 ' + refl.month.inbound + ' / 我 ' + refl.month.mine + ' 句') : ''}</div>${reflRows}</details></div>
   `
 }
 
