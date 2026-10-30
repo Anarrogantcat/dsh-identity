@@ -985,7 +985,7 @@ function moodCardHtml(){
   const needHtml = Object.keys(needs).map(function (k) { return moodBar(NEED_LABEL[k] || k, needs[k]) }).join('')
   return '<div class="pcard">' +
     '<div class="moodhero">' +
-      '<div class="moodring"><div><b>' + escapeHtml(blends.length ? String(blends[0]) : String(SEVEN_LABEL[topSeven] || '平稳')) + '</b><span>' + (blends.length ? '复合主导' : '此刻主导') + '</span></div></div>' +
+      '<div class="moodring"><div><b>' + escapeHtml(String(SEVEN_LABEL[topSeven] || '平稳')) + '</b><span>此刻主导</span></div></div>' +
       '<div class="qmain">' +
         '<div class="qtitle">七情六欲 <span class="badge">本地 · 0 token</span></div>' +
         '<div class="qmeta">' + (blends.length ? ('复合：' + escapeHtml(blends.join(' / '))) : '平稳：没有复合情绪') +
