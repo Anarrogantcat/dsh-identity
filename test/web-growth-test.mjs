@@ -131,6 +131,42 @@ A('敏感串被脱敏', listMemory(pk).every((x) => !/sk-abcdef1234567890/.test(
   A('纯图片消息不记文字', readEvents(pk).filter((e) => e.origin === 'inbound').length === inBefore, readEvents(pk).filter((e) => e.origin === 'inbound').length - inBefore)
 }
 
+// 宿主每步插的时间采样行也会被当成用户消息塞进来（真实事故：纯英文的
+// "Time sampled while preparing turn 967..." 被记成了群友说的话）
+{
+  const memBefore = listMemory(pk).length
+  const evBefore = readEvents(pk).length
+  fire({ header: { id: 'web-abc' } }, {
+    type: 'user/message',
+    seq: 11,
+    data: {
+      role: 'user',
+      content: [{
+        type: 'text',
+        text: `Time sampled while preparing turn 967, step 12: 2026-10-31T04:41:24+08:00[Asia/Shanghai]
+Browser time zone for this request: Asia/Shanghai. Interpret otherwise-unqualified dates and times in this zone.
+Elapsed since the preceding step context: unavailable.`,
+      }],
+    },
+  })
+  A('时间采样行不记记忆', listMemory(pk).length === memBefore, listMemory(pk).length - memBefore)
+  A('时间采样行不记事件', readEvents(pk).length === evBefore, readEvents(pk).length - evBefore)
+
+  fire({ header: { id: 'web-abc' } }, {
+    type: 'user/message',
+    seq: 12,
+    data: {
+      role: 'user',
+      content: [{
+        type: 'text',
+        text: '这版看着顺眼多了\nTime sampled while preparing turn 968, step 1: 2026-10-31T04:45:00+08:00[Asia/Shanghai]',
+      }],
+    },
+  })
+  const withMeta = listMemory(pk).at(-1)
+  A('真话后面跟时间行也保住真话', /看着顺眼/.test(withMeta?.text ?? '') && !/Time sampled/i.test(withMeta?.text ?? ''), withMeta?.text)
+}
+
 // 审计里能看到 inbound（以前全是 bot）
 {
   const ap = join(dirs.logs, 'audit.jsonl')

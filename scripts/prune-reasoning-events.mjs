@@ -112,9 +112,13 @@ for (const t of targets) {
 }
 console.log('会话 ' + sessions + ' 个，assistant/message ' + asst + ' 条；真实发言前缀 ' + visiblePrefix.size + ' 个，精确存证 ' + exactPolluted.size + ' 条')
 
+/** 宿主自己插进来的元信息（时间采样 / 时区说明），被当成用户消息记下来的那种 */
+const HOST_META = /^(time sampled while preparing turn|elapsed since the preceding step context|browser time zone for this request)\b/i
+
 const isDraft = (text) => {
   const t = String(text ?? '')
   if (!t) return false
+  if (HOST_META.test(t)) return true // 规则 0：宿主元信息，不是任何人说的话
   if (exactPolluted.has(t)) return true
   if (!/^[\x20-\x7e]+$/.test(t)) return false // 有非 ASCII 就不动
   return !visiblePrefix.has(t.slice(0, VISIBLE_KEEP))
@@ -141,7 +145,9 @@ for (const note of existsSync(evRoot) ? readdirSync(evRoot) : []) {
       if (!ln.trim()) { keep.push(ln); continue }
       let o
       try { o = JSON.parse(ln) } catch { keep.push(ln); continue }
-      if (o.origin === 'bot' && isDraft(o.text)) hit++
+      // 草稿只可能出现在 bot 一侧；宿主元信息会被记成 inbound，也要清
+      const drop = (o.origin === 'bot' && isDraft(o.text)) || (o.origin === 'inbound' && HOST_META.test(String(o.text ?? '')))
+      if (drop) hit++
       else { keep.push(ln); kept++ }
     }
     if (!hit) continue
