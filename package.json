@@ -1,7 +1,7 @@
 {
   "name": "dsh-identity",
-  "version": "1.9.176",
-  "description": "DSH 身份系统：给「大肥鱼」一套持续运行的身份状态——可编辑内核、证据制 traits、跨群记忆、情绪与调节、关系/好感、精力控频、自主目标、共情事件与学习闭环。QQ（NapCat/OneBot 11）是第一个通道，核心不依赖 QQ；数据在本机，安全/支付/权限由代码闸门硬拦。当前处于观察期：durable 需要跨天证据。",
+  "version": "1.9.177",
+  "description": "DSH 身份系统：给「大肥鱼」一套持续运行的身份状态——可编辑内核、证据制 traits、记忆/日记/复盘、心情 v2、关系与精力、自主提议、共情与学习闭环。身份段与面板在任意 DSH 会话生效，不接 QQ 也能用；QQ（NapCat/OneBot 11）只是第一个通道，额外提供接话判断、主动开口与群治理。数据在本机，安全/支付/权限由代码闸门硬拦。",
   "type": "module",
   "scripts": {
     "test": "node test/run-all.mjs"
@@ -26,9 +26,9 @@
   "dsh": {
     "id": "dsh-identity",
     "name": "大肥鱼 · 身份系统",
-    "version": "1.9.176",
+    "version": "1.9.177",
     "repo": "Anarrogantcat/dsh-identity",
-    "permissions": "QQ 通道、记忆/情绪/成长数据、联网搜索、语音调用、面板扩展",
+    "permissions": "QQ 通道（可选）、记忆/情绪/成长数据、联网搜索、语音调用、面板扩展",
     "bundle": {
       "patch": "./cordis.patch.yml"
     },
@@ -41,7 +41,7 @@
       ]
     },
     "displayName": "大肥鱼 · 身份系统",
-    "description": "不是角色卡：内核 + 记忆 + 情绪 + 关系 + 精力 + 自主 + 成长；QQ 只是第一个通道。安全/支付/权限由代码闸门硬拦，不交给身份判断。"
+    "description": "不是角色卡：内核 + 记忆 + 心情 + 关系 + 精力 + 自主 + 成长。任意 DSH 会话都能用，不接 QQ 也在；QQ 只是第一个通道，额外提供接话判断、主动开口与群治理。安全/支付/权限由代码闸门硬拦。"
   },
   "keywords": [
     "dsh",
