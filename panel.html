@@ -1779,6 +1779,7 @@ async function claimAdd(kind, value) {
   const j = await scopeOp({ action: "mgmtOp", kind, op: "add", value })
   if (!j.ok) alert(/未知操作|unknown/i.test(j.error || "") ? "宿主还是旧代码，请重启 DSH" : (j.error || "添加失败"))
   await load()
+  if (j.ok) { try { const m = $("msg"); if (m) m.textContent = "已加入白名单：" + value } catch (e) {} }
 }
 
 function listCard(title, kind, rows, hint) {
@@ -1819,7 +1820,7 @@ function renderScopeClaim() {
   const isGroup = (a) => a.scope === "group"
   const groupRow = (e) => {
     const who = isGroup(e) ? "群" : "私聊"
-    const already = isGroup(e) ? groups.includes(e.peer) : dms.includes(e.peer)
+    const already = (isGroup(e) ? groups : dms).map(String).includes(String(e.peer))
     const n = e.senders.size
     const senders = [...e.senders.entries()]
     const senderLine = (sid, at) => `<div class="wlrow">
@@ -1912,12 +1913,12 @@ function renderScopeClaim() {
     btn.onclick = async () => {
       const j = await scopeOp({ action: "bindNew", purpose: btn.dataset.bind, ttlMin: 10 })
       const msg = $("claimmsg")
-      if (j.ok) { if (msg) msg.textContent = "已生成，见上方代码"; await load() }
+      if (j.ok) { await load(); try { const m = $("msg"); if (m) m.textContent = "已生成绑定码，10 分钟内有效" } catch (e) {} }
       else if (msg) msg.textContent = /未知操作|unknown/i.test(j.error || "") ? "宿主还是旧代码：请重启一次 DSH 再点" : ("生成失败：" + (j.error || ""))
     }
   })
   const bc = el.querySelector("[data-bindcancel]")
-  if (bc) bc.onclick = async () => { await scopeOp({ action: "bindCancel" }); await load() }
+  if (bc) bc.onclick = async () => { await scopeOp({ action: "bindCancel" }); await load(); try { const m = $("msg"); if (m) m.textContent = "绑定码已作废" } catch (e) {} }
   const addBtn = $("claimadd")
   if (addBtn) addBtn.onclick = async () => {
     const kind = $("claimkind").value
@@ -2765,11 +2766,12 @@ async function loadSafety(box) {
 function rosterCardHtml() {
   const r = STATE.roster || {}
   const choices = STATE.groupChoices || []
-  const inList = new Set(((STATE.config.scope && STATE.config.scope.groups) || []))
-  const pending = choices.filter(function (g) { return !inList.has(g.id) })
+  // 群号在 state 里可能是数字，配置里是字符串；统一按字符串比，否则「已在白名单」永远判不中
+  const inList = new Set((((STATE.config.scope && STATE.config.scope.groups) || [])).map(String))
+  const pending = choices.filter(function (g) { return !inList.has(String(g.id)) })
   const opts = choices.map(function (g) {
-    return '<option value="' + escapeHtml(g.id) + '">' + escapeHtml(g.id) + (g.name ? "（" + escapeHtml(g.name) + "）" : "") +
-      " · " + (g.count == null ? 0 : g.count) + " 人" + (inList.has(g.id) ? " · 已在白名单" : "") + '</option>'
+    return '<option value="' + escapeHtml(String(g.id)) + '">' + escapeHtml(String(g.id)) + (g.name ? "（" + escapeHtml(g.name) + "）" : "") +
+      " · " + (g.count == null ? 0 : g.count) + " 人" + (inList.has(String(g.id)) ? " · 已在白名单" : "") + '</option>'
   }).join("")
   const items = [
     ["群", r.groups == null ? "—" : r.groups],
@@ -2827,7 +2829,7 @@ async function bindRosterCard() {
   if (add) {
     const syncBtn = function () {
       const gid = sel ? sel.value : ""
-      const inList = ((STATE.config.scope && STATE.config.scope.groups) || []).indexOf(gid) >= 0
+      const inList = (((STATE.config.scope && STATE.config.scope.groups) || []).map(String)).indexOf(String(gid)) >= 0
       add.disabled = !gid || inList
       add.textContent = inList ? "已在白名单" : "加入白名单"
     }
@@ -2853,10 +2855,13 @@ async function bindRosterCard() {
     if (!ids.length) { if (pickMsg) pickMsg.textContent = '先勾一个群'; return }
     many.disabled = true
     let ok = 0
-    for (const gid of ids) { try { const j = await mg({ action: 'mgmtOp', kind: 'groups', op: 'add', value: gid }); if (j && j.ok) ok++ } catch (e) {} }
-    if (pickMsg) pickMsg.textContent = '已加入 ' + ok + ' 个'
+    let lastErr = ''
+    for (const gid of ids) { try { const j = await mg({ action: 'mgmtOp', kind: 'groups', op: 'add', value: gid }); if (j && j.ok) ok++; else if (j && j.error) lastErr = j.error } catch (e) { lastErr = e.message } }
     many.disabled = false
-    try { await load(); renderPanel() } catch (e) {}
+    try { await load() } catch (e) { lastErr = lastErr || e.message }
+    // load() 会重绘整块，旧提示会被冲掉；结果写到顶栏，保证看得到
+    try { const m = $('msg'); if (m) m.textContent = '已加入 ' + ok + ' 个群' + (lastErr ? ('；失败：' + lastErr) : '') } catch (e) {}
+    try { renderPanel() } catch (e) {}
   }
   const box = $("rosterRows")
   if (box) {
