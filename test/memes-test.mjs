@@ -56,6 +56,7 @@ T('热门失败退热搜词', fallback.length === 1 && fallback[0].title === '�
 await M.refreshMemes({ fetchImpl: stub(['新的一条'], []), now: Date.now() })
 const text2 = readFileSync(M.MEMES_FILE, 'utf8')
 T('同日覆盖不叠加', (text2.match(/^## /gm) || []).length === 1 && text2.includes('新的一条') && !text2.includes('第二条') && !text2.includes('B站一条'), text2)
+T('能取最新一天给按需注入', M.latestSectionText().includes('新的一条'), M.latestSectionText())
 
 // 过期段清理
 const old = '## 2000-01-01\n- 上古梗\n'

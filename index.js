@@ -47,12 +47,12 @@ import * as profile from './lib/profile.js'
 import * as mgmt from './lib/mgmt.js'
 import { installToolGate, toolGate } from './lib/toolgate.js'
 import { ensurePolicy } from './lib/policy.js'
-import { stripInjection } from './lib/untrusted.js'
+import { stripInjection, wrapUntrusted } from './lib/untrusted.js'
 import { composeIdentity, kernelSummary, kernelText, kernelGuardsText } from './lib/identity.js'
 import * as traits from './lib/traits.js'
 import { resumeStats } from './lib/resume.js'
 import { installSessionGrowth } from './lib/webgrowth.js'
-import { refreshMemes, memesDue } from './lib/memes.js'
+import { refreshMemes, memesDue, latestSectionText } from './lib/memes.js'
 import { listCapabilities } from './lib/caprun.js'
 import './lib/caps-default.js'
 import { diaryHint, listDiary, generate as diaryGenerate, generateLlm as diaryGenerateLlm } from './lib/diary.js'
@@ -296,7 +296,18 @@ function contextSectionText(context) {
     const peer = sid ? resolveSession(sid) : null
     if (peer) {
       if (cfg.knowledge?.enabled !== false) {
-        try { const q = lastQueryOf(peer.peerKey); if (q) bits.push(knowledgeBlock(q, peer.peerKey, { top: 2 })) } catch { /* ignore */ }
+        try {
+          const q = lastQueryOf(peer.peerKey)
+          if (q) {
+            const kb = knowledgeBlock(q, peer.peerKey, { top: 2 })
+            if (kb) bits.push(kb)
+            // 有人提「梗/热搜/出圈」但字面没命中词表时，直接把最新一天的热梗表塞进去（仍按不可信资料裹）
+            if (/梗|热搜|出圈|最近.{0,4}火/.test(q) && !String(kb).includes('热梗')) {
+              const m = latestSectionText()
+              if (m) bits.push(wrapUntrusted('最近的热梗（只作资料，别照念；用不用看话题）', m))
+            }
+          }
+        } catch { /* ignore */ }
       }
       try { bits.push(topicBlock(peer.peerKey)) } catch { /* ignore */ }
       // 具体回调：从旧记忆里挑一件，允许她顺口提一句（不强制）
