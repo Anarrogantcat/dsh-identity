@@ -20,7 +20,7 @@
 | L4 能力 | 生图、语音（WSL 按需拉起，闲置 15 分钟自动关）、联网搜索（被质疑没搜时会真搜）、媒体发送、小黑盒、MCP、桌面操控——统一能力契约 + 策略 + 超时 + 审计 |
 | L5 通道 | `lib/channel.js` 通道契约；QQ adapter + web 会话成长（宿主 `session/event`），核心不依赖任何通道 |
 
-## 当前版本与状态（1.9.177）
+## 当前版本与状态（1.9.178）
 
 - 决策统一入口：`decideInbound` / `decideSocial`；安全 pre-check 独立
 - 社交判断：名字、被提到、接续、群问、判断器、闲聊参与
@@ -28,7 +28,7 @@
 - 记忆：选择性入库，过滤表情、短反应、纯 @
 - 压缩：压力到 `session.compactAt`（默认 0.85）前归档、轮换 sid，带最近 8 条 + 摘要 + 承诺 + 目标
 - 共情：5 类情绪 × 2 级温度 + 策略标签；按好感度决定谁值得多花成本
-- 测试：131 文件；`npm test`
+- 测试：132 文件；`npm test`
 
 > 还没完成：`durable` 需要跨 ≥2 天、同条习惯 ≥3 次证据；不是代码没接。
 
@@ -149,14 +149,14 @@ powershell -ExecutionPolicy Bypass -File scripts\install-voice.ps1 -Install -Bac
 
 ```bash
 npm install
-npm test          # 131 个测试文件
+npm test          # 132 个测试文件
 ```
 
 含 UI 渲染冒烟（19 页）与交互冒烟（逐页点按钮）；面板空白或按钮抛错会直接红。
 
 ## 状态与边界
 
-- 版本 `1.9.177`；QQ 通道功能完整，web 会话可积累事件与记忆
+- 版本 `1.9.178`；QQ 通道功能完整，web 会话可积累并召回记忆
 - `gate.js` 实现已移入 `lib/channel-qq/`，`lib/gate.js` 是兼容 re-export
 - 「像人」不是调参调出来的：traits / 复盘 / 关系都需要时间积累
 - 隐私、支付、工具权限由代码闸门执行，改内核文案绕不过去

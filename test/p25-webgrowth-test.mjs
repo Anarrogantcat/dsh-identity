@@ -26,6 +26,8 @@ handler({ header: { id: sid } }, { type: 'user/message', seq: 1, data: { message
 const pk = 'web_' + sid
 T('web 用户消息落事件', E.readEvents(pk).length === 1, E.readEvents(pk))
 T('web 用户消息进记忆', M.listMemory(pk).length === 1)
+const card = M.memoryCard(pk, {})
+T('web 记忆能被注入召回', card.includes('今天在 DSH 里调代码'), card)
 handler({ header: { id: sid } }, { type: 'assistant/message', seq: 2, data: { message: { content: [{ type: 'text', text: '那就先跑测试' }] } } })
 T('她的回复也落事件', E.readEvents(pk).some((e) => e.origin === 'bot'))
 

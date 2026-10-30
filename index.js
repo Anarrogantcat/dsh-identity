@@ -114,13 +114,15 @@ async function readBody(req, limit = 512 * 1024) {
   return chunks.length ? JSON.parse(Buffer.concat(chunks).toString('utf8')) : {}
 }
 
-/** 记忆注入：只对 QQ 会话生效 */
-function memorySectionText(context) {
+/** 记忆注入：QQ 会话按群/人，DSH web 会话按 web_<sid>（与 webgrowth 写入的桶一致） */
+export function memorySectionText(context) {
   try {
     const cfg = loadConfig()
     if (!cfg.memory.enabled) return ''
     const sid = sessionIdOfContext(context)
     const peer = sid ? resolveSession(sid) : null
+    const key = peer?.peerKey || (sid ? 'web_' + sid : '')
+    const bits = []
     try { const ep = peer ? empathy.latestFor(peer.peer, 10 * 60000) : null; if (ep && ep.guide) bits.push('共情提示（只影响这次怎么说，不是任务）：' + ep.guide) } catch { /* ignore */ }
     // 饭量（预算+充值−今日花费）：有人问就照实说，别装不知道
     try {
@@ -130,21 +132,25 @@ function memorySectionText(context) {
         bits.push('平台账户真实余额：¥' + Number(cb.yuan).toFixed(2) + '（' + (ageH < 1 ? '刚刚' : ageH.toFixed(1) + ' 小时前') + '读取；这是账户里的钱；有人问余额/多少钱/白饭，先报这个数，再说明读取时间）')
       }
     } catch { /* ignore */ }
-    if (!peer) return ''
-    // 上下文压力大（快要压缩/截断）时，临时扩大召回，别让「记得的事」被挤掉
-    let pressureBoost = false
-    try {
-      const sid = sidForOneBot(peer.scope, peer.peer)
-      const raw = JSON.parse(readFileSync(sessionFile(sid), 'utf8'))
-      if (pressureRatioOf(raw) > 0.45) pressureBoost = true
-    } catch { /* 读不到就算了，按默认召回 */ }
-    const baseCfg = pressureBoost ? { ...cfg, memory: { ...(cfg.memory ?? {}), recallTop: Math.max(6, Number(cfg?.memory?.recallTop ?? 3) * 2) } } : cfg
-    let card = memoryCard(peer.peerKey, baseCfg)
-    const q = takePendingRecall(peer.peerKey)
+    if (!key) return bits.filter(Boolean).join('\n\n')
+    let baseCfg = cfg
+    if (peer) {
+      // 上下文压力大（快要压缩/截断）时，临时扩大召回，别让「记得的事」被挤掉
+      let pressureBoost = false
+      try {
+        const osid = sidForOneBot(peer.scope, peer.peer)
+        const raw = JSON.parse(readFileSync(sessionFile(osid), 'utf8'))
+        if (pressureRatioOf(raw) > 0.45) pressureBoost = true
+      } catch { /* 读不到就算了，按默认召回 */ }
+      if (pressureBoost) baseCfg = { ...cfg, memory: { ...(cfg.memory ?? {}), recallTop: Math.max(6, Number(cfg?.memory?.recallTop ?? 3) * 2) } }
+    }
+    let card = memoryCard(key, baseCfg)
+    const q = takePendingRecall(key)
     if (q) {
-      const hits = recall(peer.peerKey, q, cfg, cfg.memory.recallTop ?? 5)
+      const hits = recall(key, q, cfg, cfg.memory.recallTop ?? 5)
       if (hits.length) card += `\n\n# 补充回忆（关键词：${q}）\n` + hits.map((h) => `- [${String(h.at).slice(0, 10)}] ${h.text}`).join('\n')
     }
+    if (bits.length) card = bits.filter(Boolean).join('\n\n') + (card ? '\n\n' + card : '')
     // 记忆里可能夹着群友原话：过滤掉指令式句子，别让她把记忆当命令执行
     const filtered = stripInjection(card)
     if (filtered.hits) {
