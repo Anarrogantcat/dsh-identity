@@ -301,9 +301,9 @@ function contextSectionText(context) {
           if (q) {
             const kb = knowledgeBlock(q, peer.peerKey, { top: 2 })
             if (kb) bits.push(kb)
-            // 有人提「梗/热搜/出圈」但字面没命中词表时，直接把最新一天的热梗表塞进去（仍按不可信资料裹）
-            if (/梗|热搜|出圈|最近.{0,4}火/.test(q) && !String(kb).includes('热梗')) {
-              const m = latestSectionText()
+            // 只在真的在问梗时补最新表：别让一句带「梗」的闲聊也吃 400 字预算
+            if (/(是什么梗|什么梗|啥梗|梗.{0,3}意思|这梗|热梗|新梗|最近.{0,4}(梗|火|出圈|热搜))/.test(q) && !String(kb).includes('梗Wiki')) {
+              const m = latestSectionText(320)
               if (m) bits.push(wrapUntrusted('最近的热梗（只作资料，别照念；用不用看话题）', m))
             }
           }
