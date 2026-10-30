@@ -1,0 +1,17 @@
+# awesome-dsh-plugin 收录条目
+#
+# 提交方式：在 awesome-dsh-plugin/awesome-dsh-plugin 仓库里加这一个文件：
+#   data/plugins/Anarrogantcat__dsh-identity.yml
+# 然后对这个仓库的 main 提 PR（标题写 Add Anarrogantcat/dsh-identity 即可）。
+#
+# 注意：
+# - 一个 PR 只加这一条，不要动两个 README（它们由脚本生成）。
+# - 描述里含 ": " 时必须整体加引号，否则 YAML 会当成嵌套键。
+# - 分类 identity 是对方列表里已有的合法值，不要改成 storage。
+
+url: https://github.com/Anarrogantcat/dsh-identity
+name: Anarrogantcat/dsh-identity
+category: identity
+description:
+  en: 'Persistent identity layer for DSH: editable kernel, evidence-based traits, on-demand memory, mood, bond, energy pacing, autonomy and empathy — QQ is one optional channel.'
+  zh: 'DSH 身份系统：可编辑内核、证据制 traits、按需召回的记忆、心情、关系、精力控频、自主提议与共情；QQ 只是一个可选通道。'
