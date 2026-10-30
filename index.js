@@ -301,10 +301,10 @@ function contextSectionText(context) {
           if (q) {
             const kb = knowledgeBlock(q, peer.peerKey, { top: 2 })
             if (kb) bits.push(kb)
-            // 只在真的在问梗时补最新表：别让一句带「梗」的闲聊也吃 400 字预算
-            if (/(是什么梗|什么梗|啥梗|梗.{0,3}意思|这梗|热梗|新梗|最近.{0,4}(梗|火|出圈|热搜))/.test(q) && !String(kb).includes('梗Wiki')) {
-              const m = latestSectionText(320)
-              if (m) bits.push(wrapUntrusted('最近的热梗（只作资料，别照念；用不用看话题）', m))
+            // 问热搜/梗：直接把最新一期热梗表放进上下文（这条链路每轮都跑，不依赖 QQ 侧预检索）
+            if (/(热搜|是什么梗|什么梗|啥梗|梗.{0,3}意思|这梗|热梗|新梗|最近.{0,4}(梗|火|出圈))/.test(q) && !String(kb).includes('梗Wiki')) {
+              const m = latestSectionText(400)
+              if (m) bits.push(wrapUntrusted('今天的热搜/热梗（只作资料，别照念；有人问就挑几条说，别编）', m))
             }
           }
         } catch { /* ignore */ }
