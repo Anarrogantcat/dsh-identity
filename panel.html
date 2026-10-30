@@ -818,6 +818,12 @@ function renderSystemPage() {
   })
 }
 
+function goalBtns(g) {
+  if (!g || g.status !== 'proposed') return '<span class="hint">已处理</span>'
+  const id = escapeHtml(String(g.id || ''))
+  return '<button data-goal="' + id + '" data-status="approved">批准</button> <button data-goal="' + id + '" data-status="dropped">放弃</button>'
+}
+
 function behaviorCardHtml() {
   const mv = STATE.moodV2 || {}
   const lp = STATE.lifeparams || {}
@@ -833,7 +839,7 @@ function behaviorCardHtml() {
   </div>
   <div class="pcard"><div class="label">此刻状态</div><div class="hint">心情：${escapeHtml(blends)} · 目标：${goals.length} 个（待批 ${(au.by && au.by.proposed) || 0} / 已批 ${(au.by && au.by.approved) || 0}）</div></div>
   <div class="pcard"><div class="label">生活参数</div>${keys.filter((k) => k in vals).map((k) => '<div class="row"><div class="meta"><div class="label">' + k + '</div></div><div class="ctl"><span class="hint">' + vals[k] + '</span></div></div>').join('')}</div>
-  <div class="pcard"><div class="label">目标 <span class="badge">${goals.length}</span></div>${goals.length ? goals.slice(0, 6).map((g) => '<div class="row"><div class="meta"><div class="label">' + escapeHtml(String(g.text || g.title || '').slice(0, 60)) + ' <span class="badge">' + escapeHtml(String(g.status || '')) + '</span></div><div class="hint">' + escapeHtml(String(g.why || g.reason || '').slice(0, 80)) + '</div></div></div>').join('') : '<div class="hint">还没有目标；她自己觉得该做的事会先提议。</div>'}</div>`
+  <div class="pcard"><div class="label">目标 <span class="badge">${goals.length}</span></div>${goals.length ? goals.slice(0, 6).map((g) => '<div class="row"><div class="meta"><div class="label">' + escapeHtml(String(g.text || g.title || '').slice(0, 60)) + ' <span class="badge">' + escapeHtml(String(g.status || '')) + '</span></div><div class="hint">' + escapeHtml(String(g.why || g.reason || '').slice(0, 80)) + '</div></div><div class="ctl">' + goalBtns(g) + '</div></div>').join('') : '<div class="hint">还没有目标；她自己觉得该做的事会先提议。</div>'}</div>`
 }
 function renderMemoryPage() {
   const el = $('panel')
@@ -859,6 +865,7 @@ function renderProactivePage() {
   const el = $('panel')
   const flds = (STATE.fields || []).filter((f) => f.tab === 'proactive')
   el.innerHTML = behaviorCardHtml() + (flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项）</summary><div class="pcard">' + flds.map((f) => fieldRow(f)).join('') + '</div></details>' : '')
+  el.querySelectorAll('[data-goal]').forEach((b) => { b.onclick = async () => { try { const j = await pfetch({ action: 'autonomyStatus', id: b.dataset.goal, status: b.dataset.status }); if (!j || j.ok === false) { say('操作失败：' + ((j && j.error) || '未知')); return } location.reload() } catch (e) { say('操作失败') } } })
   bindFields(el)
 }
 function settingsHeroHtml(v) {
@@ -933,16 +940,19 @@ function renderOverview() {
       ${card('心情', escapeHtml(blends), '七情六欲 · 改语气、内容、行为', 'cognition')}
       ${card('自我 traits', String((tr.stats && tr.stats.durable) || 0) + ' durable / ' + String((tr.stats && tr.stats.tentative) || 0) + ' tentative', '有证据才进人格', 'identity')}
       ${card('承诺', String(pr.length) + ' 件没做完' + (overdue ? (' · ' + overdue + ' 件逾期') : ''), '她自己说的才算', 'identity')}
-      ${card('自主目标', String((au.by && au.by.proposed) || 0) + ' 待批 / ' + String((au.by && au.by.approved) || 0) + ' 已批', '只提议，你批了才动', 'identity')}
+      ${card('自主目标', String((au.by && au.by.proposed) || 0) + ' 待批 / ' + String((au.by && au.by.approved) || 0) + ' 已批', '只提议，你批了才动', 'proactive')}
       ${card('今日花费', '¥' + Number(todayYuan).toFixed(2), '软预算提醒，不拦聊天', 'usage')}
       ${card('最近复盘', (rf.week ? ('群 ' + rf.week.inbound + ' / 我 ' + rf.week.mine + ' 句') : '暂无'), '只吃事件、不读日记', 'identity')}
+      ${card('会话压力', String(Math.round(Number((tp.sessionPressure || 0)) * 100)) + '%', '到 ' + String(Math.round(Number(tp.compactAt || 0.85) * 100)) + '% 自动压缩 · 接续带最近对话', 'system')}
       ${card('自我模型', escapeHtml(String((STATE.selfModel && STATE.selfModel.mood) || '平稳')), escapeHtml(String((STATE.selfModel && STATE.selfModel.regulation) || '按平常说话')) + ' · 目标 ' + String(((STATE.selfModel && STATE.selfModel.goals) || []).length), 'identity')}
-      ${card('接话决策', String((STATE.decision && STATE.decision.total) || 0) + ' 次 · 接 ' + String((STATE.decision && STATE.decision.directed) || 0), '不接 ' + String(((STATE.decision && STATE.decision.total) || 0) - ((STATE.decision && STATE.decision.directed) || 0)) + ' · 被接 ' + String((STATE.decision && STATE.decision.engaged) || 0) + ' · 没接又被找 ' + String((STATE.decision && STATE.decision.missed) || 0), 'identity')}
+      ${card('接话决策', String((STATE.decision && STATE.decision.total) || 0) + ' 次 · 接 ' + String((STATE.decision && STATE.decision.directed) || 0), '不接 ' + String(((STATE.decision && STATE.decision.total) || 0) - ((STATE.decision && STATE.decision.directed) || 0)) + ' · 规则 ' + String((STATE.decision && STATE.decision.sources && STATE.decision.sources.rule) || 0) + ' · 模型 ' + String((STATE.decision && STATE.decision.sources && STATE.decision.sources.model) || 0) + ' · 提到 ' + String((STATE.decision && STATE.decision.sources && STATE.decision.sources.mention) || 0) + ' · 主动 ' + String((STATE.decision && STATE.decision.sources && STATE.decision.sources.proactive) || 0), 'identity')}
       ${card('成长指标', growthTxt, '观察期：≥3 次证据 + 跨 ≥2 天', 'identity')}
     </div>`
   const decLast = (STATE.decision && Array.isArray(STATE.decision.last)) ? STATE.decision.last.slice(-5).reverse() : []
   el.insertAdjacentHTML('beforeend', '<div class="pcard"><div class="label">最近判断 <span class="badge">'+decLast.length+'</span></div>' + (decLast.length ? decLast.map(function(x){ return '<div class="wlrow"><div class="qmeta" style="flex:none;min-width:56px">'+escapeHtml(x.directed?'接':'不接')+'</div><div style="min-width:0">'+escapeHtml(String(x.reason||'没有理由'))+(x.outcome?(' · '+escapeHtml(String(x.outcome))):'')+'</div></div>' }).join('') : '<div class="hint">还没有判断记录</div>') + '</div>')
   el.insertAdjacentHTML('beforeend', '<div class="pcard"><div class="label">最近对话 <span class="badge">实时 · 5 秒</span></div><div id="recentChat"><div class="hint">读取中…</div></div></div>')
+  el.insertAdjacentHTML('beforeend', '<div class="pcard"><div class="label">会话操作</div><div class="pbtns"><button id="compactNow">立即压缩会话</button><span id="compactMsg" class="hint">归档旧会话，新会话带最近对话+摘要</span></div></div>')
+  try { const cb = document.getElementById('compactNow'); if (cb) cb.onclick = async () => { cb.disabled = true; try { const j = await pfetch({ action: 'compactNow' }); const m = document.getElementById('compactMsg'); if (m) m.textContent = j && j.ok ? '已压缩，下一句会带接续包' : ('失败：' + ((j && j.error) || '未知')); } catch (e) { const m = document.getElementById('compactMsg'); if (m) m.textContent = '失败：网络错误' } cb.disabled = false } } catch (e) {}
   ;[...el.querySelectorAll('[data-goto]')].forEach((b) => { b.onclick = () => goTab(b.dataset.goto) })
   armChatPoll()
 }
@@ -1264,7 +1274,7 @@ function renderPanel(){
   if (VIEW === "identity") {
     const el = $("panel")
     const flds = (STATE.fields || []).filter((f) => f.tab === "identity")
-    el.innerHTML = '<div class="phead"><div class="phead-main"><div class="phead-title">身份</div><div class="phead-desc">内核是底座，traits 是长出来的；承诺和复盘是她自己的账。</div></div><div class="phead-side"><span class="chip">' + (STATE.traits && STATE.traits.stats ? (STATE.traits.stats.durable + ' durable / ' + STATE.traits.stats.tentative + ' tentative') : '') + '</span></div></div>' + identityCardHtml() + (flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项：注入开关/预算/尺度）</summary><div class="pcard">' + flds.map((f) => fieldRow(f)).join("") + '</div></details>' : '')
+    el.innerHTML = '<div class="phead"><div class="phead-main"><div class="phead-title">身份</div><div class="phead-desc">内核是底座，traits 是长出来的；承诺和复盘是她自己的账。</div></div><div class="phead-side"><span class="chip">' + (STATE.traits && STATE.traits.stats ? (STATE.traits.stats.durable + ' durable / ' + STATE.traits.stats.tentative + ' tentative') : '') + '</span></div></div>' + identityCardHtml() + '<div class="pcard"><div class="label">自我模型 <span class="badge">runtime</span></div><div class="hint" style="white-space:pre-wrap;line-height:1.55">' + escapeHtml(String((STATE.selfModel && STATE.selfModel.text) || '还没有自我模型')) + '</div></div>' + (flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项：注入开关/预算/尺度）</summary><div class="pcard">' + flds.map((f) => fieldRow(f)).join("") + '</div></details>' : '')
     bindFields(el)
     bindIdentityCards(el)
     return

@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url'
 import { DEFAULTS, FIELDS, TABS, FIELD_MAP, CFG_PATH, STORE_DIR, loadConfig, saveConfig, ensureStore, clone, coerce, setAt } from './lib/config.js'
 import { ensureDirs, readJson, writeJson, dirs, peerKey, audit } from './lib/store.js'
 import { diag, loadQQBot, installHooks } from './lib/diag.js'
-import { startTransport, stopTransport, transportDescribe, getOneBotClient } from './lib/transport.js'
+import { startTransport, stopTransport, transportDescribe, getOneBotClient, currentChannel } from './lib/transport.js'
 import { capabilitySummary } from './lib/capabilities.js'
 import { refreshAll, refreshMembers, rosterStats, groupChoices, groupName, loadRoster } from './lib/roster.js'
 import { loadState, state, newBind, getBind, clearBind } from './lib/state.js'
@@ -860,6 +860,30 @@ export async function apply(ctx, config = {}) {
             return sendJson(res, 200, { ...profile.clearGroup(body.group) })
           }
           if (action === "traitRetire") return sendJson(res, 200, traits.retireTrait(String(body.id ?? ""), "owner"))
+          if (action === "compactNow") {
+            try {
+              const ch = currentChannel()
+              const chats = ch?.chats ? [...ch.chats.values()] : []
+              let c = chats[0]
+              if (!c) {
+                const cfg = loadConfig()
+                const gid = String((cfg.scope?.groups ?? [])[0] ?? '')
+                if (!gid) return sendJson(res, 200, { ok: false, error: "没有白名单群，也没有活跃会话" })
+                let sid = ''
+                try { const m = JSON.parse(readFileSync(join(dirs.root, 'sidmap.json'), 'utf8')); sid = String(m['group:' + gid] || '') } catch { /* ignore */ }
+                c = { key: 'group:' + gid, scope: 'group', peer: gid, sid, handle: null, target: null }
+              }
+              await ch.resetOverflowChat(c, { notify: false })
+              return sendJson(res, 200, { ok: true })
+            } catch (e) { return sendJson(res, 200, { ok: false, error: String(e?.message ?? e) }) }
+          }
+          if (action === "autonomyStatus") {
+            const id = String(body.id ?? "")
+            const status = String(body.status || "approved")
+            const r = autonomy.setGoalStatus(id, status, { by: "owner" })
+            if (r.ok && status === "approved") { try { autonomy.runGoal(id, { cfg: loadConfig() }) } catch { /* ignore */ } }
+            return sendJson(res, 200, r)
+          }
           if (action === "traitPromote") return sendJson(res, 200, traits.promoteTrait(String(body.id ?? "")))
           if (action === "recentEvents") {
             const g = String(body.group ?? "")
