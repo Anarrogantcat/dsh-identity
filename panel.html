@@ -939,6 +939,8 @@ function renderOverview() {
       ${card('接话决策', String((STATE.decision && STATE.decision.total) || 0) + ' 次 · 接 ' + String((STATE.decision && STATE.decision.directed) || 0), '不接 ' + String(((STATE.decision && STATE.decision.total) || 0) - ((STATE.decision && STATE.decision.directed) || 0)) + ' · 被接 ' + String((STATE.decision && STATE.decision.engaged) || 0) + ' · 没接又被找 ' + String((STATE.decision && STATE.decision.missed) || 0), 'identity')}
       ${card('成长指标', growthTxt, '观察期：≥3 次证据 + 跨 ≥2 天', 'identity')}
     </div>`
+  const decLast = (STATE.decision && Array.isArray(STATE.decision.last)) ? STATE.decision.last.slice(-5).reverse() : []
+  el.insertAdjacentHTML('beforeend', '<div class="pcard"><div class="label">最近判断 <span class="badge">'+decLast.length+'</span></div>' + (decLast.length ? decLast.map(function(x){ return '<div class="wlrow"><div class="qmeta" style="flex:none;min-width:56px">'+escapeHtml(x.directed?'接':'不接')+'</div><div style="min-width:0">'+escapeHtml(String(x.reason||'没有理由'))+(x.outcome?(' · '+escapeHtml(String(x.outcome))):'')+'</div></div>' }).join('') : '<div class="hint">还没有判断记录</div>') + '</div>')
   el.insertAdjacentHTML('beforeend', '<div class="pcard"><div class="label">最近对话 <span class="badge">实时 · 5 秒</span></div><div id="recentChat"><div class="hint">读取中…</div></div></div>')
   ;[...el.querySelectorAll('[data-goto]')].forEach((b) => { b.onclick = () => goTab(b.dataset.goto) })
   armChatPoll()
