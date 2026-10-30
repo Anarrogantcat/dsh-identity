@@ -2170,15 +2170,15 @@ function usageCardHtml() {
   return '<div class="pcard" id="usageCard">' +
     '<div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">' +
       '<div style="font-size:34px;font-weight:700;line-height:1">¥' + yuan.toFixed(2) + '</div>' +
-      '<div class="hint">今日花费（估算）' + (over ? ' · <b style="color:#ef6b6b">已超预算</b>' : '') + '</div>' +
+      '<div class="hint">今日 QQ 花费（估算）' + (over ? ' · <b style="color:#ef6b6b">已超预算</b>' : '') + '</div>' +
       '<div class="hint" style="margin-left:auto">预算 ¥' + budget.toFixed(2) + ' · 已用 ' + pct + '%</div>' +
     '</div>' +
     '<div style="height:8px;background:#0d1320;border-radius:4px;overflow:hidden;margin:10px 0 12px"><i style="display:block;height:100%;width:' + pct + '%;background:' + barColor + '"></i></div>' +
     money +
     '<div class="kgrid">' +
-      '<div class="kcell"><span class="k">今日 tokens</span><span class="v">入 ' + (totals.input || 0) + ' · 出 ' + (totals.output || 0) + ' · 命中 ' + (totals.hit || 0) + '</span></div>' +
-      '<div class="kcell"><span class="k">会话累计</span><span class="v">¥' + Number((u.all && u.all.yuan) || 0).toFixed(2) + ' · ' + Number((u.all && u.all.total) || 0) + ' tokens</span></div>' +
-      '<div class="kcell"><span class="k">自今日起累计</span><span class="v">¥' + Number((u.lifetime && u.lifetime.yuan) || 0).toFixed(2) + ' · ' + Number((u.lifetime && u.lifetime.total) || 0) + ' tokens · 起 ' + String((u.lifetime && u.lifetime.since) || '') + '</span></div>' +
+      '<div class="kcell"><span class="k">今日 QQ tokens</span><span class="v">入 ' + (totals.input || 0) + ' · 出 ' + (totals.output || 0) + ' · 命中 ' + (totals.hit || 0) + '</span></div>' +
+      '<div class="kcell"><span class="k">当前会话（仅参考）</span><span class="v">¥' + Number((u.all && u.all.yuan) || 0).toFixed(2) + ' · ' + Number((u.all && u.all.total) || 0) + ' tokens</span></div>' +
+      '<div class="kcell"><span class="k">QQ 聊天累计（自今日）</span><span class="v">¥' + Number((u.lifetime && u.lifetime.yuan) || 0).toFixed(2) + ' · ' + Number((u.lifetime && u.lifetime.total) || 0) + ' tokens · 起 ' + String((u.lifetime && u.lifetime.since) || '') + '</span></div>' +
       '<div class="kcell"><span class="k">花费硬闸</span><span class="v">' + (cfgU.hardLimitEnabled ? ('开 · 超限' + (cfgU.onExceed === 'mute' ? '静默' : '降级回模板')) : '关（只记录）') + '</span></div>' +
       '<div class="kcell"><span class="k">高峰单价（元/百万）</span><span class="v">未命中 ' + Number((u.prices && u.prices.inputMiss) || 0) + ' · 命中 ' + Number((u.prices && u.prices.inputHit) || 0) + ' · 输出 ' + Number((u.prices && u.prices.output) || 0) + '</span></div>' +
       '<div class="kcell"><span class="k">空闲单价（元/百万）</span><span class="v">' + (u.buckets && u.buckets.offPeakPrices ? ('未命中 ' + u.buckets.offPeakPrices.inputMiss + ' · 命中 ' + u.buckets.offPeakPrices.inputHit + ' · 输出 ' + u.buckets.offPeakPrices.output) : '—') + '</span></div>' +
