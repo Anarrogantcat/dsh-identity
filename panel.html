@@ -869,6 +869,26 @@ function renderProactivePage() {
   el.innerHTML = behaviorCardHtml() + (flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项）</summary><div class="pcard">' + flds.map((f) => fieldRow(f)).join('') + '</div></details>' : '')
   el.querySelectorAll('[data-goal]').forEach((b) => { b.onclick = async () => { try { const j = await pfetch({ action: 'autonomyStatus', id: b.dataset.goal, status: b.dataset.status }); if (!j || j.ok === false) { say('操作失败：' + ((j && j.error) || '未知')); return } location.reload() } catch (e) { say('操作失败') } } })
   bindFields(el)
+  bindProactiveHumanize()
+}
+/** 「人一点」：别像定时打卡，安静等 8–16 分、两次之间 30–55 分，随机取一组写进待保存草稿 */
+function bindProactiveHumanize() {
+  const b = $('proHumanize')
+  if (!b) return
+  b.onclick = function () {
+    const silent = 8 + Math.floor(Math.random() * 9)
+    const gap = 30 + Math.floor(Math.random() * 26)
+    draft['proactive.silentMinutes'] = silent
+    draft['proactive.minGapMinutes'] = gap
+    try {
+      const pc = STATE.config && (STATE.config.proactive || (STATE.config.proactive = {}))
+      if (pc) { pc.silentMinutes = silent; pc.minGapMinutes = gap }
+    } catch (e) {}
+    try { markDirty() } catch (e) {}
+    renderProactivePage()
+    const m = $('msg')
+    if (m) m.textContent = '已按「人一点」调：安静 ' + silent + ' 分 / 间隔 ' + gap + ' 分（点右上角保存生效）'
+  }
 }
 function settingsHeroHtml(v) {
   const cfg = STATE.config || {}
@@ -1285,21 +1305,29 @@ function compatCardHtml() {
     return '<div class="row"><div class="meta"><div class="label">' + escapeHtml(compatMark(k.level) + ' ' + String(k.label || '')) + '</div><div class="hint">' + escapeHtml(String(k.note || '')) + '</div></div></div>'
   }).join('')
   const bad = c.checks.filter(function (k) { return k.level === 'fail' }).length
+  const diag0 = c.hostDiag || {}
+  const tried0 = Array.isArray(diag0.tried) ? diag0.tried : []
+  const why = (c.host && c.host.version) ? '' : ('<div class="hint">没读出宿主版本：' +
+    escapeHtml(tried0.length ? tried0.map(function (t) { return (t.why || '') + ' → ' + (t.ok ? 'ok' : (t.reason || '失败')) }).join('；') : ('resourcesPath=' + (diag0.resourcesPath || '无') + ' execPath=' + (diag0.execPath || '无'))) + '</div>')
   return '<div class="pcard"><div class="label">兼容自检 <span class="badge">' + (bad ? ('✗ ' + bad + ' 项') : '✓ 通过') + '</span></div>' +
-    '<div class="hint">宿主 DSH ' + escapeHtml(env.dsh || '未知') + ' · 插件 v' + escapeHtml(c.plugin || STATE.version || '?') + ' · Electron ' + escapeHtml(env.electron || '?') + '</div>' +
+    '<div class="hint">宿主 DSH ' + escapeHtml((c.host && c.host.version) || '未知') + ' · 插件 v' + escapeHtml(c.plugin || STATE.version || '?') + ' · Electron ' + escapeHtml((c.host && c.host.electron) || env.electron || '?') + '</div>' +
     '<div class="hint" style="margin-top:4px">实测范围：DSH ' + escapeHtml((c.verified && c.verified.dsh) || '?') + '（' + escapeHtml((c.verified && c.verified.at) || '') + '）</div>' +
-    rows +
+    why + rows +
     '<div class="pbtns" style="margin-top:8px"><button id="compatBtn">重新自检</button><span id="compatMsg" class="hint"></span></div></div>'
 }
 function bindCompatCard() {
   const b = document.getElementById('compatBtn')
   if (!b) return
   b.onclick = async function () {
-    const msg = document.getElementById('compatMsg')
     b.disabled = true
-    if (msg) msg.textContent = '检查中…'
-    try { await load(); if (msg) msg.textContent = '已重新读取' } catch (e) { if (msg) msg.textContent = '检查失败' }
-    b.disabled = false
+    const m0 = document.getElementById('compatMsg')
+    if (m0) m0.textContent = '检查中…'
+    try { await load() } catch (e) { /* load 自己会提示 */ }
+    // load() 会整页重绘，上面那个 span 已经被换掉了：重查一遍再写，不然提示立刻消失
+    const msg = document.getElementById('compatMsg')
+    if (msg) msg.textContent = '已重新读取'
+    const top = document.getElementById('msg')
+    if (top) top.textContent = '兼容自检已刷新'
   }
 }
 function renderAboutPage() {

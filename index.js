@@ -92,6 +92,15 @@ let stopJobs = null
 let modsRef = null
 /** 宿主的 agentDefaultModel 服务（拿「默认用哪个模型」） */
 let defaultModelSvc = null
+/** 插件 ctx：兼容自检想从宿主拿版本号（沙箱里 process 可能被裁过） */
+let hostCtxRef = null
+
+/** 宿主版本：取自 ctx（这版 DSH 的 context 上有 version），没有就留空让别路去试 */
+function hostVersionOf(ctx = hostCtxRef) {
+  try { if (ctx && typeof ctx.version === 'string' && ctx.version) return ctx.version } catch { /* ignore */ }
+  try { const v = ctx?.version; if (typeof v === 'string' && v) return v } catch { /* ignore */ }
+  return ''
+}
 
 /** QQ 群聊模式的硬约束（已并入 lib/identity.js 的场景段） */
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v)
@@ -386,6 +395,7 @@ function installInfo() {
 
 function snapshot() {
   const cfg = loadConfig()
+  const tp = (() => { try { return transportDescribe() } catch { return null } })()
   return {
     ok: true,
     version: currentVersion(),
@@ -418,7 +428,7 @@ function snapshot() {
     })(),
     moodLlm: (() => { try { return llmStats() } catch { return null } })(),
     kb: (() => { try { return kbStats() } catch { return null } })(),
-    transport: (() => { try { return transportDescribe() } catch { return null } })(),
+    transport: tp,
     capabilities: (() => { try { return capabilitySummary(cfg) } catch { return null } })(),
     roster: (() => { try { return rosterStats() } catch { return null } })(),
     groupChoices: (() => { try { return groupChoices() } catch { return [] } })(),
@@ -539,7 +549,7 @@ function snapshot() {
     anti8gu: (() => { try { return anti8gu.styleAudit(7) } catch { return null } })(),
     autonomy: (() => { try { return { ...autonomy.autonomyStats(), goals: autonomy.listGoals({}).slice(0, 10) } } catch { return null } })(),
     toolGate,
-    compat: (() => { try { return compatReport({ version: currentVersion() }) } catch (e) { return { error: String(e?.message ?? e) } } })(),
+    compat: (() => { try { return compatReport({ version: currentVersion(), ctxVersion: hostVersionOf(), transport: tp }) } catch (e) { return { error: String(e?.message ?? e) } } })(),
     gateExisting: loadConfig().tools?.gateExisting === true,
     recentPeers: state.seen ?? [],
     bind: getBind(),
@@ -550,6 +560,7 @@ function snapshot() {
 
 export async function apply(ctx, config = {}) {
   const logger = ctx.logger ?? console
+  hostCtxRef = ctx
   ensureStore()
   ensureDirs()
   loadState()
