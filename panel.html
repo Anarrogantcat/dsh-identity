@@ -858,7 +858,7 @@ function renderMemoryPage() {
       ${refl.length ? refl.map((d) => '<div class="row"><div class="meta"><div class="label">' + escapeHtml(d.date) + '</div><div class="hint">' + escapeHtml((d.lines || []).slice(0, 2).join(' ').slice(0, 140)) + '</div></div></div>').join('') : '<div class="hint">还没有复盘。</div>'}
     </div>
     <div class="pcard"><div class="label">记忆（衰减卡） <span class="badge">${mem.length}</span></div>
-      ${mem.length ? mem.slice(0, 10).map((m) => '<div class="row"><div class="meta"><div class="label">' + escapeHtml(String(m.text).slice(0, 80)) + (m.pinned ? ' <span class="badge cur">置顶</span>' : '') + '</div><div class="hint">P ' + m.P + ' · 重要度 ' + m.importance + '</div></div></div>').join('') : '<div class="hint">还没有记忆。</div>'}
+      ${mem.length ? mem.slice(0, 10).map((m) => '<div class="row"><div class="meta"><div class="label">' + escapeHtml(String(m.text).slice(0, 80)) + (m.pinned ? ' <span class="badge cur">置顶</span>' : '') + (m.origin === 'agent' ? ' <span class="badge">本鱼记的</span>' : m.status === 'superseded' ? ' <span class="badge">已作废</span>' : '') + '</div><div class="hint">P ' + m.P + ' · 重要度 ' + m.importance + (m.origin === 'user' ? ' · 群友说的' : '') + '</div></div></div>').join('') : '<div class="hint">还没有记忆。</div>'}
     </div>
     ${flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项）</summary><div class="pcard">' + flds.map((f) => fieldRow(f)).join('') + '</div></details>' : ''}`
   bindFields(el)

@@ -353,6 +353,7 @@ function contextSectionText(context) {
 # 可用标记（只写标记，不要解释）
 [[sticker:auto]] 发一张表情（auto=按当前心情挑）；也可以写具体情绪，如 [[sticker:无语]]
 [[remember: 要点]] 记一笔长期记忆（会淡忘，被提到会加强）
+[[correct: 旧的说法 => 新的说法]] 发现自己在记忆里记错了就用它改：旧的作废、不再拿出来说，不跟新的混着讲
 [[recall: 关键词]] 想不起旧事时让它翻记忆
 [[voice: 文本]] 想用声音说这句话时就加（一次对话最多一条；不想用就不写）。这是你自己的选择，不用征求同意；别在正文里解释标记，也别聊权限/嗓子这类幕后。你能用语音说话：别人问“能不能发语音/什么时候能发”，直接说能；想听就自己发，不用等许可`
     }
@@ -640,7 +641,7 @@ export async function apply(ctx, config = {}) {
         if (!memesDue(Number(c.knowledge?.memesHours ?? 24))) return
         const r = await refreshMemes({ top: 15, keepDays: Number(c.knowledge?.memesKeepDays ?? 14) })
         if (r.ok) logger.info?.('[memes] 热梗已更新：' + r.count + ' 条 → memes.md')
-        else logger.warn?.('[memes] 抓取失败：' + r.error)
+        else logger.warn?.('[memes] 抓取失败：' + r.error + (r.retryAt ? '（' + r.retryAt + ' 再试）' : '（本次不再重试）'))
       } catch { /* ignore */ }
     }
     const mt = setInterval(memeTick, 30 * 60 * 1000); mt.unref?.()
