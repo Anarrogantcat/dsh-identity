@@ -2156,7 +2156,7 @@ function usageCardHtml() {
     counters = [
       ['入站', c.inbound || 0], ['投给模型', c.dispatched || 0], ['被闸门挡', c.blocked || 0],
       ['回复', c.replied || 0], ['发送成功', c.sent || 0], ['发送失败', c.failed || 0],
-      ['看过图', c.images || 0], ['通知事件', c.notices || 0],
+      ['看过图', c.images || 0], ['通知事件', c.notices || 0], ['模型判断', c.modelGate || 0],
     ]
   } else {
     const d = STATE.diag || {}; const dc = d.counts || {}
