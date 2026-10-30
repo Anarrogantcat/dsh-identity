@@ -56,6 +56,14 @@ const before = listMemory(PK).length
 await gate.onOutbound(bot, 'sendText', [target, '随便说说 [[correct: 这条没有箭头]]'])
 A('缺箭头的标记不硬改', listMemory(PK).length === before, listMemory(PK).length)
 
+// 出站承诺记账：这一段以前引用了入站帧 f，ReferenceError 被吞，承诺全丢
+{
+  const { listPromises } = await import(base + 'lib/promises.js')
+  await gate.onOutbound(bot, 'sendText', [target, '我明天帮你看看那个配置'])
+  const ps = listPromises({ peerKey: PK })
+  A('她答应的事能记下来', ps.some((p) => String(p.text ?? '').includes('明天帮你')), ps)
+}
+
 console.log('=== 改口标记测试 ===')
 let fail = 0
 for (const [n, p, d] of ok) { console.log((p ? 'OK  ' : 'FAIL ') + n + (p ? '' : '   ' + JSON.stringify(d))); if (!p) fail++ }
