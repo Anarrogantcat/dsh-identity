@@ -57,6 +57,7 @@ import './lib/caps-default.js'
 import { diaryHint, listDiary, generate as diaryGenerate, generateLlm as diaryGenerateLlm } from './lib/diary.js'
 import * as moodv2 from './lib/moodv2.js'
 import * as decision from './lib/decision.js'
+import { selfModelText, buildSelfModel } from './lib/selfmodel.js'
 import * as autonomy from './lib/autonomy.js'
 import * as anti8gu from './lib/anti8gu.js'
 import * as lifeparams from './lib/lifeparams.js'
@@ -494,6 +495,7 @@ function snapshot() {
     })(),
     moodV2: (() => { try { return moodv2.summary() } catch { return null } })(),
     decision: (() => { try { return decision.stats() } catch { return null } })(),
+    selfModel: (() => { try { return buildSelfModel() } catch { return null } })(),
     lifeparams: (() => { try { return lifeparams.summary() } catch { return null } })(),
     memoryPage: (() => {
       try {
