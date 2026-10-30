@@ -119,8 +119,6 @@ function memorySectionText(context) {
     const peer = sid ? resolveSession(sid) : null
     // 饭量（预算+充值−今日花费）：有人问就照实说，别装不知道
     try {
-      const b = mealBalance(cfg)
-      bits.push('今日软预算：还剩 ' + b.bowls + ' 碗（约 ¥' + b.remain.toFixed(2) + ' / 预算 ¥' + b.budget.toFixed(2) + '）' + (b.empty ? '，已经空了' : '') + '。这是每天给她的软预算，不是平台账户余额；别人问“余额/多少钱/还有多少白饭”时，必须先报下一行的平台账户真实余额，再补软预算，别只报预算。') 
       const cb = cachedBalance()
       if (cb) {
         const ageH = (Date.now() - Number(cb.at || 0)) / 3600000
