@@ -1054,11 +1054,17 @@ function bindMoodCard(){
   var ml = $("moodllmreset")
   if (ml) ml.onclick = async function () { mm("重置熔断中…"); try { var j2 = await mg({ action: "mgmtOp", kind: "mood", op: "resetLlm" }); mm(j2 && j2.ok ? "熔断已重置" : ("失败：" + ((j2 && j2.error) || ""))) } catch (e) { mm("失败：" + e.message) } ; await load() }
 }
+function empathyCardHtml() {
+  const rows = Array.isArray(STATE.empathy) ? STATE.empathy : []
+  if (!rows.length) return '<div class="pcard"><div class="label">共情事件</div><div class="hint">还没有强情绪事件。</div></div>'
+  return '<div class="pcard"><div class="label">共情事件 <span class="badge">' + rows.length + '</span></div><div class="hint">只记录强情绪，用来决定这次要多近；不强制套话。</div>' + rows.map((e) => '<div class="row"><div class="meta"><div class="label">' + escapeHtml(String(e.who || '群友')) + ' · ' + escapeHtml(String(e.emotion || '')) + ' <span class="badge">' + Number(e.intensity || 0).toFixed(2) + '</span></div><div class="hint">' + escapeHtml(String(e.cause || '').slice(0, 60)) + ' · ' + escapeHtml(String(e.guide || '')) + ' · ' + escapeHtml(String(e.strategy || '')) + (e.outcome ? (' · ' + escapeHtml(String(e.outcome))) : '') + '</div></div><div class="ctl"><span class="hint">' + escapeHtml(String(e.at || '').slice(11, 16)) + '</span></div></div>').join('') + '</div>'
+}
+
 function renderMoodPage(){
   const el = $("panel")
   if (!el) return
   const flds = (STATE.fields || []).filter(function (f) { return f.tab === "mood" && !SKIP_KEYS.has(f.k) })
-  el.innerHTML = moodCardHtml() + moodStanceCardHtml() +
+  el.innerHTML = moodCardHtml() + empathyCardHtml() + moodStanceCardHtml() +
     (flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项：心情开关 / 注入 / 模型评估）</summary><div class="pcard">' + flds.map(function (f) { return fieldRow(f) }).join('') + '</div></details>' : '')
   bindFields(el)
   bindMoodCard()
@@ -1213,6 +1219,24 @@ function bindBiliCard() {
     b.disabled = false
   }
 }
+function voiceWizardCardHtml() {
+  const check = 'powershell -ExecutionPolicy Bypass -File scripts\\install-voice.ps1'
+  const inst = 'powershell -ExecutionPolicy Bypass -File scripts\\install-voice.ps1 -Install -Backend cuda'
+  return '<div class="pcard"><div class="label">安装向导 <span class="badge">不是一条 plugin add</span></div>' +
+    '<div class="hint">声音服务是独立的 Python/GPU 服务，插件只负责调用。按下面顺序来：</div>' +
+    '<div class="hint" style="margin-top:8px">1. 先检查 GPU / WSL / git</div>' +
+    '<pre class="hint" style="white-space:pre-wrap">' + check + '</pre>' +
+    '<div class="pbtns"><button data-copy="' + check + '">复制检查命令</button></div>' +
+    '<div class="hint" style="margin-top:8px">2. 拉仓库并看到 WSL 安装步骤（不会自动下大模型）</div>' +
+    '<pre class="hint" style="white-space:pre-wrap">' + inst + '</pre>' +
+    '<div class="pbtns"><button data-copy="' + inst + '">复制安装命令</button></div>' +
+    '<div class="hint" style="margin-top:8px">3. 按声音服务仓库 INSTALL_AGENT.md 下模型、填 configs、启动服务</div>' +
+    '<div class="hint">4. 回本页填 baseUrl / apiKey，点试听</div></div>'
+}
+function bindVoiceWizard() {
+  document.querySelectorAll('[data-copy]').forEach((b) => { b.onclick = async () => { try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = '已复制' } catch (e) { b.textContent = '复制失败' } } })
+}
+
 function voiceTryCardHtml() {
   return '<div class="pcard"><div class="label">试听</div><div class="hint">用当前声线合成一句（会拉起服务，约 20 秒）。</div><div class="row" style="border-bottom:0;padding:8px 0 0"><input id="voiceTryText" value="你好呀，我是大肥鱼。" style="flex:1"><button id="voiceTryBtn">合成并试听</button></div><div id="voiceTryMsg" class="hint"></div></div>'
 }
@@ -1355,7 +1379,7 @@ function renderPanel(){
     } catch (e) {}
   }
   if (VIEW === 'bili') { try { el.insertAdjacentHTML('beforeend', biliCardHtml()); bindBiliCard() } catch (e) {} }
-  if (VIEW === 'voice') { try { el.insertAdjacentHTML('beforeend', voiceTryCardHtml()); bindVoiceTry() } catch (e) {} }
+  if (VIEW === 'voice') { try { el.insertAdjacentHTML('beforeend', voiceWizardCardHtml()); bindVoiceWizard(); el.insertAdjacentHTML('beforeend', voiceTryCardHtml()); bindVoiceTry() } catch (e) {} }
   if (VIEW === 'draw') { try { el.insertAdjacentHTML('beforeend', drawPingCardHtml()); bindDrawPing() } catch (e) {} }
   attachCogNav()
   try {
@@ -2742,6 +2766,7 @@ function rosterCardHtml() {
   const r = STATE.roster || {}
   const choices = STATE.groupChoices || []
   const inList = new Set(((STATE.config.scope && STATE.config.scope.groups) || []))
+  const pending = choices.filter(function (g) { return !inList.has(g.id) })
   const opts = choices.map(function (g) {
     return '<option value="' + escapeHtml(g.id) + '">' + escapeHtml(g.id) + (g.name ? "（" + escapeHtml(g.name) + "）" : "") +
       " · " + (g.count == null ? 0 : g.count) + " 人" + (inList.has(g.id) ? " · 已在白名单" : "") + '</option>'
@@ -2762,11 +2787,13 @@ function rosterCardHtml() {
       '<div class="qmeta">' + (r.supported ? "群/好友/成员来自通道接口，刷新后可以用来一键填白名单。" : "当前通道拿不到名册；切 onebot 模式（NapCat）后可用。") + '</div>' +
     '</div><div class="qact"><button id="rosterRefresh">刷新名册</button><button id="rosterPrune">清理旧通道条目</button></div></div>' +
     '<div class="qstat">' + items.map(cell).join("") + '</div>' +
-    (opts
+    (choices.length
       ? '<div class="qsep"></div><div class="qhero"><div class="qmain">' +
-          '<div class="qtitle" style="font-size:13px">从群列表加入白名单</div>' +
-          '<div class="qnote">选中一个群 → [加入白名单]；已经在白名单里的按钮会禁用。</div>' +
-        '</div><div class="qact"><select id="rosterGroup">' + opts + '</select><button id="rosterAdd">加入白名单</button></div></div>'
+          '<div class="qtitle" style="font-size:13px">群白名单（可多选）</div>' +
+          '<div class="qnote">勾选多个群 → 加入选中；已在白名单的不会再出现。</div>' +
+        '</div></div>' +
+        '<div class="pbtns" style="margin:6px 0"><input id="rosterSearch" placeholder="搜群名/群号" style="min-width:160px"><button id="rosterAddMany">加入选中</button><span class="hint" id="rosterPickMsg"></span></div>' +
+        (pending.length ? '<div id="rosterPick" style="max-height:220px;overflow:auto">' + pending.map(function (g) { return '<label class="wlrow" style="cursor:pointer"><input type="checkbox" value="' + escapeHtml(g.id) + '"> <span class="memname">' + escapeHtml(String(g.id)) + (g.name ? '（' + escapeHtml(g.name) + '）' : '') + ' · ' + (g.count == null ? 0 : g.count) + ' 人</span></label>' }).join('') + '</div>' : '<div class="qnote">所有名册群都已在白名单。</div>')
       : '<div class="qnote">名册里还没有群（点 [刷新名册]，或切到 onebot 通道）</div>') +
     '<div class="qnote" id="rosterMsg" style="min-height:16px"></div>' +
     '<details class="adv"><summary>名册明细（服务端原样）</summary><div id="rosterRows" style="margin-top:6px"><div class="hint">加载…</div></div></details>' +
@@ -2816,6 +2843,20 @@ async function bindRosterCard() {
         await load()
       } catch (e) { say("加入失败：" + e.message) }
     }
+  }
+  const many = $('rosterAddMany')
+  const pickMsg = $('rosterPickMsg')
+  const search = $('rosterSearch')
+  if (search) search.oninput = function () { const q = String(search.value || '').toLowerCase(); document.querySelectorAll('#rosterPick label').forEach(function (l) { l.style.display = l.textContent.toLowerCase().includes(q) ? '' : 'none' }) }
+  if (many) many.onclick = async function () {
+    const ids = [...document.querySelectorAll('#rosterPick input:checked')].map(function (x) { return x.value })
+    if (!ids.length) { if (pickMsg) pickMsg.textContent = '先勾一个群'; return }
+    many.disabled = true
+    let ok = 0
+    for (const gid of ids) { try { const j = await mg({ action: 'mgmtOp', kind: 'groups', op: 'add', value: gid }); if (j && j.ok) ok++ } catch (e) {} }
+    if (pickMsg) pickMsg.textContent = '已加入 ' + ok + ' 个'
+    many.disabled = false
+    try { await load(); renderPanel() } catch (e) {}
   }
   const box = $("rosterRows")
   if (box) {

@@ -58,6 +58,7 @@ import { diaryHint, listDiary, generate as diaryGenerate, generateLlm as diaryGe
 import * as moodv2 from './lib/moodv2.js'
 import * as decision from './lib/decision.js'
 import * as pace from './lib/pace.js'
+import * as empathy from './lib/empathy.js'
 import { selfModelText, buildSelfModel, history as selfHistory } from './lib/selfmodel.js'
 import * as autonomy from './lib/autonomy.js'
 import * as anti8gu from './lib/anti8gu.js'
@@ -120,6 +121,7 @@ function memorySectionText(context) {
     if (!cfg.memory.enabled) return ''
     const sid = sessionIdOfContext(context)
     const peer = sid ? resolveSession(sid) : null
+    try { const ep = peer ? empathy.latestFor(peer.peer, 10 * 60000) : null; if (ep && ep.guide) bits.push('共情提示（只影响这次怎么说，不是任务）：' + ep.guide) } catch { /* ignore */ }
     // 饭量（预算+充值−今日花费）：有人问就照实说，别装不知道
     try {
       const cb = cachedBalance()
@@ -497,6 +499,7 @@ function snapshot() {
     moodV2: (() => { try { return moodv2.summary() } catch { return null } })(),
     decision: (() => { try { return decision.stats() } catch { return null } })(),
     pace: (() => { try { return pace.snapshot() } catch { return null } })(),
+    empathy: (() => { try { return empathy.recent(20) } catch { return [] } })(),
     selfModel: (() => { try { return buildSelfModel() } catch { return null } })(),
     selfHistory: (() => { try { return selfHistory(5) } catch { return [] } })(),
     lifeparams: (() => { try { return lifeparams.summary() } catch { return null } })(),
