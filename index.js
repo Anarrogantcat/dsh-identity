@@ -74,6 +74,7 @@ import { sponsorsText } from './lib/sponsors.js'
 import { atmosphereOf, sinceLastSpoke } from './lib/presence.js'
 import { PERM_LEVELS, levelOf } from './lib/permgear.js'
 import { currentVersion, latestCached, checkLatest, applyUpdate, pluginDirOf, isPnpmManaged, compareVersions, readCache } from './lib/update.js'
+import { compatReport } from './lib/compat.js'
 
 export const name = 'qqbot-refine'
 export const inject = ['webServer']
@@ -538,6 +539,7 @@ function snapshot() {
     anti8gu: (() => { try { return anti8gu.styleAudit(7) } catch { return null } })(),
     autonomy: (() => { try { return { ...autonomy.autonomyStats(), goals: autonomy.listGoals({}).slice(0, 10) } } catch { return null } })(),
     toolGate,
+    compat: (() => { try { return compatReport({ version: currentVersion() }) } catch (e) { return { error: String(e?.message ?? e) } } })(),
     gateExisting: loadConfig().tools?.gateExisting === true,
     recentPeers: state.seen ?? [],
     bind: getBind(),

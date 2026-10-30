@@ -1272,13 +1272,45 @@ function bindDrawPing() {
     b.disabled = false
   }
 }
+function compatMark(level) {
+  return level === "ok" ? "✓" : level === "fail" ? "✗" : "!"
+}
+function compatCardHtml() {
+  const c = STATE.compat || {}
+  if (!c.checks || !c.checks.length) {
+    return '<div class="pcard"><div class="label">兼容自检</div><div class="hint">读不到自检结果' + (c.error ? '：' + escapeHtml(c.error) : '') + '</div><div class="pbtns" style="margin-top:8px"><button id="compatBtn">重新自检</button><span id="compatMsg" class="hint"></span></div></div>'
+  }
+  const env = c.env || {}
+  const rows = c.checks.map(function (k) {
+    return '<div class="row"><div class="meta"><div class="label">' + escapeHtml(compatMark(k.level) + ' ' + String(k.label || '')) + '</div><div class="hint">' + escapeHtml(String(k.note || '')) + '</div></div></div>'
+  }).join('')
+  const bad = c.checks.filter(function (k) { return k.level === 'fail' }).length
+  return '<div class="pcard"><div class="label">兼容自检 <span class="badge">' + (bad ? ('✗ ' + bad + ' 项') : '✓ 通过') + '</span></div>' +
+    '<div class="hint">宿主 DSH ' + escapeHtml(env.dsh || '未知') + ' · 插件 v' + escapeHtml(c.plugin || STATE.version || '?') + ' · Electron ' + escapeHtml(env.electron || '?') + '</div>' +
+    '<div class="hint" style="margin-top:4px">实测范围：DSH ' + escapeHtml((c.verified && c.verified.dsh) || '?') + '（' + escapeHtml((c.verified && c.verified.at) || '') + '）</div>' +
+    rows +
+    '<div class="pbtns" style="margin-top:8px"><button id="compatBtn">重新自检</button><span id="compatMsg" class="hint"></span></div></div>'
+}
+function bindCompatCard() {
+  const b = document.getElementById('compatBtn')
+  if (!b) return
+  b.onclick = async function () {
+    const msg = document.getElementById('compatMsg')
+    b.disabled = true
+    if (msg) msg.textContent = '检查中…'
+    try { await load(); if (msg) msg.textContent = '已重新读取' } catch (e) { if (msg) msg.textContent = '检查失败' }
+    b.disabled = false
+  }
+}
 function renderAboutPage() {
   const el = document.getElementById('panel')
   const cfgPath = STATE.configPath || ''
   el.innerHTML = '<div class="phead"><div class="phead-main"><div class="phead-title">关于</div><div class="phead-desc">版本、安装与边界。</div></div><div class="phead-side"><span class="chip">v' + escapeHtml(STATE.version || '?') + '</span></div></div>' +
+    compatCardHtml() +
     '<div class="pcard"><div class="label">身份系统</div><div class="hint">一个内核 + 记忆 + 情绪 + 自主 + 成长；不是客服模板。</div><div class="hint" style="margin-top:6px">仓库：github.com/Anarrogantcat/dsh-identity</div>' + (cfgPath ? '<div class="hint">配置：' + escapeHtml(cfgPath) + '</div>' : '') + '</div>' +
     '<div class="pcard"><div class="label">边界</div><div class="hint">钱、账号、权限对外动作只提议，主人确认；B站评论未做自动发布；模型权重不可改。</div></div>' +
     '<div class="pcard"><div class="label">安装 / 更新</div><div class="hint">dsh plugin --profile desktop add github:Anarrogantcat/dsh-identity</div><div class="hint">升级后重启 DSH；版本号按功能/修复递增。</div></div>'
+  bindCompatCard()
 }
 
 function addPageHead(title, desc, chips) {
