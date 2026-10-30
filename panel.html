@@ -2177,7 +2177,6 @@ function usageCardHtml() {
     money +
     '<div class="kgrid">' +
       '<div class="kcell"><span class="k">今日 QQ tokens</span><span class="v">入 ' + (totals.input || 0) + ' · 出 ' + (totals.output || 0) + ' · 命中 ' + (totals.hit || 0) + '</span></div>' +
-      '<div class="kcell"><span class="k">当前会话（仅参考）</span><span class="v">¥' + Number((u.all && u.all.yuan) || 0).toFixed(2) + ' · ' + Number((u.all && u.all.total) || 0) + ' tokens</span></div>' +
       '<div class="kcell"><span class="k">聊天累计消耗</span><span class="v">¥' + Number((u.lifetime && u.lifetime.yuan) || 0).toFixed(2) + ' · ' + Number((u.lifetime && u.lifetime.total) || 0) + ' tokens · 起 ' + String((u.lifetime && u.lifetime.since) || '') + '</span></div>' +
       '<div class="kcell"><span class="k">花费硬闸</span><span class="v">' + (cfgU.hardLimitEnabled ? ('开 · 超限' + (cfgU.onExceed === 'mute' ? '静默' : '降级回模板')) : '关（只记录）') + '</span></div>' +
       '<div class="kcell"><span class="k">高峰单价（元/百万）</span><span class="v">未命中 ' + Number((u.prices && u.prices.inputMiss) || 0) + ' · 命中 ' + Number((u.prices && u.prices.inputHit) || 0) + ' · 输出 ' + Number((u.prices && u.prices.output) || 0) + '</span></div>' +
