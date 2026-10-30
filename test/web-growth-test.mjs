@@ -165,6 +165,15 @@ Elapsed since the preceding step context: unavailable.`,
   })
   const withMeta = listMemory(pk).at(-1)
   A('真话后面跟时间行也保住真话', /看着顺眼/.test(withMeta?.text ?? '') && !/Time sampled/i.test(withMeta?.text ?? ''), withMeta?.text)
+
+  // 另一种措辞：Elapsed since the preceding model-visible message（这条真的漏进过记忆）
+  const memBefore2 = listMemory(pk).length
+  fire({ header: { id: 'web-abc' } }, {
+    type: 'user/message',
+    seq: 13,
+    data: { role: 'user', content: [{ type: 'text', text: 'Elapsed since the preceding model-visible message: 29s.' }] },
+  })
+  A('上一步耗时行（另一种措辞）也不记', listMemory(pk).length === memBefore2, listMemory(pk).at(-1)?.text)
 }
 
 // 审计里能看到 inbound（以前全是 bot）

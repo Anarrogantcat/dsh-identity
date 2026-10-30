@@ -112,8 +112,8 @@ for (const t of targets) {
 }
 console.log('会话 ' + sessions + ' 个，assistant/message ' + asst + ' 条；真实发言前缀 ' + visiblePrefix.size + ' 个，精确存证 ' + exactPolluted.size + ' 条')
 
-/** 宿主自己插进来的元信息（时间采样 / 时区说明），被当成用户消息记下来的那种 */
-const HOST_META = /^(time sampled while preparing turn|elapsed since the preceding step context|browser time zone for this request)\b/i
+/** 宿主自己插进来的元信息（时间采样 / 时区说明 / 上一步耗时），被当成用户消息记下来的那种 */
+const HOST_META = /^(time sampled while preparing turn|elapsed since the preceding|browser time zone for this request)\b/i
 
 const isDraft = (text) => {
   const t = String(text ?? '')
