@@ -1,7 +1,8 @@
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
-import { pathToFileURL } from 'node:url';
-process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-home5';
+process.env.DSH_HOME = mkdtempSync(join(tmpdir(), 'dsh-proactive-test-'));
+delete process.env.QQBOT_REFINE_HOME;
 const base = new URL('../lib/', import.meta.url).href;
 const P = await import(base+"proactive.js");
 const S = await import(base+"state.js");
@@ -37,4 +38,5 @@ console.log(fail?`失败 ${fail}`:"全部通过");
 
 // 断言失败要真的算失败（run-all 只看 exit code）
 process.exitCode = fail ? 1 : 0;
+try { rmSync(process.env.DSH_HOME, { recursive: true, force: true }) } catch { /* ignore */ }
 

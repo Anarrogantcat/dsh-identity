@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { pathToFileURL } from 'node:url';
-process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-home' // __TEST_HOME__ 隔离，绝不写真实配置
+process.env.DSH_HOME = process.env.DSH_HOME || 'C:/dsh-test-temp/dsh-test-home' // __TEST_HOME__ 隔离，绝不写真实配置
 import http from "node:http";
 import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync } from "node:fs";
@@ -11,8 +11,14 @@ const { ensureDirs, dirs } = await import(base+"lib/store.js");
 ensureDirs();
 
 // 1) 造一个 0.8s 24k 单声道 WAV
-const wavPath = "C:/Users/Ranmi/AppData/Local/Temp/voicetest.wav";
-execFileSync("ffmpeg", ["-y","-f","lavfi","-i","sine=frequency=440:duration=0.8","-ar","24000","-ac","1",wavPath], { stdio: "ignore" });
+const wavPath = join(process.env.DSH_HOME, "voicetest.wav");
+try {
+  execFileSync("ffmpeg", ["-y","-f","lavfi","-i","sine=frequency=440:duration=0.8","-ar","24000","-ac","1",wavPath], { stdio: "ignore" });
+} catch {
+  console.log("=== 语音链路测试 ===");
+  console.log("跳过：这台机器没有 ffmpeg，不影响其它功能");
+  process.exit(0);
+}
 const wav = readFileSync(wavPath);
 console.log("测试 WAV:", wav.length, "bytes");
 

@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { pathToFileURL } from 'node:url';
-process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-imgate';
+process.env.DSH_HOME = process.env.DSH_HOME || 'C:/dsh-test-temp/dsh-test-imgate';
 import { mkdirSync, rmSync } from "node:fs";
 try { rmSync(process.env.DSH_HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(process.env.DSH_HOME + "/profiles/desktop", { recursive: true });
@@ -24,14 +24,14 @@ const exec = { agent: { session: { id: sid } } };
 const cfgNow = loadConfig();
 const tool = (name) => ({ name });
 const ok = [];
-const mediaPath = "C:\\Users\\Ranmi\\.dsh-qqbot\\media\\shot_a.png";
+const mediaPath = join(homedir(), ".dsh-qqbot", "media", "shot_a.png");
 const a1 = T.decide(tool("qqbot_describe_image"), { path: mediaPath }, exec, cfgNow);
 ok.push(["媒体目录里的图：允许看", a1.allow === true, a1]);
 const a2 = T.decide(tool("qqbot_describe_image"), { path: mediaPath }, exec, cfgNow);
 ok.push(["同一张图 30 分钟内不重复看", a2.allow === false && a2.why === "image-dupe", a2]);
-const a3 = T.decide(tool("qqbot_describe_image"), { path: "C:\\Users\\Ranmi\\.dsh-qqbot\\media\\shot_b.png" }, exec, cfgNow);
+const a3 = T.decide(tool("qqbot_describe_image"), { path: join(homedir(), ".dsh-qqbot", "media", "shot_b.png") }, exec, cfgNow);
 ok.push(["第二张新图仍可看（上限 2）", a3.allow === true, a3]);
-const a4 = T.decide(tool("qqbot_describe_image"), { path: "C:\\Users\\Ranmi\\.dsh-qqbot\\media\\shot_c.png" }, exec, cfgNow);
+const a4 = T.decide(tool("qqbot_describe_image"), { path: join(homedir(), ".dsh-qqbot", "media", "shot_c.png") }, exec, cfgNow);
 ok.push(["超过每日上限被拒", a4.allow === false && a4.why === "image-quota", a4]);
 const b1 = T.decide(tool("read_image"), { file_path: "C:\\Windows\\System32\\x.png" }, exec, cfgNow);
 ok.push(["越界路径被拒（TDZ 修复后不再静默放行）", b1.allow === false && b1.why === "outside-workspace", b1]);

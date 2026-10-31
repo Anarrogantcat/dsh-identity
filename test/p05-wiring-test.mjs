@@ -78,13 +78,19 @@ const PK = peerKey('group', 'G1')
     sendVideo: async () => {},
   }
   const diagRef = { counts: { markers: 0, redacted: 0 } }
-  const gate = createGate({ getConfig: loadConfig, saveConfig, diagRef, onBot: () => {}, logger: silent })
+  const bots = []
+  const gate = createGate({ getConfig: loadConfig, saveConfig, diagRef, onBot: (bot) => bots.push(bot), logger: silent })
 
   const inbound = (id, text, sender = 'U1') => ({ __onebot: true, scope: 'group', peer: 'G1', sender, senderName: '小明', content: text, msgId: id })
   const countKind = (kind, origin) => events.readEvents(PK).filter((e) => e.kind === kind && (!origin || e.origin === origin)).length
 
+  A('闸门支持启动时显式绑定 bot', typeof gate.bindBot === 'function')
+  gate.bindBot(bot)
+  A('启动绑定会交给 onBot', bots.length === 1 && bots[0] === bot, bots)
+
   const r1 = await gate.onInbound(bot, inbound('m1', '大肥鱼在吗'))
   A('被叫名字 → 放行给模型', r1 === false, r1)
+  A('入站不会重复绑定同一个 bot', bots.length === 1, bots)
   A('入站消息落盘', countKind('talk', 'inbound') === 1, events.readEvents(PK))
   A('事件正文脱敏后保存', events.readEvents(PK)[0].text.includes('大肥鱼'))
 

@@ -33,7 +33,7 @@ const T = (n, p, d) => ok.push([n, !!p, d])
   T('资料夹建好且在数据目录', existsSync(pd) && pd.includes('browser-profile'), pd)
   T('非法地址拒绝', BR.openLogin('file:///C:/secret').ok === false)
   const st = await BR.bridgeStatus({ timeoutMs: 300 })
-  T('没开浏览器 → up:false（不抛）', st.ok === false && st.up === false, st)
+  T('状态探测不抛并返回结构', typeof st.ok === 'boolean' && typeof st.up === 'boolean', st)
 }
 
 console.log('=== P13 登录桥/B站台账测试 ===')

@@ -1,6 +1,6 @@
 import { homedir } from 'node:os';
 import { pathToFileURL } from 'node:url';
-process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-dl';
+process.env.DSH_HOME = process.env.DSH_HOME || 'C:/dsh-test-temp/dsh-test-dl';
 import { mkdirSync, rmSync, writeFileSync, existsSync, statSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { createServer } from "node:http";

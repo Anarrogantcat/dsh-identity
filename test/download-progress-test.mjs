@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { pathToFileURL } from 'node:url';
-process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-dlp';
+process.env.DSH_HOME = process.env.DSH_HOME || 'C:/dsh-test-temp/dsh-test-dlp';
 import { mkdirSync, rmSync, writeFileSync, statSync } from "node:fs";
 import { createServer } from "node:http";
 const HOME = process.env.DSH_HOME;

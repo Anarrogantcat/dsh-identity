@@ -13,11 +13,12 @@ import { fileURLToPath } from 'node:url'
 import { DEFAULTS, FIELDS, TABS, FIELD_MAP, CFG_PATH, STORE_DIR, loadConfig, saveConfig, ensureStore, clone, coerce, setAt } from './lib/config.js'
 import { ensureDirs, readJson, writeJson, dirs, peerKey, audit } from './lib/store.js'
 import { diag, loadQQBot, installHooks } from './lib/diag.js'
-import { startTransport, stopTransport, transportDescribe, getOneBotClient, currentChannel } from './lib/transport.js'
+import { startTransport, stopTransport, transportDescribe, getOneBotClient, currentChannel, getOneBotChannel } from './lib/transport.js'
 import { capabilitySummary } from './lib/capabilities.js'
 import { refreshAll, refreshMembers, rosterStats, groupChoices, groupName, loadRoster } from './lib/roster.js'
 import { loadState, state, newBind, getBind, clearBind } from './lib/state.js'
 import { createGate, startJobs } from './lib/gate.js'
+import { companionStatus } from './lib/companion.js'
 import { loadCognition, createHooks, cognitionText, consolidatePeers } from './lib/hooks.js'
 import { probeService as probeVoice, lastJobInfo } from './lib/voice.js'
 import { assetStatus, progressOf, downloadAsset, removeAsset, sttAutoCommand, downloadsStats } from './lib/downloads.js'
@@ -48,7 +49,7 @@ import * as mgmt from './lib/mgmt.js'
 import { installToolGate, toolGate } from './lib/toolgate.js'
 import { ensurePolicy } from './lib/policy.js'
 import { stripInjection, wrapUntrusted } from './lib/untrusted.js'
-import { composeIdentity, kernelSummary, kernelText, kernelGuardsText } from './lib/identity.js'
+import { composeConfiguredIdentity, kernelSummary, kernelText, kernelGuardsText } from './lib/identity.js'
 import * as traits from './lib/traits.js'
 import { resumeStats } from './lib/resume.js'
 import { installSessionGrowth } from './lib/webgrowth.js'
@@ -216,7 +217,11 @@ export function identitySectionText(context) {
     if (!isQq) {
       // 非 QQ 会话：只保留内核/场景/traits，不套聊天机器人
       const ol = ownerLineOf(cfg)
-      return composeIdentity({ scope, peer: peer?.peer ?? '', baseText: cfg.identity?.baseText ?? '', parts: ol ? [{ name: 'owner', text: ol, cap: 80 }] : [], maxChars: Number(cfg.identity?.maxChars ?? 900), traitsMax: Number(cfg.identity?.traitsMax ?? 5) }).text
+      return composeConfiguredIdentity(cfg, {
+        scope,
+        peer: peer?.peer ?? '',
+        parts: ol ? [{ name: 'owner', text: ol, cap: 80 }] : [],
+      }).text
     }
     // 主人称呼：QQ 群聊/私聊也带上，不只在 DSH 里
     try { const ol = ownerLineOf(cfg); if (ol) parts.push({ name: 'owner', text: ol, cap: 80 }) } catch { /* ignore */ }
@@ -283,8 +288,7 @@ export function identitySectionText(context) {
         }
       } catch { /* ignore */ }
     }
-    const budget = Number(cfg.identity?.maxChars ?? 900)
-    return composeIdentity({ scope, peer: peer?.peer ?? '', parts, maxChars: budget }).text
+    return composeConfiguredIdentity(cfg, { scope, peer: peer?.peer ?? '', parts }).text
   } catch (err) {
     try { console.warn('[qqbot-refine] identity section 失败:', err?.message) } catch {}
     return ''
@@ -428,6 +432,7 @@ function snapshot() {
       } catch { return [] }
     })(),
     moodLlm: (() => { try { return llmStats() } catch { return null } })(),
+    companion: (() => { try { return companionStatus(loadConfig()) } catch { return null } })(),
     kb: (() => { try { return kbStats() } catch { return null } })(),
     transport: tp,
     capabilities: (() => { try { return capabilitySummary(cfg) } catch { return null } })(),
@@ -633,6 +638,10 @@ export async function apply(ctx, config = {}) {
   try {
     const tr = await startTransport(gate, logger, { ctx, hooks })
     logger.info?.(`[qqbot-refine] 通道模式=${tr.mode} 钩子=${tr.hooked ? '已挂' : '未挂'}`)
+    if (tr.mode === 'onebot') {
+      const channel = getOneBotChannel()
+      if (channel?.bot) gate.bindBot(channel.bot)
+    }
     const caps = capabilitySummary(loadConfig())
     logger.info?.(`[capability] mode=${caps.mode} 可用 ${caps.available.length}/${caps.total}` + (caps.missing.length ? ` · 缺失：${caps.missingLabels.join('/')}` : ''))
     if (tr.mode === 'onebot') {
@@ -649,6 +658,13 @@ export async function apply(ctx, config = {}) {
         const t2 = setInterval(tick, hours * 3600 * 1000); t2.unref?.()
         timers.push(t1, t2)
       }
+      const tSync = setTimeout(() => {
+        void getOneBotChannel()?.syncConfiguredChats().catch((err) => {
+          logger.warn?.('[qqbot-refine] QQ 工作区同步失败：' + (err?.message ?? err))
+        })
+      }, 3000)
+      tSync.unref?.()
+      timers.push(tSync)
     }
   } catch (err) {
     logger.warn?.('[qqbot-refine] 通道启动失败：' + (err?.message ?? err))
@@ -772,6 +788,39 @@ export async function apply(ctx, config = {}) {
           if (action === 'syncSticker') {
             const r = await sticker.syncRemote(cfg, logger)
             return sendJson(res, 200, { ok: true, result: r, sticker: sticker.stats() })
+          }
+          if (action === 'qqWorkspaceSync') {
+            const channel = getOneBotChannel()
+            if (!channel?.syncConfiguredChats) return sendJson(res, 409, { ok: false, error: 'OneBot 通道尚未启动' })
+            const result = await channel.syncConfiguredChats()
+            return sendJson(res, 200, { ok: true, ...result })
+          }
+          if (action === 'renameSessions') {
+            const items = Array.isArray(body?.items) ? body.items : []
+            const titles = ctx.get?.('sessionTitle')
+            const sessions = ctx.get?.('sessions')
+            const agents = ctx.get?.('agents')
+            if (!titles?.rename || !sessions) return sendJson(res, 409, { ok: false, error: '宿主会话服务尚未就绪' })
+            const results = []
+            for (const item of items) {
+              const sid = String(item?.sessionId ?? '').trim()
+              const title = String(item?.title ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim()
+              if (!sid || !title) {
+                results.push({ sessionId: sid, ok: false, error: 'sessionId/title 不能为空' })
+                continue
+              }
+              try {
+                const loaded = agents?.get?.(sid)?.session ?? sessions.get?.(sid)
+                const session = loaded?.then ? await loaded : loaded
+                if (!session || typeof titles.rename !== 'function') throw new Error('会话未加载')
+                titles.rename(session, title)
+                await sessions.flush?.(session)
+                results.push({ sessionId: sid, ok: true, title })
+              } catch (err) {
+                results.push({ sessionId: sid, ok: false, error: String(err?.message ?? err) })
+              }
+            }
+            return sendJson(res, 200, { ok: results.every((item) => item.ok), renamed: results.filter((item) => item.ok).length, results })
           }
           if (action === 'cleanSticker') {
             return sendJson(res, 200, { ok: true, removed: sticker.cleanExpired(cfg) })
@@ -1012,7 +1061,15 @@ export async function apply(ctx, config = {}) {
   }
 
   // 4) 定时任务
-  stopJobs = startJobs({ getConfig: loadConfig, getBot: () => botRef, diagRef: diag, logger, llmRef })
+  stopJobs = startJobs({
+    getConfig: loadConfig,
+    getBot: () => botRef,
+    diagRef: diag,
+    logger,
+    llmRef,
+    getLlm: () => llmRef,
+    resolveLlm: (c) => withLlmRoute(c, 'integration'),
+  })
   ctx.effect?.(() => () => { try { stopJobs?.() } catch { /* ignore */ } }, 'qqbot-refine: jobs')
   // 每日画像归纳：本地统计每次都跑；开了 profile.llmInduce 再顺带跑一次语义归纳
   {

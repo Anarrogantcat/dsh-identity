@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { pathToFileURL } from 'node:url';
-process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-home' // __TEST_HOME__ 隔离，绝不写真实配置
+process.env.DSH_HOME = process.env.DSH_HOME || 'C:/dsh-test-temp/dsh-test-home' // __TEST_HOME__ 隔离，绝不写真实配置
 const base = new URL('../', import.meta.url).href;
 const M = await import(base+"lib/memory.js");
 const P = await import(base+"lib/profile.js");
