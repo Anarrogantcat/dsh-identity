@@ -87,6 +87,8 @@ C.noteCompanionUser(owner, '今天聊一句', onceCfg, at(10, 0))
 C.noteCompanionSent(owner, { tokens: 100, mode: 'balanced', source: 'llm', cfg: onceCfg, now: at(10, 30) })
 const daily = C.planCompanionTurn(onceCfg, { ownerId: owner, now: at(11, 45) })
 T('每日条数达到上限就停主动消息', !daily.ok && daily.reason === 'daily-limit', daily)
+T('每日主动上限支持到 1000', C.normalizeCompanion({ dailyMax: 1000 }).dailyMax === 1000, C.normalizeCompanion({ dailyMax: 1000 }))
+T('每日主动上限不会超过 1000', C.normalizeCompanion({ dailyMax: 1200 }).dailyMax === 1000, C.normalizeCompanion({ dailyMax: 1200 }))
 
 C.resetCompanion(owner, at(9))
 const tokenCfg = mkCfg({ mode: 'chatty', dailyTokens: 1000 })
