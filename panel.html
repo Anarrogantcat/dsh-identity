@@ -835,7 +835,15 @@ function behaviorCardHtml() {
   const vals = lp.values || {}
   const keys = ['active', 'proactivity', 'curiosity', 'patience', 'tease', 'shy', 'grumpy']
   const pc = (STATE.config && STATE.config.proactive) || {}
-  return `<div class="pcard"><div class="label">她什么时候会开口</div>
+  const cc = (STATE.config && STATE.config.companion) || {}
+  const cs = STATE.companion || {}
+  const modeName = { quiet: '安静', balanced: '日常', chatty: '话多' }[cs.mode] || '等待状态'
+  const nextTxt = cs.nextAt && cs.nextAt > Date.now() ? new Date(cs.nextAt).toLocaleTimeString() : (cs.ok ? '现在可以判断要不要开口' : '暂无计划')
+  return `<div class="pcard"><div class="label">主人私聊长期陪聊 ${cs.enabled !== false && cc.enabled !== false ? '<span class="badge cur">已启用</span>' : '<span class="badge">未启用</span>'}</div>
+    <div class="hint">只主动找第一个 Owner。当前状态：${escapeHtml(modeName)}；今日主动 ${Number(cs.sendsToday) || 0}/${Number(cs.dailyCap) || 0} 条；主动 token ${Number(cs.tokensToday) || 0}/${Number(cs.tokenCap) || 0}。下次判断：${escapeHtml(nextTxt)}。</div>
+    <div class="hint">连续没回应会安静下来；每日次数或 token 达到上限时只停主动消息，正常回复不受影响。</div>
+  </div>
+  <div class="pcard"><div class="label">她什么时候会开口</div>
     <div class="hint">只在这三种情况：答应的事逾期没做完 · 你批准过的目标要推进 · 刚才的话题她还没接完。没理由就不说话，心情差会否决。</div>
     <div class="pbtns" style="margin-top:10px;align-items:center"><button id="proHumanize" class="primary">按“人一点”调</button><span class="hint">现在：安静 ${escapeHtml(String(pc.silentMinutes ?? 12))} 分 / 间隔 ${escapeHtml(String(pc.minGapMinutes ?? 45))} 分</span></div>
   </div>
@@ -1495,6 +1503,7 @@ const COMMON = new Set([
   "bili.pushEnabled", "bili.parseEnabled", "bili.sizeBudgetMB",
   "voice.enabled", "voice.baseUrl", "voice.style", "voice.autoRead",
   "proactive.enabled", "proactive.mode", "proactive.silentMinutes",
+  "companion.enabled", "companion.mode", "companion.dailyMax",
   "usage.groupDailyYuan", "usage.userDailyYuan", "usage.priceInputMiss", "usage.priceInputHit", "usage.priceOutput",
   "ui.helpCard", "ui.markers",
   "integration.linkMood", "integration.moodInPrompt", "integration.moodProactive",
