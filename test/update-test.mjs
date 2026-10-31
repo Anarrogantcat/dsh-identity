@@ -1,4 +1,4 @@
-process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-update';
+process.env.DSH_HOME = process.env.DSH_HOME || 'C:/dsh-test-temp/dsh-test-update';
 import { mkdirSync, rmSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}

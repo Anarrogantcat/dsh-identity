@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { pathToFileURL } from 'node:url';
-process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-kbimp';
+process.env.DSH_HOME = process.env.DSH_HOME || 'C:/dsh-test-temp/dsh-test-kbimp';
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
@@ -12,6 +12,7 @@ const { ensureDirs } = await import(base + "lib/store.js");
 ensureDirs();
 const K = await import(base + "lib/knowledge.js");
 const src = HOME + '/import-src';
+const wslSrc = HOME.replace(/\\/g, '/').replace(/^([A-Za-z]):/, (_, drive) => `/mnt/${drive.toLowerCase()}`) + '/import-src';
 mkdirSync(src, { recursive: true });
 writeFileSync(src + '/群规.md', '# 群规\n禁止刷屏');
 writeFileSync(src + '/faq.txt', 'Q: 怎么加群\nA: 找管理员');
@@ -45,7 +46,7 @@ const JSZipLite = { };
 const { execFileSync } = await import('node:child_process');
 let docxMade = false;
 try {
-  execFileSync('wsl', ['-d','Ubuntu','-e','python3','-c', 'import zipfile;' + 'p="/mnt/c/Users/Ranmi/AppData/Local/Temp/dsh-test-kbimp/import-src/doc.docx";' + 'z=zipfile.ZipFile(p,"w");' + 'z.writestr("[Content_Types].xml","<Types/>");' + 'z.writestr("word/document.xml","<w:document><w:body><w:p><w:r><w:t>这是文档内容</w:t></w:r></w:p></w:body></w:document>");' + 'z.close()'], { stdio: 'ignore' }); docxMade = true } catch (e) {}
+  execFileSync('wsl', ['-d','Ubuntu','-e','python3','-c', 'import zipfile;' + 'p=' + JSON.stringify(wslSrc + '/doc.docx') + ';' + 'z=zipfile.ZipFile(p,"w");' + 'z.writestr("[Content_Types].xml","<Types/>");' + 'z.writestr("word/document.xml","<w:document><w:body><w:p><w:r><w:t>这是文档内容</w:t></w:r></w:p></w:body></w:document>");' + 'z.close()'], { stdio: 'ignore' }); docxMade = true } catch (e) {}
 if (docxMade) {
   const dr = await K.importKbFromPath(src + '/doc.docx');
   const dtext = dr.ok ? K.readKbFile('doc.md').text : '';
@@ -54,7 +55,7 @@ if (docxMade) {
 // sqlite：用 WSL python 建库再导入
 let dbMade = false;
 try {
-  execFileSync('wsl', ['-d','Ubuntu','-e','python3','-c', 'import sqlite3;' + 'p="/mnt/c/Users/Ranmi/AppData/Local/Temp/dsh-test-kbimp/import-src/faq.db";' + 'c=sqlite3.connect(p);' + 'c.execute("create table faq(q text, a text)");' + 'c.execute("insert into faq values(?,?)",("怎么进群","找管理员"));' + 'c.commit();c.close()'], { stdio: 'ignore' }); dbMade = true } catch (e) {}
+  execFileSync('wsl', ['-d','Ubuntu','-e','python3','-c', 'import sqlite3;' + 'p=' + JSON.stringify(wslSrc + '/faq.db') + ';' + 'c=sqlite3.connect(p);' + 'c.execute("create table faq(q text, a text)");' + 'c.execute("insert into faq values(?,?)",("怎么进群","找管理员"));' + 'c.commit();c.close()'], { stdio: 'ignore' }); dbMade = true } catch (e) {}
 if (dbMade) {
   const sr = await K.importKbFromPath(src + '/faq.db');
   const stext = sr.ok ? K.readKbFile('faq.md').text : '';

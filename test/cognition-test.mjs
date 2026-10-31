@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { pathToFileURL } from 'node:url';
-process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-cog'
+process.env.DSH_HOME = process.env.DSH_HOME || 'C:/dsh-test-temp/dsh-test-cog'
 const base = new URL('../', import.meta.url).href;
 const fs = await import('node:fs')
 const path = await import('node:path')

@@ -1,5 +1,5 @@
 import { pathToFileURL } from 'node:url';
-process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-media';
+process.env.DSH_HOME = process.env.DSH_HOME || 'C:/dsh-test-temp/dsh-test-media';
 import { mkdirSync, rmSync } from "node:fs";
 try { rmSync(process.env.DSH_HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(process.env.DSH_HOME + "/profiles/desktop", { recursive: true });

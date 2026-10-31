@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { pathToFileURL } from 'node:url';
-process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-home10';
+process.env.DSH_HOME = process.env.DSH_HOME || 'C:/dsh-test-temp/dsh-test-home10';
 const base = new URL('../', import.meta.url).href;
 const T = await import(base+"lib/toolgate.js");
 const { ensureDirs, dirs } = await import(base+"lib/store.js");

@@ -610,7 +610,8 @@ function renderChips(){
   const tp = STATE.transport || {}
   const tpMode = tp.mode || '未就绪'
   const qqOk = !!(tp.channel && tp.channel.selfHosted) || tp.connected === true
-  const base = (STATE.config && STATE.config.identity && STATE.config.identity.baseText) ? '自定义' : '内置内核';
+  const idc = (STATE.config && STATE.config.identity) || {}
+  const base = idc.baseTextFile ? '人格文件' : (idc.baseText ? '内联内核' : '内置内核');
   const durableN = Number((STATE.traits && STATE.traits.stats && STATE.traits.stats.durable) || 0)
   const tentativeN = Number((STATE.traits && STATE.traits.stats && STATE.traits.stats.tentative) || 0)
   const blends = (mv.blends || []).join(' / ') || '平稳'
@@ -951,7 +952,8 @@ function renderOverview() {
   const tent = tItems.filter((t) => t.status !== 'durable')
   const weekNew = tent.filter((t) => { const d = (Date.now() - Date.parse(t.firstSeen || 0)) / 86400000; return d >= 0 && d <= 7 })
   const growthTxt = '观察中 ' + tent.length + ' 条' + (weekNew.length ? (' · 本周新增 ' + weekNew.length) : '') + ' · 已稳定 ' + String((tr.stats && tr.stats.durable) || 0)
-  const styleName = (STATE.config && STATE.config.identity && STATE.config.identity.baseText) ? '内核 · 自定义' : '内核 · 内置'
+  const idc = (STATE.config && STATE.config.identity) || {}
+  const styleName = idc.baseTextFile ? '人格 · 文件同步' : (idc.baseText ? '内核 · 内联' : '内核 · 内置')
   const overdue = pr.filter((p) => p.overdue).length
   const card = (title, main, sub, go) => '<div class="ovcard" data-goto="' + go + '"><div class="ovt">' + title + '</div><div class="ovm">' + main + '</div><div class="ovs">' + sub + '</div></div>'
   el.innerHTML = `
@@ -1372,7 +1374,7 @@ function renderPanel(){
   if (VIEW === "identity") {
     const el = $("panel")
     const addr = (STATE.fields || []).find((f) => f.k === "identity.addressName")
-    const flds = (STATE.fields || []).filter((f) => f.tab === "identity" && f.k !== "identity.addressName" && f.k !== "identity.baseText")
+    const flds = (STATE.fields || []).filter((f) => f.tab === "identity" && f.k !== "identity.addressName" && f.k !== "identity.baseText" && f.k !== "identity.baseTextFile")
     el.innerHTML = '<div class="phead"><div class="phead-main"><div class="phead-title">身份</div><div class="phead-desc">内核是底座，traits 是长出来的；承诺和复盘是她自己的账。</div></div><div class="phead-side"><span class="chip">' + (STATE.traits && STATE.traits.stats ? (STATE.traits.stats.durable + ' durable / ' + STATE.traits.stats.tentative + ' tentative') : '') + '</span></div></div>' + (addr ? '<div class="pcard"><div class="qtitle">称呼 <span class="badge">她怎么叫你</span></div><div class="qnote">留空=用名册里的群名片/昵称；填了就按这个叫，QQ 群聊和 DSH 会话都生效。</div>' + fieldRow(addr) + '<div class="pbtns" style="margin-top:8px"><button id="addrSave">保存称呼</button></div></div>' : '') + identityCardHtml() + '<div class="pcard"><details class="adv"><summary>自我模型（展开看当前状态）</summary><div class="hint" style="white-space:pre-wrap;line-height:1.55;margin-top:8px">' + escapeHtml(String((STATE.selfModel && STATE.selfModel.text) || '还没有自我模型')) + '</div></details></div>' + (flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项：注入开关/预算/尺度）</summary><div class="pcard">' + flds.map((f) => fieldRow(f)).join("") + '</div></details>' : '')
     bindFields(el)
     bindIdentityCards(el)
@@ -1677,6 +1679,7 @@ function identityCardHtml() {
   const items = (tr.items || []).filter(isRealTrait)
   const stats = tr.stats || {}
   const baseText = (cfg.identity && cfg.identity.baseText) || ''
+  const personaFile = (cfg.identity && cfg.identity.baseTextFile) || ''
   const promises = Array.isArray(STATE.promises) ? STATE.promises : []
   const refl = STATE.reflection || null
   const promiseRows = promises.length
@@ -1712,12 +1715,22 @@ function identityCardHtml() {
     <div class="pcard"><details class="adv"><summary>自我历史 · ${(STATE.selfHistory || []).length} 条（展开）</summary><div class="hint" style="margin-top:8px">${(STATE.selfHistory || []).map((h) => '<div style="margin:4px 0">' + escapeHtml(String(h.at || '').slice(0, 16)) + ' · ' + escapeHtml(String(h.summary || h.mood || '').slice(0, 120)) + '</div>').join('') || '还没有历史快照'}</div></details></div>
 <div class="pcard"><div class="label">精力 / 频率</div><div class="hint">精力 ${Math.round(Number((STATE.pace && STATE.pace.energy) || 1) * 100)}% · 最近 10 分钟说了 ${String((STATE.pace && STATE.pace.last10) || 0)} 句 · 累了会少回，Owner 不受限</div></div>
     <div class="pcard">
-      <div class="label">内核 <span class="badge">你说了算</span></div>
-      <div class="hint">这里写她是谁，连底线一起写。留空 = 用默认内核（已内置）。改完记得保存。真正的安全（隐私、支付、工具）在代码闸门里，不靠这段话保证。</div>
+      <div class="label">人格文件 <span class="badge">优先读取</span></div>
+      <div class="hint">填 .md / .txt 路径。支持绝对路径、~ 和相对设置目录；文件改完下一轮自动同步，不用重启。文件为空或读取失败时，继续用上一次成功内容，再回退下面的内联内核。</div>
+      <input id="idPersonaFile" type="text" spellcheck="false" value="${escapeHtml(String(personaFile))}" placeholder="例如 C:\\Users\\你\\Documents\\persona.md">
+      <div class="pbtns" style="margin-top:8px;align-items:center">
+        <button id="idPersonaFileSave" class="primary">保存路径</button>
+        <button id="idPersonaFileClear">清空路径</button>
+        <span id="idPersonaFileMsg" class="hint"></span>
+      </div>
+    </div>
+    <div class="pcard">
+      <div class="label">内联内核 <span class="badge">备用来源</span></div>
+      <div class="hint">人格文件没有配置或不可用时才读这里。两处都留空 = 用默认内核。真正的安全（隐私、支付、工具）在代码闸门里，不靠这段话保证。</div>
       <textarea id="idKernelText" spellcheck="false" placeholder="${escapeHtml(String(STATE.identityKernel || ''))}">${escapeHtml(String(STATE.identityBase || ''))}</textarea>
       <div class="pbtns" style="margin-top:8px;align-items:center">
-        <button id="idKernelSave" class="primary">保存内核</button>
-        <button id="idKernelReset">恢复默认</button>
+        <button id="idKernelSave" class="primary">保存内联内核</button>
+        <button id="idKernelReset">清空内联内核</button>
         <span id="idKernelMsg" class="hint"></span>
       </div>
     </div>
@@ -1740,6 +1753,18 @@ function bindIdentityCards(el) {
   const km = el.querySelector('#idKernelMsg')
   const ks = el.querySelector('#idKernelSave')
   const kr = el.querySelector('#idKernelReset')
+  const pf = el.querySelector('#idPersonaFile')
+  const pfm = el.querySelector('#idPersonaFileMsg')
+  const pfs = el.querySelector('#idPersonaFileSave')
+  const pfc = el.querySelector('#idPersonaFileClear')
+  if (pfs && pf) pfs.onclick = async () => {
+    if (pfm) pfm.textContent = '保存中…'
+    try { await saveKey('identity.baseTextFile', String(pf.value || '').trim()); if (pfm) pfm.textContent = '已保存，下一轮自动读取' } catch (e) { if (pfm) pfm.textContent = '失败：' + e.message }
+  }
+  if (pfc && pf) pfc.onclick = async () => {
+    pf.value = ''
+    try { await saveKey('identity.baseTextFile', ''); if (pfm) pfm.textContent = '已清空，改用内联内核' } catch (e) { if (pfm) pfm.textContent = '失败：' + e.message }
+  }
   if (ks && kt) ks.onclick = async () => {
     if (km) km.textContent = '保存中…'
     try { await saveKey('identity.baseText', String(kt.value || '').trim()); if (km) km.textContent = '已保存，下一轮生效' } catch (e) { if (km) km.textContent = '失败：' + e.message }

@@ -1,4 +1,6 @@
 import { testHome as __testHome } from './_test-home.mjs'
+import { mkdirSync, writeFileSync } from 'node:fs'
+import { dirname, join } from 'node:path'
 process.env.DSH_HOME = __testHome('dsh-test-companion')
 const base = new URL('../', import.meta.url).href
 const C = await import(base + 'lib/companion.js')
@@ -109,7 +111,11 @@ const fakeLlm = {
   },
 }
 const llmCfg = mkCfg({ llmProvider: 'test-provider', llmModel: 'test-model' })
-llmCfg.identity = { baseText: '你是用户自己填写的测试人格。', maxChars: 300 }
+const companionPersonaFile = join(process.env.DSH_HOME, 'personas', 'companion-persona.md')
+mkdirSync(dirname(companionPersonaFile), { recursive: true })
+const companionPersona = '你是用户自己填写的测试人格。\n' + '保持自然和具体。'.repeat(80) + '【主动陪聊人格结尾】'
+writeFileSync(companionPersonaFile, companionPersona, 'utf8')
+llmCfg.identity = { baseTextFile: companionPersonaFile, baseText: '不应使用的内联备用。', baseTextMaxChars: 3000, maxChars: 4000 }
 const composed = await C.composeCompanionMessage(llmCfg, fakeLlm, {
   ownerId: owner,
   plan: { ok: true, mode: 'balanced', reason: '测试主动开口' },
@@ -118,7 +124,8 @@ const composed = await C.composeCompanionMessage(llmCfg, fakeLlm, {
 T('模型能生成主动私聊内容', composed.ok && composed.source === 'llm', composed)
 T('主动内容不会带出 |||', !composed.text.includes('|||') && !composed.text.includes('｜｜｜'), composed.text)
 T('主动调用记录 token', composed.tokens === 120, composed.tokens)
-T('主动陪聊使用用户配置的人格', String(llmRequest?.system || '').includes('你是用户自己填写的测试人格。'), llmRequest?.system)
+T('主动陪聊使用用户配置的人格文件', String(llmRequest?.system || '').includes('【主动陪聊人格结尾】'), llmRequest?.system)
+T('主动陪聊不再额外截到 300 字', String(llmRequest?.system || '').includes('【主动陪聊人格结尾】'), String(llmRequest?.system || '').length)
 
 const routedLlmCfg = mkCfg()
 routedLlmCfg.integration = { llmProvider: 'routed-provider', llmModel: 'routed-model' }

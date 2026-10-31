@@ -1,7 +1,7 @@
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { pathToFileURL } from 'node:url';
-process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-home' // __TEST_HOME__ 隔离，绝不写真实配置
+process.env.DSH_HOME = process.env.DSH_HOME || 'C:/dsh-test-temp/dsh-test-home' // __TEST_HOME__ 隔离，绝不写真实配置
 const base = new URL('../lib/', import.meta.url).href;
 const P = await import(base + "privacy.js");
 const { loadConfig } = await import(base + "config.js");
@@ -12,7 +12,7 @@ const r1 = P.redactText("手机 13812345678 身份证 110101199003071234 卡 622
 ok.push(["手机号", r1.includes("[手机号]") && !r1.includes("13812345678")]);
 ok.push(["身份证", r1.includes("[身份证]")]);
 ok.push(["银行卡", r1.includes("[卡号]")]);
-const r2 = P.redactText("我的 key 是 sk-abcdefghijklmnop1234，路径 C:\\Users\\Ranmi\\.dsh\\x", cfg);
+const r2 = P.redactText("我的 key 是 sk-abcdefghijklmnop1234，路径 C:\\Users\\Example\\.dsh\\x", cfg);
 ok.push(["密钥", r2.includes("[密钥已隐藏]") && !r2.includes("sk-")]);
 ok.push(["路径", r2.includes("[本机路径]")]);
 
