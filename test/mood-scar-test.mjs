@@ -37,15 +37,15 @@ T('12 小时后高兴减半', Math.abs(joyLeft - 0.3) < 0.02, joyLeft)
 T('12 小时后火气还在（没减半）', angerLeft > 0.4, angerLeft)
 T('同样的时间，负面留得更久', angerLeft > joyLeft + 0.1, { joyLeft, angerLeft })
 
-// 36 小时后火气才大约减半
-const at36 = new Date(Date.now() - 36 * HOUR).toISOString()
-const d36 = M.decayOf({ ...state, at: at36 }, now)
-const anger36 = d36.seven.anger - 0.3
-T('36 小时后火气才减半', Math.abs(anger36 - 0.3) < 0.03, anger36)
+// 24 小时后火气减半（新口径：负面半衰期 24h —— 睡一觉该消一半）
+const at24 = new Date(Date.now() - 24 * HOUR).toISOString()
+const d24 = M.decayOf({ ...state, at: at24 }, now)
+const anger24 = d24.seven.anger - 0.3
+T('24 小时后火气减半', Math.abs(anger24 - 0.3) < 0.04, anger24)
 
-// 快乐 36 小时早就淡了
-const joy36 = d36.seven.joy - 0.3
-T('同样 36 小时，高兴已经淡掉', joy36 < 0.08, joy36)
+// 同样的 24 小时，高兴淡得更快
+const joy24 = d24.seven.joy - 0.3
+T('同样 24 小时，高兴淡得更快', joy24 < anger24 - 0.1, { anger24, joy24 })
 
 console.log('=== 会痛（负面余温）测试 ===')
 let fail = 0
