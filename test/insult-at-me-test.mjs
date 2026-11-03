@@ -29,6 +29,8 @@ const txt = kernelText(KERNEL) + JSON.stringify(KERNEL)
 T('人格含「不自我贬低」', /自我贬低/.test(txt), txt.slice(0, 80))
 T('人格含「自作多情」禁令', /自作多情/.test(txt))
 T('人格含「别用…奉承腔」', /奉承腔/.test(txt))
+T('人格允许被惹到嘴毒回去', /把火撒回去/.test(txt))
+T('嘴毒有边界（不脏话/人身攻击）', /不骂脏话|人身攻击/.test(txt))
 
 let bad = 0
 for (const [n, good, e] of ok) { if (good) console.log('OK  ' + n); else { bad++; console.log('FAIL ' + n + '  ' + String(JSON.stringify(e)).slice(0, 160)) } }
