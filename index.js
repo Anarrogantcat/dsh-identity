@@ -25,7 +25,7 @@ import { usageReport, sampleBuckets, bucketsReport, sidOfForConfig, usageTargets
 import { syncFromApi as syncEsports, loadCache as esportsCache, dayMatches } from './lib/esports.js'
 import { resolveRoute, withRoute } from './lib/llmroute.js'
 import { dataPointer, STORE_DIR as DATA_DIR } from './lib/config.js'
-import { memoryCard, listMemory, forgetMemory, pinMemory, prunePeer, takePendingRecall, recall } from './lib/memory.js'
+import { memoryCard, listMemory, forgetMemory, pinMemory, prunePeer, takePendingRecall, recall, memoryStats } from './lib/memory.js'
 import { sessionIdOfContext, scaleBlock, effectiveScale } from './lib/persona.js'
 import { resolveSession, listChannels } from './lib/channel.js'
 import './lib/channel-qq.js'
@@ -579,7 +579,7 @@ function snapshot() {
         const g = (loadConfig()?.scope?.groups ?? [])[0]
         if (!g) return null
         const pk = peerKey('group', String(g))
-        return { peerKey: pk, diary: listDiary(pk, 7), reflections: reflection.listReflections(pk, 7), memory: listMemory(pk).slice(0, 20) }
+        return { peerKey: pk, diary: listDiary(pk, 7), reflections: reflection.listReflections(pk, 7), memory: listMemory(pk).slice(0, 20), stats: (() => { try { return memoryStats(pk) } catch { return null } })() }
       } catch { return null }
     })(),
     growth: (() => { try { const g = (loadConfig()?.scope?.groups ?? [])[0]; return growth.growthMetrics(g ? peerKey('group', String(g)) : '') } catch { return null } })(),
