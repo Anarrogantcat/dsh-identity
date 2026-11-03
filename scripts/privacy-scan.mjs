@@ -8,7 +8,8 @@ import { readFileSync } from 'node:fs'
 
 const strict = process.argv.includes('--strict')
 const files = execSync('git ls-files', { encoding: 'utf8' }).trim().split('\n')
-  .filter((f) => /\.(mjs|js|json|md|yml|yaml|html)$/.test(f))
+  // 扫描脚本自己里面写着规则字样，不算泄漏
+  .filter((f) => /\.(mjs|js|json|md|yml|yaml|html)$/.test(f) && f !== 'scripts/privacy-scan.mjs')
 
 const PATTERNS = [
   { name: '个人用户名', re: /Ranmi/g },
