@@ -1,4 +1,4 @@
-process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-update';
+process.env.DSH_HOME = process.env.TEMP.replace(/\\/g, '/') + '/dsh-test-update';
 import { mkdirSync, rmSync, writeFileSync, existsSync, readFileSync } from 'node:fs';
 const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
@@ -27,7 +27,7 @@ const pkg = JSON.parse(readFileSync(new URL('package.json', base), 'utf8'));
 A('当前版本读得到', U.currentVersion() === pkg.version, [U.currentVersion(), pkg.version]);
 A('插件目录是真实路径', /dsh-(identity|qqbot-refine)/.test(U.pluginDirOf()), U.pluginDirOf());
 A('pnpm 目录被识别', U.isPnpmManaged('C:/x/node_modules/.pnpm/dsh-identity@1.0.0/node_modules/dsh-identity') === true);
-A('普通目录不算 pnpm', U.isPnpmManaged('C:/Users/x/.dsh/plugins/dsh-identity') === false);
+A('普通目录不算 pnpm', U.isPnpmManaged('<DSH_HOME>/plugins/dsh-identity') === false);
 
 // ── 3. 查最新版（打桩 fetch）──
 const goodFetch = async () => ({ ok: true, json: async () => ({ version: '99.0.1' }) });

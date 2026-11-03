@@ -1,4 +1,4 @@
-process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-pricing';
+process.env.DSH_HOME = process.env.TEMP.replace(/\\/g, '/') + '/dsh-test-pricing';
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 const HOME = process.env.DSH_HOME;
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}

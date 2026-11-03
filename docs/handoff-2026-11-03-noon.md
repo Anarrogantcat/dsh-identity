@@ -18,8 +18,8 @@
 
 - 版本 **1.9.219** 已部署，171 个测试全绿，`node scripts/check-version.mjs` 报源码与部署一致
 - 源码 `D:\AI\DeepSeek Harness Workspace\dsh-qqbot-refine`（分支 `feat/p0.5-wiring`，**大量改动还没 git commit**）
-- 部署目录 `C:\Users\Ranmi\.dsh\plugins\dsh-identity`
-- 数据 `C:\Users\Ranmi\.dsh\storages\dsh-identity`（traits 已清空壳，备份在 `traits.json.bak-2026-11-03T04-00-24-604Z`）
+- 部署目录 `<DSH_HOME>\plugins\dsh-identity`
+- 数据 `<DSH_HOME>\storages\dsh-identity`（traits 已清空壳，备份在 `traits.json.bak-2026-11-03T04-00-24-604Z`）
 
 ## 计划在哪
 

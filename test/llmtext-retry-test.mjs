@@ -3,7 +3,7 @@ import { join } from 'node:path'
 import { rmSync, mkdirSync, writeFileSync } from 'node:fs'
 import { pathToFileURL } from 'node:url'
 
-const HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-llmretry'
+const HOME = process.env.TEMP.replace(/\\/g, '/') + '/dsh-test-llmretry'
 try { rmSync(HOME, { recursive: true, force: true }) } catch {}
 process.env.DSH_HOME = HOME
 mkdirSync(HOME + '/profiles/desktop', { recursive: true })

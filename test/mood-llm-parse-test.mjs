@@ -1,8 +1,8 @@
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { pathToFileURL } from 'node:url';
-process.env.USERPROFILE = 'C:/Users/Ranmi';
-process.env.DSH_HOME = 'C:/Users/Ranmi/AppData/Local/Temp/dsh-test-mparse';
+process.env.USERPROFILE = process.env.TEMP;
+process.env.DSH_HOME = process.env.TEMP.replace(/\\/g, '/') + '/dsh-test-mparse';
 import { mkdirSync, rmSync } from "node:fs";
 try { rmSync(process.env.DSH_HOME, { recursive: true, force: true }) } catch {}
 mkdirSync(process.env.DSH_HOME + "/profiles/desktop", { recursive: true });
