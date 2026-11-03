@@ -14,13 +14,16 @@ ensureDirs();
 const ok = [];
 const eq = (n, got, want) => ok.push([n, JSON.stringify(got) === JSON.stringify(want), got, want]);
 // ── 抽规矩 ──
-eq("不要 X", learn.extractRule("以后不要用敬语"), "不要用敬语");
-eq("别 X", learn.extractRule("别老是叫我大佬"), "不要叫我大佬");
+// ── 抽规矩（2026-11-03 收紧：只认明确「在教规矩」的句式）──
+eq("以后不要 X", learn.extractRule("以后不要用敬语"), "不要用敬语");
+eq("光是「别」开头不算规矩", learn.extractRule("别老是叫我大佬"), null);
 eq("记住 X", learn.extractRule("记住：这个群只聊技术"), "记住：这个群只聊技术");
-eq("叫我 X", learn.extractRule("以后叫我小鱼就好"), "叫我小鱼就好");
+eq("以后叫我 X", learn.extractRule("以后叫我小鱼就好"), "叫我小鱼就好");
 eq("普通聊天不抽", learn.extractRule("今天好热啊"), null);
-eq("问句不抽", learn.extractRule("你不要这样行吗"), "不要这样行吗");
+eq("聊天里夹的「不要」不算", learn.extractRule("你不要这样行吗"), null);
+eq("「不要人艾特你」这种不再被收", learn.extractRule("不要人艾特你"), null);
 eq("超长不抽", learn.extractRule("不要" + "啊".repeat(200)), null);
+eq("以后别再 X 也收", learn.extractRule("以后别再艾特我了"), "不要艾特我了");
 // ── 存规矩 ──
 const pk = peerKey('group', 'G1');
 learn.forgetRules(pk);
@@ -31,6 +34,18 @@ for (let i = 0; i < 25; i++) learn.learnRule({ peerKey: pk, text: "记住：第"
 ok.push(["最多留 20 条", (learn.loadLearn().rules[pk] || []).length === 20, (learn.loadLearn().rules[pk] || []).length]);
 ok.push(["注入只取最后 5 条", learn.rulesFor(pk).length === 5, learn.rulesFor(pk)]);
 ok.push(["forgetRules 能清空", learn.forgetRules(pk) > 0 && learn.rulesFor(pk).length === 0]);
+// ── 时效与逐条管理 ──
+learn.forgetRules(pk);
+learn.learnRule({ peerKey: pk, text: "记住：新规矩", by: "U-OWNER" });
+ok.push(["新规矩会注入", learn.rulesFor(pk).length === 1]);
+{
+  const db = learn.loadLearn();
+  db.rules[pk][0].at = new Date(Date.now() - 30 * 86400000).toISOString();
+  learn.saveLearn(db);
+}
+ok.push(["30 天前的规矩不再注入", learn.rulesFor(pk).length === 0, learn.rulesFor(pk)]);
+ok.push(["listRules 能列出来", learn.listRules(pk).length === 1, learn.listRules(pk)]);
+ok.push(["forgetRule 能删一条", learn.forgetRule(pk, "记住：新规矩") === 1]);
 // ── 反馈学习 ──
 learn.markSent(pk);
 ok.push(["发完等着被接", learn.markReacted(pk) === true]);

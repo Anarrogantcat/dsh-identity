@@ -892,8 +892,35 @@ function renderMemoryPage() {
     <div class="pcard"><div class="label">记忆（衰减卡） <span class="badge">${mem.length}</span></div>
       ${mem.length ? mem.slice(0, 10).map((m) => '<div class="row"><div class="meta"><div class="label">' + escapeHtml(String(m.text).slice(0, 80)) + (m.pinned ? ' <span class="badge cur">置顶</span>' : '') + (m.origin === 'agent' ? ' <span class="badge">本鱼记的</span>' : '') + (m.status === 'superseded' ? ' <span class="badge">已作废</span>' : m.status === 'overturned' ? ' <span class="badge" style="background:var(--bad,#a33);color:#fff">已推翻</span>' : m.status === 'consolidated' ? ' <span class="badge">已压成摘要</span>' : '') + '</div><div class="hint">P ' + m.P + ' · 重要度 ' + m.importance + ' · 置信 ' + Math.round(Number(m.confidence ?? 0) * 100) + '%' + (m.origin === 'user' ? ' · 群友说的' : '') + '</div></div></div>').join('') : '<div class="hint">还没有记忆。</div>'}
     </div>
+    <div class="pcard"><div class="label">学到的规矩 <span class="badge" id="learnRuleCount">…</span></div>
+      <div class="hint">只认「记住…」「以后不要…」这类明确指令；超过 7 天的自动不再注入。删掉立刻失效。</div>
+      <div id="learnRulesBox" class="hint">加载中…</div>
+    </div>
     ${flds.length ? '<details class="adv"><summary>高级设置（' + flds.length + ' 项）</summary><div class="pcard">' + flds.map((f) => fieldRow(f)).join('') + '</div></details>' : ''}`
   bindFields(el)
+  loadLearnRules(mp.peerKey)
+}
+
+async function loadLearnRules(peerKey) {
+  const box = document.getElementById('learnRulesBox')
+  if (!box) return
+  if (!peerKey) { box.textContent = '先在「白名单 / 名册」里选一个群。'; return }
+  try {
+    const j = await pfetch({ action: 'learnList', peerKey })
+    const items = (j && j.items) || []
+    const cnt = document.getElementById('learnRuleCount')
+    if (cnt) cnt.textContent = items.length + ' 条'
+    if (!items.length) { box.textContent = '还没有学到的规矩。'; return }
+    box.innerHTML = items.map((r) =>
+      '<div class="row"><div class="meta"><div class="label">' + escapeHtml(r.text) + '</div>' +
+      '<div class="hint">' + escapeHtml(String(r.at || '').slice(0, 16)) + ' · 教的人 ' + escapeHtml(String(r.by || '').slice(0, 12)) + '</div></div>' +
+      '<div class="ctl"><button data-learn-del="' + escapeHtml(r.text) + '">删掉</button></div></div>').join('')
+    box.querySelectorAll('[data-learn-del]').forEach((b) => {
+      b.onclick = async () => {
+        try { await pfetch({ action: 'learnForget', peerKey, text: b.dataset.learnDel }); await loadLearnRules(peerKey) } catch (e) { /* ignore */ }
+      }
+    })
+  } catch (e) { box.textContent = '加载失败：' + (e && e.message ? e.message : '网络错误') }
 }
 function renderProactivePage() {
   const el = $('panel')

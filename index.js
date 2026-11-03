@@ -38,7 +38,7 @@ import { llmStats } from './lib/moodllm.js'
 import { knowledgeBlock, lastQueryOf, kbStats, listKbFiles, readKbFile, saveKbFile, deleteKbFile, kbNameForPeer, importKbFromPath } from './lib/knowledge.js'
 import { topicBlock, topicStats } from './lib/topic.js'
 import { matchStats } from './lib/esports.js'
-import { rulesFor as learnRulesFor, learnStats, learnView } from './lib/learn.js'
+import { rulesFor as learnRulesFor, learnStats, learnView, listRules, forgetRule } from './lib/learn.js'
 import { gearValues, GEARS } from './lib/gear.js'
 import { roleDiagnostics, clearRoleCache } from './lib/roles.js'
 import * as sticker from './lib/sticker.js'
@@ -835,6 +835,12 @@ export async function apply(ctx, config = {}) {
           }
           if (action === 'memoryPin') {
             return sendJson(res, 200, { ok: true, pinned: pinMemory(body.peerKey ?? '', body.id, body.pinned !== false) })
+          }
+          if (action === 'learnList') {
+            return sendJson(res, 200, { ok: true, items: listRules(body.peerKey ?? '') })
+          }
+          if (action === 'learnForget') {
+            return sendJson(res, 200, { ok: true, removed: forgetRule(body.peerKey ?? '', body.text ?? '') })
           }
           if (action === 'biliParse') {
             const parsed = bili.extractBili(body.url ?? '')
