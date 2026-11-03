@@ -31,6 +31,11 @@ ok.push(['弱信号 + 熟人 → 算', pass(E.detect('就这样吧'), 2.1, false
 ok.push(['弱信号 + 熟人 + 被叫到 → 算', pass(E.detect('就这样吧'), 3, true) === true])
 ok.push(['强信号 + 被叫到 → 算', pass(E.detect('烦死了'), 0, true) === true])
 
+// web 会话里「对她说的指令」不算她在共情
+ok.push(['指令话不算自己状态', E.isSelfState('群友惹你生气了，可以把火撒在群友身上') === false])
+ok.push(['「你可以毒一点」不算', E.isSelfState('你可以毒一点') === false])
+ok.push(['「我今天有点累」算', E.isSelfState('我今天有点累') === true])
+ok.push(['「我有点烦」算', E.isSelfState('我有点烦') === true])
 let bad = 0
 for (const [n, good, got, want] of ok) {
   if (!good) { bad++; console.log('FAIL ' + n + '  got=' + JSON.stringify(got) + ' want=' + JSON.stringify(want)) } else console.log('OK  ' + n)
