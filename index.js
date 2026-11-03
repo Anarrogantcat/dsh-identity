@@ -39,6 +39,7 @@ import { knowledgeBlock, lastQueryOf, kbStats, listKbFiles, readKbFile, saveKbFi
 import { topicBlock, topicStats } from './lib/topic.js'
 import { matchStats } from './lib/esports.js'
 import { rulesFor as learnRulesFor, learnStats, learnView, listRules, forgetRule } from './lib/learn.js'
+import { logError, logRun, logInfo, installProcessHooks, logStats, recentErrors, recentRun, queryLogs, clearLogs } from './lib/diaglog.js'
 import { gearValues, GEARS } from './lib/gear.js'
 import { roleDiagnostics, clearRoleCache } from './lib/roles.js'
 import * as sticker from './lib/sticker.js'
@@ -606,6 +607,7 @@ export async function apply(ctx, config = {}) {
   hostCtxRef = ctx
   ensureStore()
   ensureDirs()
+  try { installProcessHooks(logger); logRun('boot') } catch { /* ignore */ }
   loadState()
   // 清掉我们测试留下的孤儿浏览器（payqr-edge-*），历史事故：泄漏 700+ 个 msedge
   try { scheduleBrowserSweep({ logger }) } catch { /* ignore */ }
@@ -839,8 +841,22 @@ export async function apply(ctx, config = {}) {
           if (action === 'learnList') {
             return sendJson(res, 200, { ok: true, items: listRules(body.peerKey ?? '') })
           }
-          if (action === 'learnForget') {
+           if (action === 'learnForget') {
             return sendJson(res, 200, { ok: true, removed: forgetRule(body.peerKey ?? '', body.text ?? '') })
+          }
+          if (action === 'diagLogs') {
+            return sendJson(res, 200, {
+              ok: true,
+              stats: logStats(),
+              errors: recentErrors(30),
+              run: recentRun(20),
+              rows: queryLogs({ level: body.level ?? '', q: body.q ?? '', limit: body.limit ?? 60 }),
+            })
+          }
+          if (action === 'diagClear') {
+            const n = clearLogs()
+            try { logInfo('logs.clear', { removed: n }) } catch { /* ignore */ }
+            return sendJson(res, 200, { ok: true, removed: n })
           }
           if (action === 'biliParse') {
             const parsed = bili.extractBili(body.url ?? '')

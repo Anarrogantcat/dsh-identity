@@ -780,6 +780,49 @@ function renderTabs(){
   }).join('')
   ;[...document.querySelectorAll('.tab')].forEach((b) => { b.onclick = () => goTab(b.dataset.tab) })
 }
+async function loadDiagLogs(el) {
+  const root = el && el.querySelector ? el : document
+  const box = root.querySelector('#logBox')
+  if (!box) return
+  const lvSel = root.querySelector('#logLevel')
+  const qInp = root.querySelector('#logQ')
+  try {
+    const j = await pfetch({ action: 'diagLogs', level: lvSel ? lvSel.value : '', q: qInp ? qInp.value : '', limit: 80 })
+    if (!j || j.ok === false) { box.textContent = '读不到日志'; return }
+    const cnt = root.querySelector('#logCount')
+    const st = j.stats || {}
+    if (cnt) cnt.textContent = (st.errors ?? 0) + ' 错误 / ' + (st.app ?? 0) + ' 条记录 · ' + Math.round((Number(st.appBytes || 0) + Number(st.errorBytes || 0)) / 1024) + 'KB'
+    const rows = j.rows || []
+    if (!rows.length) { box.innerHTML = '<div class="hint">没有匹配的日志。</div>' } else {
+      box.innerHTML = rows.map((r) => {
+        const lvl = String(r.level || 'info')
+        const color = lvl === 'error' ? 'var(--bad)' : lvl === 'warn' ? 'var(--warn)' : lvl === 'debug' ? 'var(--dim)' : 'var(--ok)'
+        const head = '[' + lvl + '] ' + String(r.kind || '')
+        const body = String(r.msg || r.text || '').slice(0, 160)
+        const extra = [
+          r.provider ? String(r.provider) + '/' + String(r.model || '') : '',
+          r.ms ? r.ms + 'ms' : '',
+          r.tokens ? r.tokens + ' tok' : '',
+          r.ok === false ? '失败' : '',
+        ].filter(Boolean).join(' · ')
+        return '<div class="row"><div class="meta"><div class="label"><span style="color:' + color + '">' + escapeHtml(head) + '</span>' +
+          (body ? ' ' + escapeHtml(body) : '') + '</div>' +
+          '<div class="hint">' + escapeHtml(String(r.at || '').replace('T', ' ').slice(0, 19)) + (extra ? ' · ' + escapeHtml(extra) : '') +
+          (r.stack ? '<br>' + escapeHtml(String(r.stack).split('\n')[0].trim().slice(0, 110)) : '') + '</div></div></div>'
+      }).join('')
+    }
+    const apply = root.querySelector('#logApply')
+    if (apply) apply.onclick = () => loadDiagLogs(root)
+    const reload = root.querySelector('#logReload')
+    if (reload) reload.onclick = () => loadDiagLogs(root)
+    const clear = root.querySelector('#logClear')
+    if (clear) clear.onclick = async () => {
+      if (!window.confirm('清空全部日志？清完不能恢复。')) return
+      try { const r = await pfetch({ action: 'diagClear' }); box.textContent = '已清空 ' + ((r && r.removed) || 0) + ' 条' } catch (e) { box.textContent = '清空失败' }
+    }
+  } catch (e) { box.textContent = '加载失败：' + (e && e.message ? e.message : '网络错误') }
+}
+
 function renderSystemPage() {
   const el = $('panel')
   const caps = Array.isArray(STATE.capabilitiesList) ? STATE.capabilitiesList : []
@@ -807,7 +850,18 @@ function renderSystemPage() {
       <div style="display:flex;align-items:center;gap:10px;margin:8px 0"><label class="switch"><input type="checkbox" id="mcpEnabled" ${mcp.enabled ? 'checked' : ''}><i></i></label><span class="hint">启用 MCP</span></div>
       <div id="mcpList"></div>
       <div class="pbtns" style="margin-top:8px"><button id="mcpAdd">+ 添加服务器</button><button id="mcpSave" class="primary">保存 MCP</button><span id="mcpMsg" class="hint"></span></div>
+    </div>
+    <div class="pcard">
+      <div class="label">运行日志 / 报错 <span class="badge" id="logCount">…</span></div>
+      <div class="hint">分级记录（debug/info/warn/error）+ 模型调用（provider/耗时/tokens/成败）+ 异常堆栈。同类错误 60 秒内只记一次，单文件超 2MB 自动轮转。</div>
+      <div style="display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap">
+        <select id="logLevel" style="width:120px"><option value="">全部级别</option><option value="error">error</option><option value="warn">warn</option><option value="info">info</option><option value="debug">debug</option></select>
+        <input id="logQ" placeholder="搜关键词（kind / 模型 / 报错内容）" style="flex:1;min-width:180px">
+        <button id="logApply">查询</button><button id="logReload">刷新</button><button id="logClear">清空</button>
+      </div>
+      <div id="logBox" class="hint">加载中…</div>
     </div>`
+  loadDiagLogs(el)
   // MCP 多服务器编辑：每行 id / url / token / 启用 / 删除
   let mcpDraft = servers.map((s) => ({ id: String(s.id || ''), url: String(s.url || ''), token: String(s.token || ''), enabled: s.enabled !== false }))
   const renderMcpList = () => {
