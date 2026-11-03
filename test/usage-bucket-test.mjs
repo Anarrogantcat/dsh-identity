@@ -31,9 +31,19 @@ writeFileSync(HOME + '/storages/dsh-qqbot-refine/usage-buckets.json', JSON.strin
 const r = U.bucketsReport(cfg);
 T("高峰 100 万未命中 = ¥2", r.peakCost === 2, r);
 T("空闲 100 万未命中（半价）= ¥1", r.offpeakCost === 1, r);
-T("搜索在 11-01 前免费", r.searchCost === 0, r);
-T("合计 = ¥3（搜索未计费）", r.total === 3, r.total);
-// 校准系数对峰谷都生效
+// 搜索免费期：默认截止 2026-11-01T00:00+08，之后按次计费。
+// 以前这里直接拿「今天」去比默认截止日，写测试那天（10 月底）还免费，11-02 之后就必然红——
+// 是测试过期，不是代码变了。改成显式给两侧的截止日，两个方向都验。
+cfg.usage.searchFreeUntil = '2099-01-01T00:00:00+08:00';
+const rFree = U.bucketsReport(cfg);
+T("免费期内搜索不计费", rFree.searchCost === 0, rFree);
+T("免费期内合计 = ¥3", rFree.total === 3, rFree.total);
+cfg.usage.searchFreeUntil = '2020-01-01T00:00:00+08:00';
+const rPaid = U.bucketsReport(cfg);
+T("免费期过后按次计费（3 次 × 0.01 = ¥0.03）", Math.abs(rPaid.searchCost - 0.03) < 0.0005, rPaid.searchCost);
+T("免费期过后合计 = ¥3.03", Math.abs(rPaid.total - 3.03) < 0.0005, rPaid.total);
+// 校准系数对峰谷都生效（回到免费期，排除搜索项干扰）
+cfg.usage.searchFreeUntil = '2099-01-01T00:00:00+08:00';
 cfg.usage.calibFactor = 0.5;
 const r2 = U.bucketsReport(cfg);
 T("校准 ×0.5 后 = ¥1.5", Math.abs(r2.total - 1.5) < 0.005, r2.total);

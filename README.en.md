@@ -32,6 +32,6 @@ npm install
 npm test
 ```
 
-130 test files, including UI render smoke (19 pages) and interaction smoke (every button clicked).
+181 test files, including UI render smoke (22 pages: 18 tabs + 4 cognition sub-pages) and interaction smoke (every button clicked).
 
 MIT

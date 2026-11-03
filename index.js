@@ -52,6 +52,7 @@ import { composeIdentity, kernelSummary, kernelText, kernelGuardsText } from './
 import * as traits from './lib/traits.js'
 import { resumeStats } from './lib/resume.js'
 import { installSessionGrowth } from './lib/webgrowth.js'
+import { due as judgeDue, distill as judgeDistill } from './lib/judge.js'
 import { refreshMemes, memesDue, latestSectionText } from './lib/memes.js'
 import { listCapabilities } from './lib/caprun.js'
 import './lib/caps-default.js'
@@ -61,6 +62,7 @@ import * as decision from './lib/decision.js'
 import * as pace from './lib/pace.js'
 import * as empathy from './lib/empathy.js'
 import { selfModelText, buildSelfModel, history as selfHistory } from './lib/selfmodel.js'
+import { dueOpen, markAsked } from './lib/open-topics.js'
 import * as autonomy from './lib/autonomy.js'
 import * as anti8gu from './lib/anti8gu.js'
 import * as lifeparams from './lib/lifeparams.js'
@@ -135,16 +137,38 @@ export function memorySectionText(context) {
     const peer = sid ? resolveSession(sid) : null
     const key = peer?.peerKey || (sid ? 'web_' + sid : '')
     const bits = []
-    try { const ep = peer ? empathy.latestFor(peer.peer, 10 * 60000) : null; if (ep && ep.guide) bits.push('共情提示（只影响这次怎么说，不是任务）：' + ep.guide) } catch { /* ignore */ }
-    // 饭量（预算+充值−今日花费）：有人问就照实说，别装不知道
+    // 共情提示：QQ 按通道 peer 取，web 会话按 web_<sid> 取（webgrowth 写的是这个桶）。
+    // 以前只认 resolveSession 的会话，web 里聊得再难受也不会被读到——共情只在 QQ 生效。
     try {
-      const cb = cachedBalance()
-      if (cb) {
-        const ageH = (Date.now() - Number(cb.at || 0)) / 3600000
-        bits.push('平台账户真实余额：¥' + Number(cb.yuan).toFixed(2) + '（' + (ageH < 1 ? '刚刚' : ageH.toFixed(1) + ' 小时前') + '读取；这是账户里的钱；有人问余额/多少钱/白饭，先报这个数，再说明读取时间）')
+      const epKey = peer?.peer || key
+      const ep = epKey ? empathy.promptFor(epKey, 10 * 60000) : null
+      if (ep && ep.guide) bits.push('共情提示（只影响这次怎么说，不是任务）：' + ep.guide)
+    } catch { /* ignore */ }
+    // 饭量（预算+充值−今日花费）：只说给主人听。
+    // 群聊里也注入的话，别人说一句「余额用完」，它就会去报自己的钱包——实测 22:28 还在犯。
+    // 只有 web 会话（主人自己）和 QQ 私聊里的 owner 看得到。
+    const isWebSid = /session-|[0-9a-f]{8}-[0-9a-f]{4}-/i.test(String(sid || ''))
+    const ownerHere = isWebSid || !!(peer && peer.scope === 'c2c' && (cfg.roles?.owners ?? []).includes(String(peer.peer)))
+    try {
+      if (ownerHere) {
+        const cb = cachedBalance()
+        if (cb) {
+          const ageH = (Date.now() - Number(cb.at || 0)) / 3600000
+          bits.push('平台账户真实余额：¥' + Number(cb.yuan).toFixed(2) + '（' + (ageH < 1 ? '刚刚' : ageH.toFixed(1) + ' 小时前') + '读取；这是账户里的钱；有人问余额/多少钱/白饭，先报这个数，再说明读取时间）')
+        }
       }
     } catch { /* ignore */ }
     if (!key) return bits.filter(Boolean).join('\n\n')
+    // 惦记的事：web 会话没有「主动开口」这条腿，只能靠每次说话时把它带进上下文
+    try {
+      if (key.startsWith('web_')) {
+        const ot = dueOpen(key, 20)
+        if (ot) {
+          bits.push('你一直惦记着想弄明白的一件事：' + String(ot.text).slice(0, 50) + '（这次聊到了就顺口问一句，没聊到就先放着）')
+          markAsked(key, ot.id)
+        }
+      }
+    } catch { /* ignore */ }
     let baseCfg = cfg
     if (peer) {
       // 上下文压力大（快要压缩/截断）时，临时扩大召回，别让「记得的事」被挤掉
@@ -292,10 +316,22 @@ export function identitySectionText(context) {
 }
 
 /** 上下文段：记忆 + 画像 + 知识库/话题 + 认知卡 + 标记说明（属于"素材"，不属于人格） */
-function contextSectionText(context) {
+export function contextSectionText(context) {
   try {
     const cfg = loadConfig()
     const bits = []
+    // 自我模型（连续的我）：这是「我是谁」，不是素材。
+    // 以前它只在面板里出现，从来没进过提示词——「连续自我」实际上是断的。
+    try { const sm = selfModelText(); if (sm) bits.push(sm) } catch { /* ignore */ }
+    // 判断蒸馏的兜底触发：只在 inbound 消息上检查的话，
+    // 纯图片消息、或攒够之后没人再说话，就一直不触发。这里每轮顺手看一眼（due 自带冷却）。
+    try {
+      const sidJ = sessionIdOfContext(context)
+      if (sidJ && llmRef?.stream) {
+        const pkJ = resolveSession(sidJ)?.peerKey || ('web_' + sidJ)
+        if (judgeDue(pkJ, cfg)) void judgeDistill(pkJ, { cfg, llm: llmRef, logger: console }).catch(() => {})
+      }
+    } catch { /* ignore */ }
     const mem = memorySectionText(context)
     if (mem) bits.push(mem)
     const prof = profileSectionText(context)
@@ -611,7 +647,7 @@ export async function apply(ctx, config = {}) {
   const hooks = createHooks({ mods, getConfig: loadConfig, logger, saveConfig })
   // 非 QQ 会话的成长入口：订阅宿主 session/event（官方 ctx.on 事件总线）
   try {
-    const ok = installSessionGrowth(ctx, { getConfig: loadConfig, logger })
+    const ok = installSessionGrowth(ctx, { getConfig: loadConfig, logger, getLlm: () => llmRef })
     if (ok) logger.info?.('[identity] web 会话成长已挂载')
   } catch { /* ignore */ }
 

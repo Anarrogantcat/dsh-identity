@@ -41,6 +41,16 @@ C.resetCostGuard();
 const c3 = loadConfig(); c3.usage.onExceed = "mute"; saveConfig(c3);
 const m1 = C.gateDecision(loadConfig());
 A("超限 → 静默（mute）", m1.block === true && m1.speak === false && m1.action === "mute", m1);
+// 3.5) 默认就是静默：没饭 = 睡着，不播报
+{
+  C.resetCostGuard();
+  const cDef = clone(DEFAULTS);
+  cDef.usage.hardLimitEnabled = true;
+  cDef.usage.dailyYuanHardLimit = 0.01;
+  A("默认 onExceed 是 mute", DEFAULTS.usage.onExceed === "mute", DEFAULTS.usage.onExceed);
+  const dDef = C.gateDecision(cDef);
+  A("默认超限 → 静默不吭声", dDef.block === true && dDef.speak === false && dDef.action === "mute", dDef);
+}
 // 4) 阈值提醒只一次
 C.resetCostGuard();
 const c4 = loadConfig(); c4.usage.onExceed = "degrade"; c4.usage.dailyYuanHardLimit = 1; c4.usage.warnAt = 0.01; saveConfig(c4);

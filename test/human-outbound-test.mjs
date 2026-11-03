@@ -31,7 +31,11 @@ mk(); bot.sent.length = 0;
 const s1 = t0();
 const r1 = await gate.onOutbound(bot, 'sendText', [target, LONG]);
 const waited = t0() - s1;
-await new Promise(r => setTimeout(r, 3000));
+// 后续气泡的延迟是 typingDelay + 1800 + 0~1200 随机；轮询等它真的发出来，最多 8 秒
+{
+  const deadline = Date.now() + 8000;
+  while (bot.sent.length === 0 && Date.now() < deadline) await new Promise(r => setTimeout(r, 100));
+}
 const all = [r1.args[1], ...bot.sent];
 ok.push(["首条等待 >= 250ms（在打字）", waited >= 250, waited]);
 ok.push(["去掉了 markdown（没有 # 和 *）", all.every(x => !/[#*]/.test(x)), all]);

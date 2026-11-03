@@ -18,7 +18,7 @@
 dsh-qqbot-refine/
 ├─ index.js            插件入口（cordis apply）
 ├─ panel.html          控制面板（单文件原生 JS）
-├─ client.js           浏览器半边：右下角悬浮按钮
+├─ client.js           浏览器半边：左侧栏「大肥鱼」图标 + 主面板（旧的右下角悬浮按钮已撤）
 ├─ lib/
 │  ├─ onebot-channel.js   自建 OneBot 通道（事件→闸门→agent→发送）
 │  ├─ onebot-client.js    OneBot 11 WS 客户端

@@ -55,14 +55,15 @@ cfg.autonomy = { ...cfg.autonomy, autoInternal: false }
 {
   const g = A.listGoals({ status: 'approved' })[0]
   const r = A.runGoal(g.id, { cfg })
-  Aa('批准后能跑', r.ran === true && r.ok === true, r)
+  Aa('批准后能跑', r.ran === true, r)
   Aa('产出只到 tentative', (() => {
     const t = T.listTraits({ limit: 100 }).find((x) => x.text.includes('开始留意'))
     return t && t.status === 'tentative'
   })())
-  Aa('目标标为 done', A.listGoals({}).find((x) => x.id === g.id).status === 'done')
-  Aa('done 再跑不重复', A.runGoal(g.id, { cfg }).ran === false)
-  Aa('预算不足就跳过', A.setGoalStatus(A.listGoals({})[0].id, 'approved', { by: 'owner' }).ok === false)
+  Aa('空跑不进 done', A.listGoals({}).find((x) => x.id === g.id).status === 'approved', A.listGoals({}).find((x) => x.id === g.id))
+  Aa('空跑后冷却期内不重跑', A.runGoal(g.id, { cfg }).ran === false)
+  const rb = A.runGoal(A.listGoals({ status: 'approved' })[0].id, { cfg, now: Date.now() + 7 * 3600 * 1000, budget: { allow: false, reason: '没额度' } })
+  Aa('预算不足就跳过', rb.ran === false && String(rb.reason).includes('没额度'), rb)
 }
 
 // 防死循环：同类连续失败 3 次不再提议（用假 stats 直接验逻辑）

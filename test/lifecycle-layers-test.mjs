@@ -21,10 +21,10 @@ let t = L.addEvidence(t0, { kind: 'self-say', ref: 'm1', at: at(0) }, now);
 A('一次证据不升 durable', t.status === 'tentative', t);
 A('置信度随证据上升但不高', t.confidence > 0.3 && t.confidence < 0.6, t.confidence);
 
-// 3) 同一天三次：不够（没有跨天）
+// 3) 同一天三次：够（不再卡跨天——成长不该被日历按住）
 let same = L.makeTrait({ text: '同一天三次' });
 for (const i of [0, 1, 2]) same = L.addEvidence(same, { kind: 'self-say', ref: 's' + i, at: at(0) }, now);
-A('同一天 3 次仍不 durable（防止一天情绪定型）', same.status === 'tentative', same.status);
+A('同一天 3 次也能 durable（不卡跨天）', same.status === 'durable', same.status);
 
 // 4) 跨天三次：durable
 let cross = L.makeTrait({ text: '跨天三次' });

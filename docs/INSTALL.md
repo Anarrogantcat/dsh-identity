@@ -102,8 +102,8 @@ node -p "require('$env:USERPROFILE/.dsh/profiles/web/node_modules/dsh-qqbot-refi
 插件是宿主进程内的 cordis 插件，**必须重启 DSH** 才会加载。
 
 重启后：
-- 侧边栏/设置里出现「大肥鱼 · QQ 增强」入口
-- 或直接开 `http://127.0.0.1:<DSH端口>/api/qqbot-refine/panel`
+- 左侧栏出现「大肥鱼」图标（插件显示名「大肥鱼 · 身份系统」），点进去就是面板
+- 或直接开 `http://127.0.0.1:<DSH端口>/qqbot-refine`
 
 ## 4. 第一次配置
 
@@ -120,7 +120,7 @@ node -p "require('$env:USERPROFILE/.dsh/profiles/web/node_modules/dsh-qqbot-refi
 | 字段 | 示例 |
 |---|---|
 | `voice.enabled` | 开 |
-| `voice.baseUrl` | `http://127.0.0.1:9881` |
+| `voice.baseUrl` | `http://127.0.0.1:<你服务实际监听的端口>` |
 | `voice.apiKey` | 服务端的 key |
 | `voice.autoStart` | 开（服务没跑时自动拉起） |
 

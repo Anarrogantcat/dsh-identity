@@ -9,3 +9,10 @@ backups/
 dsh-test-*
 *.tgz
 _diag/
+
+# 临时/中间产物（别进仓库）
+_tmp_*/
+_tmp_*.py
+__pycache__/
+*.pyc
+scripts/_live_result.json

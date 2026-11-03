@@ -11,7 +11,8 @@ const { window } = dom
 window.fetch = () => new Promise(() => {})
 window.scrollTo = () => {}
 window.matchMedia = window.matchMedia || (() => ({ matches: false, addEventListener() {}, removeEventListener() {} }))
-const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)][0][1]
+// 取最长的那段脚本：面板 <head> 里还有一小段 embed 检测，主程序始终是最长的一块
+const script = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]).sort((a, b) => b.length - a.length)[0]
 const hook = ';window.__ui = { setState: (s) => { STATE = s }, setActive: (a) => { ACTIVE = a }, setCog: (c) => { COGSUB = c }, renderPanel, renderTabs, renderChips };'
 window.eval(script + hook)
 
