@@ -72,6 +72,33 @@ console.log('  验收口径：至少 3 次真实被怼/难受并记进 docs')
 console.log('')
 console.log('[日志通道] 共情 ' + empathyLogged.length + ' 条 / 情绪变化 ' + moodNotes.length + ' 条')
 
+// ── 为什么没触发（只读诊断：今天的真实群里，有几句够得上弱信号） ──
+try {
+  const { readdirSync } = await import('node:fs')
+  const { detect } = await import('../lib/empathy.js')
+  const today = new Date().toISOString().slice(0, 10)
+  let total = 0, weakHits = 0, strongHits = 0
+  for (const d of readdirSync(join(STORE_DIR, 'events'))) {
+    if (!d.startsWith('g_')) continue
+    let f = ''
+    try { f = readFileSync(join(STORE_DIR, 'events', d, today + '.jsonl'), 'utf8') } catch { continue }
+    for (const line of f.split('\n')) {
+      if (!line.trim()) continue
+      let e
+      try { e = JSON.parse(line) } catch { continue }
+      if (e.kind !== 'talk' || e.origin !== 'inbound') continue
+      total++
+      const em = detect(String(e.text || ''))
+      if (!em) continue
+      if (em.weak) weakHits++
+      else strongHits++
+    }
+  }
+  console.log('')
+  console.log('[今天的真实对话] 入站 ' + total + ' 条，强情绪 ' + strongHits + ' 条，弱信号 ' + weakHits + ' 条')
+  console.log('  说明：弱信号只在对方 bond≥2 时才算数；如果这里弱信号长期为 0，是群里没那种话')
+} catch { /* 诊断失败不影响主报告 */ }
+
 const allPass = empathyPass && personaPass && moodPass
 console.log('')
 console.log(allPass ? '三项全部达标。' : '还没全达标——差的是真实样本，不是代码。')
