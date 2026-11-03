@@ -820,6 +820,19 @@ async function loadDiagLogs(el) {
       if (!window.confirm('清空全部日志？清完不能恢复。')) return
       try { const r = await pfetch({ action: 'diagClear' }); box.textContent = '已清空 ' + ((r && r.removed) || 0) + ' 条' } catch (e) { box.textContent = '清空失败' }
     }
+    const dl = root.querySelector('#logDownload')
+    if (dl) dl.onclick = async () => {
+      try {
+        const r = await pfetch({ action: 'diagDownload' })
+        if (!r || r.ok === false) { box.textContent = '导出失败'; return }
+        const blob = new Blob([String(r.text || '')], { type: 'application/x-ndjson' })
+        const a = document.createElement('a')
+        a.href = URL.createObjectURL(blob)
+        a.download = String(r.filename || 'app-logs.jsonl')
+        a.click()
+        setTimeout(() => URL.revokeObjectURL(a.href), 2000)
+      } catch (e) { box.textContent = '导出失败' }
+    }
   } catch (e) { box.textContent = '加载失败：' + (e && e.message ? e.message : '网络错误') }
 }
 
@@ -857,7 +870,7 @@ function renderSystemPage() {
       <div style="display:flex;gap:8px;align-items:center;margin:8px 0;flex-wrap:wrap">
         <select id="logLevel" style="width:120px"><option value="">全部级别</option><option value="error">error</option><option value="warn">warn</option><option value="info">info</option><option value="debug">debug</option></select>
         <input id="logQ" placeholder="搜关键词（kind / 模型 / 报错内容）" style="flex:1;min-width:180px">
-        <button id="logApply">查询</button><button id="logReload">刷新</button><button id="logClear">清空</button>
+        <button id="logApply">查询</button><button id="logReload">刷新</button><button id="logDownload">下载日志</button><button id="logClear">清空</button>
       </div>
       <div id="logBox" class="hint">加载中…</div>
     </div>`

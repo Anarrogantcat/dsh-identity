@@ -39,7 +39,7 @@ import { knowledgeBlock, lastQueryOf, kbStats, listKbFiles, readKbFile, saveKbFi
 import { topicBlock, topicStats } from './lib/topic.js'
 import { matchStats } from './lib/esports.js'
 import { rulesFor as learnRulesFor, learnStats, learnView, listRules, forgetRule } from './lib/learn.js'
-import { logError, logRun, logInfo, installProcessHooks, logStats, recentErrors, recentRun, queryLogs, clearLogs } from './lib/diaglog.js'
+import { logError, logRun, logInfo, installProcessHooks, logStats, recentErrors, recentRun, queryLogs, clearLogs, exportLogs } from './lib/diaglog.js'
 import { gearValues, GEARS } from './lib/gear.js'
 import { roleDiagnostics, clearRoleCache } from './lib/roles.js'
 import * as sticker from './lib/sticker.js'
@@ -852,6 +852,10 @@ export async function apply(ctx, config = {}) {
               run: recentRun(20),
               rows: queryLogs({ level: body.level ?? '', q: body.q ?? '', limit: body.limit ?? 60 }),
             })
+          }
+          if (action === 'diagDownload') {
+            const f = exportLogs(body.kind === 'errors' ? 'errors' : 'app')
+            return sendJson(res, 200, { ok: true, filename: f.filename, text: f.text })
           }
           if (action === 'diagClear') {
             const n = clearLogs()
