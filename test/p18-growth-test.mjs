@@ -18,8 +18,12 @@ const Tt = (n, p, d) => ok.push([n, !!p, d])
 const PK = peerKey('group', 'G1')
 const day = (n) => new Date(Date.now() - n * 86400000).toISOString()
 
-// 跨两天的 3 次证据 → durable
+// 跨两天的 3 次证据 + 一次群友确认 → durable（新规矩：得有外部印证）
 for (const [i, d] of [2, 1, 0].entries()) T.observe('喜欢被叫本鱼', { ref: 'e' + i, at: day(d) })
+{
+  const tr = T.listTraits({ limit: 50 }).find((x) => String(x.text).includes('喜欢被叫本鱼'))
+  if (tr) T.confirmTrait(tr.id, { ref: 'mem:e', by: 'user' })
+}
 T.observe('今天有点累', { ref: 'm', kind: 'feeling', at: day(1) })
 P.notePromise(PK, '等下帮你查版本号')
 P.notePromise(PK, '明天陪你练一局')

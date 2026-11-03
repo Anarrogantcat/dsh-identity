@@ -41,7 +41,10 @@ const d1 = new Date(Date.now() - 1 * 86400000).toISOString()
 T.observe('被指出理解错时先看上下文再答', { ref: 'c1', kind: 'feedback', at: d3 })
 T.observe('被指出理解错时先看上下文再答', { ref: 'c2', kind: 'feedback', at: d2 })
 const r4 = T.observe('被指出理解错时先看上下文再答', { ref: 'c3', kind: 'feedback', at: d1 })
-A('跨三天三次证据升 durable', r4.status === 'durable', r4)
+// 新规矩：跨天三次之外，还要有群友认过一次才算人格
+if (r4.ok) T.confirmTrait(r4.id, { ref: 'mem:c', by: 'user' })
+const r4b = T.listTraits({ limit: 60 }).find((x) => x.id === r4.id) || r4
+A('跨三天三次证据升 durable', r4b.status === 'durable', r4b)
 
 // 5) 只有 durable 才进出口吻的 bias
 const bias = T.behaviorBias()

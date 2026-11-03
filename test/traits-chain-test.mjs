@@ -38,30 +38,31 @@ const traitOf = (id) => readJson(join(dirs.root, 'traits.json'), { items: {} }).
   T_('新 traits 带 confirmedBy/refutedBy', Array.isArray(t.confirmedBy) && Array.isArray(t.refutedBy), t)
 }
 
-// 二、确认按 ref 去重；三次确认就 durable
+const dayAt = (d) => new Date(Date.now() - d * 86400000).toISOString()
+
+// 二、确认按 ref 去重；但确认本身不构成人格，得有跨场合的行为证据
 {
   let t = L.makeTrait({ text: '我不爱长篇解释' })
   t = L.confirmWith(t, { ref: 'a', by: 'user' }, Date.now())
   t = L.confirmWith(t, { ref: 'a', by: 'user' }, Date.now())
   T_('同一个 ref 只算一次', t.confirmedBy.length === 1 && t.hits === 1, { n: t.confirmedBy.length, hits: t.hits })
+  T_('只靠确认升不了 durable', t.status === 'tentative', t.status)
+  for (let d = 1; d <= 3; d++) t = L.addEvidence(t, { ref: 'e' + d, kind: 'self-say', at: dayAt(d) })
   t = L.confirmWith(t, { ref: 'b', by: 'user' }, Date.now())
-  t = L.confirmWith(t, { ref: 'c', by: 'judge' }, Date.now())
-  T_('三次确认升 durable', t.status === 'durable', t.status)
+  T_('跨场合 + 有人认过才升 durable', t.status === 'durable', t.status)
 }
 
-// 三、否认两次压过确认 → 降回 tentative；否认不加证据
+// 三、否认压过确认 → 降回 tentative；否认不加证据
 {
   let t = L.makeTrait({ text: '我不爱长篇解释' })
-  t = L.confirmWith(t, { ref: 'a' }, Date.now())
-  t = L.confirmWith(t, { ref: 'b' }, Date.now())
-  t = L.confirmWith(t, { ref: 'c' }, Date.now())
+  for (let d = 1; d <= 3; d++) t = L.addEvidence(t, { ref: 'e' + d, kind: 'self-say', at: dayAt(d) })
+  t = L.confirmWith(t, { ref: 'a', by: 'user' }, Date.now())
+  T_('先升到 durable', t.status === 'durable', t.status)
   const hitsBefore = t.hits
   t = L.refuteWith(t, { ref: 'x', reason: '改口' }, Date.now())
   T_('否认不追加证据', t.hits === hitsBefore, { before: hitsBefore, after: t.hits })
-  T_('否认少于确认还压不下去', t.status === 'durable', t.status)
+  T_('一次否认还压不下去', t.status === 'durable', t.status)
   t = L.refuteWith(t, { ref: 'y', reason: '改口' }, Date.now())
-  T_('还是压不下去（2 < 3）', t.status === 'durable', t.status)
-  t = L.refuteWith(t, { ref: 'z', reason: '改口' }, Date.now())
   T_('否认追平确认就降回 tentative', t.status === 'tentative' && t.confidence <= 0.3, { status: t.status, c: t.confidence })
 }
 

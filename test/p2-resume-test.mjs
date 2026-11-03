@@ -53,6 +53,11 @@ const PK = peerKey('group', 'G1')
   T.observe('喜欢被叫本鱼', { ref: 'r1', at: day(2) })
   T.observe('喜欢被叫本鱼', { ref: 'r2', at: day(1) })
   T.observe('喜欢被叫本鱼', { ref: 'r3', at: day(0) })
+  // 新规矩：还得有人认过（跨三天 + 一次群友确认）才算人格
+  {
+    const tr = T.listTraits({ limit: 50 }).find((x) => String(x.text).includes('喜欢被叫本鱼'))
+    if (tr) T.confirmTrait(tr.id, { ref: 'mem:r', by: 'user' })
+  }
   T.observe('今天有点累', { ref: 'r4', kind: 'feeling', at: day(0) })
   E.appendEvent(PK, { kind: 'talk', origin: 'inbound', who: '小明', text: '嗯' })
   const b = R.buildResumeBundle(PK, { maxChars: 500 })

@@ -21,15 +21,19 @@ let t = L.addEvidence(t0, { kind: 'self-say', ref: 'm1', at: at(0) }, now);
 A('一次证据不升 durable', t.status === 'tentative', t);
 A('置信度随证据上升但不高', t.confidence > 0.3 && t.confidence < 0.6, t.confidence);
 
-// 3) 同一天三次：够（不再卡跨天——成长不该被日历按住）
+// 3) 同一天三次：同一场合重复不算新证据（「正常人」规则）
 let same = L.makeTrait({ text: '同一天三次' });
 for (const i of [0, 1, 2]) same = L.addEvidence(same, { kind: 'self-say', ref: 's' + i, at: at(0) }, now);
-A('同一天 3 次也能 durable（不卡跨天）', same.status === 'durable', same.status);
+A('同一天 3 次仍是 tentative', same.status === 'tentative', same.status);
+same = L.confirmWith(same, { ref: 'mem:s', by: 'user' }, now);
+A('同日重复 + 有人认过也不够（独立证据=1）', same.status === 'tentative', same.status);
 
-// 4) 跨天三次：durable
+// 4) 跨天三次 + 有人认过 → durable
 let cross = L.makeTrait({ text: '跨天三次' });
 for (const d of [3, 2, 1]) cross = L.addEvidence(cross, { kind: 'correction', ref: 'c' + d, at: at(d) }, now);
-A('跨 3 天 3 次 → durable', cross.status === 'durable', { status: cross.status, hits: cross.hits });
+A('跨 3 天但没人认过：还是 tentative', cross.status === 'tentative', { status: cross.status, hits: cross.hits });
+cross = L.confirmWith(cross, { ref: 'mem:c', by: 'user' }, now);
+A('跨 3 天 + 有人认过 → durable', cross.status === 'durable', { status: cross.status, hits: cross.hits });
 A('durable 置信度更高', cross.confidence >= 0.6, cross.confidence);
 
 // 5) 情绪单独多次：永不 durable
