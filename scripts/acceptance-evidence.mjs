@@ -97,6 +97,10 @@ try {
   console.log('')
   console.log('[今天的真实对话] 入站 ' + total + ' 条，强情绪 ' + strongHits + ' 条，弱信号 ' + weakHits + ' 条')
   console.log('  说明：弱信号只在对方 bond≥2 时才算数；如果这里弱信号长期为 0，是群里没那种话')
+  const skips = appLog.filter((r) => r.kind === 'empathy.skip')
+  const byWhy = {}
+  for (const s of skips) byWhy[s.why || '?'] = (byWhy[s.why || '?'] || 0) + 1
+  console.log('  听出情绪但没记：' + skips.length + ' 次 ' + JSON.stringify(byWhy))
 } catch { /* 诊断失败不影响主报告 */ }
 
 const allPass = empathyPass && personaPass && moodPass
