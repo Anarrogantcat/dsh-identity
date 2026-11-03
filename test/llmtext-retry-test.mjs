@@ -65,6 +65,26 @@ const busy = { type: 'finish', reason: { kind: 'error', failure: { message: 'Ser
   T('max-tokens 不重试', calls === 1 && r.text === '', { calls })
 }
 
+// 5) provider 不支持 reasoningEffort: none → 去掉参数再试一次（别当模型失败）
+{
+  const seen = []
+  let calls = 0
+  const llm = {
+    async *stream(req) {
+      calls++
+      seen.push(req.reasoningEffort === undefined ? '(none)' : req.reasoningEffort)
+      if (calls === 1) {
+        yield { type: 'finish', reason: { kind: 'error', failure: { message: 'does not support reasoning effort "none"', code: 'UNSUPPORTED_REASONING_EFFORT' } } }
+        return
+      }
+      yield { type: 'text-delta', text: '好' }
+      yield { type: 'finish', reason: { kind: 'stop' } }
+    },
+  }
+  const r = await collectStream(llm, { provider: 'p', model: 'm', prompt: 'x', kind: 'test', reasoningEffort: 'none' })
+  T('不支持 reasoningEffort 时去参数重试', r.text === '好' && seen.length === 2 && seen[1] === '(none)', { text: r.text, seen })
+}
+
 let bad = 0
 for (const [n, good, e] of ok) { if (good) console.log('OK  ' + n); else { bad++; console.log('FAIL ' + n + '  ' + JSON.stringify(e)) } }
 console.log(bad ? ('失败 ' + bad) : '全部通过')
