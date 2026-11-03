@@ -35,12 +35,21 @@ const stale = items.filter((x) => x.stale === true)
 const personaPass = durable.length >= 10
 
 // ── 七情：真实负面情绪样本（被怼/难受） ──
+const appLog = lines(join('logs', 'app.jsonl'))
 const NEG = new Set(['难过', '生气', '焦虑', '疲惫'])
 const negReal = realEmp.filter((e) => NEG.has(String(e.emotion)))
-const moodPass = negReal.length >= 3
+// 情绪日志通道（1.9.247 起 moodv2.note 会记一条 mood.note，neg>0 表示负面情绪真的动了）
+const moodNotes = appLog.filter((r) => r.kind === 'mood.note')
+const moodNeg = moodNotes.filter((r) => Number(r.neg) > 0)
+const moodPass = negReal.length >= 3 || moodNeg.length >= 3
+
+// ── 情绪层健康度：mood 模型调用成功率 ──
+const modelCalls = appLog.filter((r) => r.kind === 'model.call')
+const moodCalls = modelCalls.filter((r) => r.modelKind === 'mood')
+const moodOk = moodCalls.filter((r) => r.ok === true).length
+const moodRate = moodCalls.length ? Math.round((moodOk / moodCalls.length) * 100) : null
 
 // ── 运行日志里共情有没有被记下来（新证据通道） ──
-const appLog = lines(join('logs', 'app.jsonl'))
 const empathyLogged = appLog.filter((r) => r.kind === 'empathy.record')
 
 function mark(ok) { return ok ? '✅ 达标' : '⏳ 还差' }
@@ -57,9 +66,11 @@ console.log('  验收口径：durable ≥ 10 且无空壳，靠真实聊天攒')
 console.log('')
 console.log('[七情] ' + mark(moodPass))
 console.log('  真实负面情绪记录：' + negReal.length + ' 条（难过/生气/焦虑/疲惫）')
+console.log('  情绪日志里负面变化：' + moodNeg.length + ' 次（kind=mood.note, neg>0）')
+console.log('  七情模型调用：' + moodCalls.length + ' 次，成功 ' + moodOk + (moodRate === null ? '' : '（' + moodRate + '%）'))
 console.log('  验收口径：至少 3 次真实被怼/难受并记进 docs')
 console.log('')
-console.log('[日志通道] 共情已进运行日志：' + empathyLogged.length + ' 条（kind=empathy.record）')
+console.log('[日志通道] 共情 ' + empathyLogged.length + ' 条 / 情绪变化 ' + moodNotes.length + ' 条')
 
 const allPass = empathyPass && personaPass && moodPass
 console.log('')
