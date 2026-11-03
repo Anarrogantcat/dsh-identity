@@ -278,7 +278,7 @@ export function identitySectionText(context) {
           const lp = [pick('active', '活跃'), pick('proactivity', '主动'), pick('patience', '耐心'), pick('curiosity', '好奇'), pick('verbosity', '话多'), pick('humor', '爱开玩笑'), pick('emoji', '表情')].filter(Boolean).join(' · ')
           if (lp) extra += '\n此刻的生活状态（只影响你的表达倾向）：' + lp
         } catch { /* ignore */ }
-        if (extra.trim()) parts.push({ name: 'mood', text: extra.trim(), cap: 200 })
+        if (extra.trim()) parts.push({ name: 'mood', text: extra.trim(), cap: 320 })
       } catch { /* ignore */ }
     }
     // 这个群学到的规矩

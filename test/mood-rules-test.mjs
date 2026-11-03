@@ -53,7 +53,7 @@ M.reset()
 for (let i = 0; i < 3; i++) M.note('滚 烦死了', { role: 'member', now: T0 + i * MIN })
 const st = M.getState(T0 + 3 * MIN)
 T('气到一定程度进抗拒档', M.blendsOf(st).some((b) => b.label === '抗拒'), M.blendsOf(st))
-T('语气块明说别骂人', /别骂人/.test(M.toneBlock(st)))
+T('抗拒档允许嘴毒但有边界', /脏话|人身攻击/.test(M.toneBlock(st)))
 
 const before = anger(T0 + 3 * MIN)
 M.note('对不起，是我错了', { role: 'member', now: T0 + 4 * MIN })
