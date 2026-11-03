@@ -736,12 +736,12 @@ const TAB_GROUPS = [
   ['认知', ['cognition']],
   ['自主', ['proactive']],
   ['治理', ['privacy', 'usage']],
-  ['能力', ['sticker', 'draw', 'voice', 'bili']],
+  ['能力', ['cap', 'sticker', 'draw', 'voice', 'bili']],
   ['通道', ['qq']],
   ['系统', ['system', 'about']],
 ]
 const TAB_ORDER = TAB_GROUPS.flatMap(([, ks]) => ks)
-function tabLabel(k) { if (k === 'overview') return '总览'; if (k === 'system') return '系统'; if (k === 'qq') return 'QQ 通道'; if (k === 'order') return 'QQ 群管'; return ((STATE.tabs.find((t) => t[0] === k) || [k, k])[1]) }
+function tabLabel(k) { if (k === 'overview') return '总览'; if (k === 'cap') return '能力总览'; if (k === 'system') return '系统'; if (k === 'qq') return 'QQ 通道'; if (k === 'order') return 'QQ 群管'; return ((STATE.tabs.find((t) => t[0] === k) || [k, k])[1]) }
 function tabIcon(k) { return iconSvg(k) }
 function goTab(k) {
   if (k === 'qq') k = 'scope'
@@ -1360,6 +1360,7 @@ function renderAboutPage() {
     compatCardHtml() +
     '<div class="pcard"><div class="label">身份系统</div><div class="hint">一个内核 + 记忆 + 情绪 + 自主 + 成长；不是客服模板。</div><div class="hint" style="margin-top:6px">仓库：github.com/Anarrogantcat/dsh-identity</div>' + (cfgPath ? '<div class="hint">配置：' + escapeHtml(cfgPath) + '</div>' : '') + '</div>' +
     '<div class="pcard"><div class="label">边界</div><div class="hint">钱、账号、权限对外动作只提议，主人确认；B站评论未做自动发布；模型权重不可改。</div></div>' +
+    '<div class="pcard"><div class="label">次级目标</div><div class="hint">语音唱歌 / 浏览器 / 贴吧 / 小黑盒 / 工具分权这些还没接的能力，统一收在「能力总览」里看状态：<a href="#cap">去能力总览</a>。</div></div>' +
     '<div class="pcard"><div class="label">安装 / 更新</div><div class="hint">dsh plugin --profile desktop add github:Anarrogantcat/dsh-identity</div><div class="hint">升级后重启 DSH；版本号按功能/修复递增。</div></div>'
   bindCompatCard()
 }
@@ -1372,11 +1373,33 @@ function addPageHead(title, desc, chips) {
     el.insertAdjacentHTML('afterbegin', '<div class="phead"><div class="phead-main"><div class="phead-title">' + escapeHtml(title) + '</div><div class="phead-desc">' + escapeHtml(desc || '') + '</div></div><div class="phead-side">' + side + '</div></div>')
   } catch (e) {}
 }
+function renderCapOverview() {
+  const el = document.getElementById('panel')
+  const row = (name, badge, hint, tab) =>
+    '<div class="row"><div class="meta"><div class="label">' + name + ' <span class="badge">' + badge + '</span></div>' +
+    '<div class="hint">' + hint + (tab ? ' · <a href="#' + tab + '">去这页</a>' : '') + '</div></div></div>'
+  el.innerHTML =
+    '<div class="pcard"><div class="label">次级目标 · 设置入口</div>' +
+      '<div class="hint">下一阶段的能力。这里先把入口和真实状态摆出来，不假装已经能用。</div>' +
+      row('语音说话', '可用', 'TTS → silk，QQ 通道发语音', 'voice') +
+      row('语音唱歌', '未接', '要带旋律的 TTS 或 SVC 变声；先调研再定') +
+      row('生图', '可用', 'ComfyUI 已接，#画 先搜 → 再问 → 确认', 'draw') +
+      row('操控电脑', '部分', '闸门和 read/full 分档在，默认值待定', 'privacy') +
+      row('浏览器', '未接', '宿主有浏览器工具，插件侧还没统一封装') +
+      row('B站', '可用', '链接解析 / 订阅推送；搜索还没接到命令', 'bili') +
+      row('贴吧', '未做', '要先解决登录态和反爬，计划只读检索') +
+      row('小黑盒', '部分', '能力已注册，接口可用性还没核过') +
+      row('DSH 工具集', '部分', '白名单在，按角色分权待补', 'privacy') +
+    '</div>' +
+    '<div class="pcard"><div class="label">已经能配的</div><div class="hint">表情 / 生图 / 语音 / B站 各自一页，从上面对应的「去这页」进去。</div></div>'
+}
+
 function renderPanel(){
   renderSubnav()
   if (ACTIVE === "overview") { renderOverview(); addPageHead('总览','她今天怎么样、在跟谁说话',[((STATE.traits&&STATE.traits.stats&&STATE.traits.stats.durable)||0)+' durable', ((STATE.traits&&STATE.traits.stats&&STATE.traits.stats.tentative)||0)+' 观察']); return }
   if (ACTIVE === "system") { renderSystemPage(); addPageHead('系统','MCP 与可选能力；默认都关着',['v'+(STATE.version||'?')]); return }
   if (ACTIVE === "about") { renderAboutPage(); return }
+  if (ACTIVE === "cap") { renderCapOverview(); addPageHead('能力总览','次级目标与设置入口，状态写实',[]); return }
   // §clear§ 每次渲染前先清空，避免自定义页用 append 时越切越长
   try { const _el = $("panel"); if (_el) _el.innerHTML = "" } catch {}
   const VIEW = ACTIVE === "cognition" ? COGSUB : ACTIVE
@@ -1709,14 +1732,28 @@ function identityCardHtml() {
   const kernel = escapeHtml(String(STATE.identityKernel || id.name || "")).replace(/\n/g, "<br>")
   const badge = (t) => t.status === "durable" ? '<span class="badge cur">durable</span>' : '<span class="badge">tentative</span>'
   const traitRow = (t) => {
-    const days = Math.floor((Date.now() - Date.parse(t.firstSeen || t.lastConfirmed || 0)) / 86400000)
-    const hits = t.hits || 0
-    const needHits = Math.max(0, 3 - hits)
-    const needDays = Math.max(0, 2 - days)
-    const prog = (t.status === 'durable') ? '已稳定' : (needHits || needDays ? ('还差 ' + [needHits ? needHits + ' 次' : '', needDays ? needDays + ' 天' : ''].filter(Boolean).join(' + ')) : '够了，等下一次判定')
+    // 「独立证据」= 天 × 来源去重（同一场合重复说三遍不算），口径跟 lifecycle.evidenceStats 一致
+    const indep = (() => {
+      try {
+        const cells = new Set((t.evidence || [])
+          .filter((e) => e && e.at && e.kind !== 'confirm')
+          .map((e) => String(e.at).slice(0, 10) + '|' + String(e.kind || '')))
+        return cells.size
+      } catch { return 0 }
+    })()
+    const conf = (t.confirmedBy || []).length
+    const ref = (t.refutedBy || []).length
+    const external = (t.confirmedBy || []).some((x) => x && x.by === 'user')
+    const prog = t.status === 'durable'
+      ? (t.stale ? '已稳定（待复核：缺外部确认）' : '已稳定')
+      : (indep < 3 ? ('独立证据 ' + indep + '/3') : (external ? '够了，等下一次判定' : '证据够了，等群友认过'))
+    const chain = [conf ? ('群友确认 ' + conf) : '', ref ? ('被推翻 ' + ref) : ''].filter(Boolean).join(' · ')
     return '<div class="row">' +
-      '<div class="meta"><div class="label">' + escapeHtml(t.text) + ' ' + badge(t) + ' <span class="hint">' + escapeHtml(String(t.kind || '')) + '</span></div>' +
-      '<div class="hint">证据 ' + hits + '/3 · 第 ' + (days + 1) + ' 天 · ' + prog + ' · 置信 ' + Math.round(Number(t.confidence || 0) * 100) + '%</div><div class="relbar" style="margin-top:6px"><i style="width:' + Math.min(100, Math.round((hits / 3) * 60 + Math.min(1, days / 2) * 40)) + '%"></i></div></div>' +
+      '<div class="meta"><div class="label">' + escapeHtml(t.text) + ' ' + badge(t) +
+      (t.stale ? ' <span class="badge" style="background:var(--warn,#8a6a00);color:#fff">待复核</span>' : '') +
+      ' <span class="hint">' + escapeHtml(String(t.kind || '')) + '</span></div>' +
+      '<div class="hint">独立证据 ' + indep + '/3 · 置信 ' + Math.round(Number(t.confidence || 0) * 100) + '% · ' + prog + (chain ? ' · ' + chain : '') + '</div>' +
+      '<div class="relbar" style="margin-top:6px"><i style="width:' + Math.min(100, Math.round((indep / 3) * 70 + (external ? 30 : 0))) + '%"></i></div></div>' +
       '<div class="ctl pbtns">' + (t.status !== "durable" ? '<button data-tpromote="' + t.id + '">晋升</button>' : '') + '<button data-tretire="' + t.id + '">否决</button></div>' +
     '</div>'
   }
