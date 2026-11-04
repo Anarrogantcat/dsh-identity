@@ -2512,9 +2512,13 @@ function renderProfilePanel() {
       ? '<div class="memstat">对她：找 ' + (m.attitude.ask || 0) + ' · 夸 ' + (m.attitude.praise || 0) + ' · 逗 ' + (m.attitude.tease || 0) + '</div>'
       : ''
     const words = (m.topWords || []).length ? '<div class="memstat">常聊 ' + escapeHtml((m.topWords || []).join('/')) + '</div>' : ''
+    const fresh = m.freshness && m.freshness.level
+    const freshBadge = fresh === 'stale' ? ' <span class="badge">久未出现</span>' : fresh === 'fading' ? ' <span class="badge">最近没露面</span>' : ''
+    const impression = m.impression ? '<div class="memstat">她对这个人的印象：' + escapeHtml(m.impression) + '</div>' : ''
     return '<div class="memcard">' +
-      '<div class="memtop"><div class="memname">' + nick + '</div><div>' + role + sealed + '</div></div>' +
+      '<div class="memtop"><div class="memname">' + nick + freshBadge + '</div><div>' + role + sealed + '</div></div>' +
       '<div class="memstat">发言 ' + (m.msgs || 0) + ' 条' + (m.chars ? ' · ' + m.chars + ' 字' : '') + ' · 均长 ' + (m.avgLen || 0) + ' 字' + (m.uid ? ' · ' + escapeHtml(String(m.uid)) : '') + '</div>' +
+      impression +
       words +
       '<div class="memtags">' + tags + '</div>' + interests + attitude +
       '<div class="membtns"><button data-pdel2="' + m.key + '">删除</button><button data-pseal2="' + m.key + '">屏蔽重建</button></div>' +
