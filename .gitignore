@@ -16,3 +16,9 @@ _tmp_*.py
 __pycache__/
 *.pyc
 scripts/_live_result.json
+
+# 内部计划/交接/教训文档只留本地，不进公开仓库
+docs/*.md
+!docs/README.md
+!docs/INSTALL.md
+docs/*.png
