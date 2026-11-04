@@ -59,6 +59,12 @@ const n = L.clearLogs()
 T('清空返回条数', n > 0, n)
 T('清空后没有日志', L.queryLogs({ limit: 5 }).length === 0 && L.recentErrors(5).length === 0)
 
+// 业务数据里的 kind/level 不许覆盖日志保留字段（曾把 mood.note 写成 kind=text）
+L.logInfo('mood.keep', { kind: 'text', level: 'error', at: 'x', role: 'member', changed: ['anger'] })
+const kept = L.queryLogs({ q: 'mood.keep', limit: 5 })
+T('保留字段不被覆盖（kind）', kept.length === 1 && kept[0].kind === 'mood.keep', kept[0] && kept[0].kind)
+T('保留字段不被覆盖（level）', kept.length === 1 && kept[0].level === 'info', kept[0] && kept[0].level)
+T('普通字段照常带上', kept.length === 1 && kept[0].role === 'member', kept[0] && kept[0].role)
 let bad = 0
 for (const [name, good, e] of ok) {
   if (good) console.log('OK  ' + name)
