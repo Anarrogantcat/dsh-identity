@@ -605,10 +605,18 @@ function snapshot() {
 export async function apply(ctx, config = {}) {
   const logger = ctx.logger ?? console
   hostCtxRef = ctx
-  ensureStore()
-  ensureDirs()
+  // 容器里数据目录可能不可写（只读镜像 / 非 root 用户 / HOME 指向怪路径）：
+  // 环境不对就让插件这次不启用，别把宿主进程一起带崩（issue #4：docker 里无限重启）
+  try {
+    ensureStore()
+    ensureDirs()
+    loadState()
+  } catch (err) {
+    try { logError('boot.store', err) } catch { /* ignore */ }
+    logger.error?.('[qqbot-refine] 数据目录初始化失败，插件本次不启用：' + ((err && err.message) || err))
+    return
+  }
   try { installProcessHooks(logger); logRun('boot') } catch { /* ignore */ }
-  loadState()
   // 清掉我们测试留下的孤儿浏览器（payqr-edge-*），历史事故：泄漏 700+ 个 msedge
   try { scheduleBrowserSweep({ logger }) } catch { /* ignore */ }
   // 策略存储：没有就落一份默认（动作模式/限额/确认码都在这里，与模型隔离）
@@ -634,7 +642,9 @@ export async function apply(ctx, config = {}) {
   }
 
   // 认知 / 安全模块（可选；缺了插件照常跑）
-  const mods = await loadCognition(logger)
+  // 认知模块加载失败（缺依赖、Node 版本不对）也不许抛出去：降级成无认知继续跑
+  let mods = null
+  try { mods = await loadCognition(logger) } catch (err) { try { logError('boot.cognition', err) } catch { /* ignore */ } ; logger.warn?.('[qqbot-refine] 认知模块加载失败（已降级）：' + ((err && err.message) || err)) }
   modsRef = mods
   try { defaultModelSvc = ctx.get?.('agentDefaultModel') ?? null } catch { defaultModelSvc = null }
 
