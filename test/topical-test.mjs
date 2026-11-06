@@ -47,6 +47,18 @@ T('话题词去掉寒暄', (() => {
   return !w.includes('哈哈') && !w.includes('这个')
 })(), topicWords('哈哈这个深渊怎么打'))
 
+T('clear 丢弃待批且不触发 onBatch', (() => {
+  let called = 0
+  const b = createBatcher({ windowMs: 600, onBatch: () => { called++ }, timer: () => 1, clear: () => {} })
+  b.push('g', 'x')
+  const had = b.pending('g') === 1
+  const okClear = b.clear('g') === true
+  const empty = b.pending('g') === 0
+  b.flush('g')
+  return had && okClear && empty && called === 0
+})(), { called: 'onBatch 不应被调用' })
+T('clear 不存在的群返回 false', createBatcher({ onBatch: () => {} }).clear('nobody') === false)
+
 let bad = 0
 for (const [n, pass, e] of ok) { if (pass) console.log('OK   ' + n); else { bad++; console.log('FAIL ' + n + '  ' + String(JSON.stringify(e)).slice(0, 140)) } }
 console.log(bad ? ('失败 ' + bad) : '全部通过')
