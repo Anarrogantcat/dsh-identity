@@ -72,7 +72,8 @@ import { listPromises, closePromise } from './lib/promises.js'
 import * as reflection from './lib/reflection.js'
 import { reflectDay as reflectDayOf, reflectDayLlm } from './lib/reflection.js'
 import { think as innerThink, innerHint } from './lib/inner.js'
-import { recentRaw } from './lib/timeline.js'
+import { recentRaw, recentGroup } from './lib/timeline.js'
+import { topicCard } from './lib/topical.js'
 import { sponsorsText } from './lib/sponsors.js'
 import { atmosphereOf, sinceLastSpoke } from './lib/presence.js'
 import { PERM_LEVELS, levelOf } from './lib/permgear.js'
@@ -267,7 +268,20 @@ export function identitySectionText(context) {
         }
         try {
           const ml = readLocalMood()
-          const recent = Date.now() - Number(ml?.at ?? 0) < 15 * 60 * 1000
+          /** 话题卡用的昵称解析：画像里 uid→昵称，按群缓存 60 秒，别每条回复都读 291KB */
+const _nickCache = new Map()
+function nickResolver(peer) {
+  const k = String(peer?.peer ?? '')
+  const hit = _nickCache.get(k)
+  if (hit && Date.now() - hit.at < 60000) return hit.fn
+  const m = new Map()
+  try { for (const x of profile.listMembers(k)) if (x.uid) m.set(String(x.uid), x.nick) } catch { /* ignore */ }
+  const fn = (u) => m.get(String(u)) || ''
+  _nickCache.set(k, { at: Date.now(), fn })
+  return fn
+}
+
+const recent = Date.now() - Number(ml?.at ?? 0) < 15 * 60 * 1000
           if (ml?.lastBy && recent && /情绪|生气|难过|心情/.test(String(ml.lastKind ?? 'text'))) {
             extra += '\n（刚才那句是「' + String(ml.lastBy).slice(0, 12) + '」说的——只影响你这一下的情绪，别把原话学出去。）'
           }
@@ -388,6 +402,8 @@ export function contextSectionText(context) {
       } catch { /* ignore */ }
       try { const atm = atmosphereOf(peer.peerKey, (u) => { try { return profile.memberBrief(peer.peer, u)?.nick || u } catch { return u } }); if (atm) bits.push('现在的群：' + atm) } catch { /* ignore */ }
       try { const since = sinceLastSpoke(peer.peerKey); if (since) bits.push('你上次开口之后，群里又说：' + since) } catch { /* ignore */ }
+      // 多人聊天：一句「现在谁在聊什么」，比逐条塞更省，也更不容易接错
+      try { const card = topicCard(recentGroup(peer.peerKey, { limit: 8, resolveNick: nickResolver(peer) })); if (card) bits.push(card) } catch { /* ignore */ }
       try { const sp = sponsorsText(8); if (sp) bits.push('赞助记录（只在被问起时照实说，别主动提）：' + sp) } catch { /* ignore */ }
       try { const gm = listMemory('__global__').slice(0, 3); if (gm.length) bits.push('你私下记下的事（跨群也知道，但别在群里复述）：' + gm.map((x) => String(x.text || '').slice(0, 50)).join('；')) } catch { /* ignore */ }
       try { bits.push(cognitionText(mods, peer.peerKey, cfg)) } catch { /* ignore */ }
